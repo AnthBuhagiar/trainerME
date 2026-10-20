@@ -1,6 +1,8 @@
 import { describe, expect, test } from "vitest";
 import { christmasWindow, mondayOf, periodise, phaseOn } from "@/lib/plan/periodise";
 import { DEFAULT_PHYSICS, eventMovingSeconds, powerForTarget, predictEvent } from "@/lib/goals/eventTime";
+import type { Goal } from "@/lib/goals/model";
+import { goalSummary } from "@/lib/goals/summary";
 
 describe("periodisation", () => {
   const phases = periodise("2026-10-20", "2027-04-18", { holidays: [christmasWindow(2026)] });
@@ -54,5 +56,40 @@ describe("event time", () => {
   test("power for a target time round-trips", () => {
     const w = powerForTarget(147, 2200, 6 * 3600, physics);
     expect(eventMovingSeconds(147, 2200, w, physics) / 3600).toBeCloseTo(6, 1);
+  });
+});
+
+describe("goal summary", () => {
+  const settings = { weightKg: 77, acceptedFtp: 208, bikeWeightKg: 8.5 };
+  const bathurst: Goal = {
+    id: "bathurst",
+    name: "Bathurst Cycling Festival",
+    type: "event",
+    priority: "A",
+    date: "2027-04-18",
+    event: { distanceKm: 147, climbingM: 2200, targetMinutes: 360 },
+    startHourPower: 177,
+    createdAt: "2026-10-20",
+  };
+
+  test("counts down and finds the phase", () => {
+    const s = goalSummary(bathurst, 177, settings, "2026-10-20");
+    expect(s.daysToGo).toBe(180);
+    expect(s.weeksToGo).toBe(26);
+    expect(s.phase).toBeNull(); // the block starts next Monday
+    expect(goalSummary(bathurst, 177, settings, "2027-03-01").phase?.name).toBe("specific");
+  });
+
+  test("a 6-hour target needs more hour power than today", () => {
+    const s = goalSummary(bathurst, 177, settings, "2026-10-20");
+    expect(s.predicted!.seconds).toBeGreaterThan(6 * 3600);
+    expect(s.needed!.hourPower).toBeGreaterThan(177);
+    expect(s.targetHourPower).toBe(s.needed!.hourPower);
+  });
+
+  test("without a target time the ring aims 10% above the start", () => {
+    const s = goalSummary({ ...bathurst, event: { distanceKm: 147, climbingM: 2200 } }, 177, settings, "2026-10-20");
+    expect(s.needed).toBeUndefined();
+    expect(s.targetHourPower).toBe(195);
   });
 });

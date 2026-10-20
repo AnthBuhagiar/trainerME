@@ -44,11 +44,12 @@ export function eventMovingSeconds(distanceKm: number, climbingM: number, power:
 }
 
 /**
- * Share of hour power a rider can average for a long event: ~0.80 at 3 h
- * falling to ~0.70 at 7 h, scaled by durability (0.94-1.00).
+ * Share of hour power a rider can average for a long event: ~0.86 at 3 h
+ * falling to ~0.78 at 7 h, scaled by durability (0.94-1.00). Calibrated on
+ * Bowral 2025: ~145 W average over 6 h 13 moving on an hour power of ~180 W.
  */
 export function sustainableFraction(hours: number, durability = 0.97): number {
-  const base = Math.max(0.65, Math.min(0.85, 0.89 - 0.03 * hours));
+  const base = Math.max(0.7, Math.min(0.88, 0.92 - 0.02 * hours));
   return base * (durability / 0.97);
 }
 

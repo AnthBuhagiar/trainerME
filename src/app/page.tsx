@@ -5,6 +5,9 @@ import { loadActivities, loadRides, loadSettings } from "@/lib/data/store";
 import { dateOnly, todayLocal } from "@/lib/engine/dates";
 import { buildHistory } from "@/lib/engine/history";
 import { buildModel } from "@/lib/engine/hourPower";
+import { formatDuration } from "@/lib/goals/eventTime";
+import { activeGoal } from "@/lib/goals/model";
+import { goalSummary } from "@/lib/goals/summary";
 import { applyStrengthTarget, describeSlot, inferTimeBudget } from "@/lib/plan/timeBudget";
 import { callbackDomain, hasCredentials, loadTokens } from "@/lib/strava/client";
 
@@ -27,10 +30,14 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
   const current = history?.current ?? null;
   const budget = applyStrengthTarget(inferTimeBudget(loadActivities(), todayLocal()));
 
-  // Until goals are set up, show progress from the 6-month low towards +20%.
+  const goal = activeGoal(todayLocal());
+  const summary = goal && current ? goalSummary(goal, current.hourPower, settings, todayLocal(), current.durability.factor) : null;
+
+  // Without a goal, show progress from the 6-month low towards +20%.
   const recent = history?.points.filter((p) => Date.parse(p.date) > Date.now() - 182 * 86_400_000) ?? [];
-  const start = recent.length ? Math.floor(Math.min(...recent.map((p) => p.hourPower)) / 5) * 5 : 0;
-  const goal = current ? Math.ceil((current.hourPower * 1.2) / 5) * 5 : 0;
+  const sixMonthLow = recent.length ? Math.floor(Math.min(...recent.map((p) => p.hourPower)) / 5) * 5 : 0;
+  const start = goal?.startHourPower ? Math.floor(goal.startHourPower / 5) * 5 - 10 : sixMonthLow;
+  const target = summary?.targetHourPower ?? (current ? Math.ceil((current.hourPower * 1.2) / 5) * 5 : 0);
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-4 px-5 py-6">
@@ -43,12 +50,12 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
 
       {current ? (
         <section className="flex flex-col items-center gap-3 rounded-3xl bg-asphalt p-5 text-chalk">
-          <HourRing hourPower={current.hourPower} low={current.low} high={current.high} start={start} goal={goal} />
+          <HourRing hourPower={current.hourPower} low={current.low} high={current.high} start={start} goal={target} />
           <div className="flex w-full justify-between text-[13px]" style={{ color: "#B9C4D0" }}>
             <span className="whitespace-nowrap">{(current.hourPower / settings.weightKg).toFixed(2)} W/kg</span>
             <span className="flex items-center gap-1.5 whitespace-nowrap">
               <span className="inline-block h-2 w-2 rounded-full bg-signal" />
-              Example goal {goal} W
+              {summary ? `Goal ${target} W` : `Example goal ${target} W`}
             </span>
           </div>
           <dl className="grid w-full grid-cols-2 gap-3 text-[13px]" style={{ color: "#B9C4D0" }}>
@@ -69,6 +76,68 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
             Connect Strava and sync. Rides with a power meter and heart rate give the best estimate.
           </p>
         </section>
+      )}
+
+      {summary ? (
+        <a href="/goal" className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-5">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="label">Goal · {summary.goal.priority}</h2>
+            <span className="display text-[18px] whitespace-nowrap">
+              {summary.weeksToGo > 1 ? `${summary.weeksToGo} weeks` : `${summary.daysToGo} days`}
+            </span>
+          </div>
+          <div>
+            <div className="display text-[20px] leading-tight">{summary.goal.name}</div>
+            <div className="text-[14px] text-muted">
+              {new Intl.DateTimeFormat("en-AU", { weekday: "short", day: "numeric", month: "long", year: "numeric" }).format(new Date(`${summary.goal.date}T00:00:00`))}
+              {summary.goal.event && ` · ${summary.goal.event.distanceKm} km · ${summary.goal.event.climbingM.toLocaleString("en-AU")} m`}
+            </div>
+          </div>
+          {summary.predicted && (
+            <dl className="grid grid-cols-2 gap-3 text-[13px] text-muted">
+              <div>
+                <dt>If it were today</dt>
+                <dd className="display text-[18px] text-foreground">{formatDuration(summary.predicted.seconds)}</dd>
+                <dd>at {summary.predicted.power} W average</dd>
+              </div>
+              {summary.needed && summary.goal.event?.targetMinutes && (
+                <div>
+                  <dt>For {formatDuration(summary.goal.event.targetMinutes * 60)}</dt>
+                  <dd className="display text-[18px] text-foreground">{summary.needed.hourPower} W</dd>
+                  <dd>hour power ({summary.needed.power} W average)</dd>
+                </div>
+              )}
+            </dl>
+          )}
+          <div className="rounded-2xl bg-[#E6EAEE] px-4 py-3 text-asphalt">
+            {summary.phase ? (
+              <>
+                <div className="text-[15px] font-semibold">{summary.phase.label} · until {fmtDate.format(new Date(`${summary.phase.end}T00:00:00`))}</div>
+                <div className="text-[13px] leading-snug">{summary.phase.focus}</div>
+              </>
+            ) : (
+              <div className="text-[15px] font-semibold">
+                Plan starts Monday {fmtDate.format(new Date(`${summary.phases[0].start}T00:00:00`))} with {summary.phases[0].label.toLowerCase()}
+              </div>
+            )}
+          </div>
+          <ol className="flex gap-1" aria-label="Training phases">
+            {summary.phases.map((p) => (
+              <li
+                key={p.start}
+                title={`${p.label}: ${p.weeks} weeks`}
+                style={{ flexGrow: p.weeks }}
+                className={`h-2 rounded-full ${summary.phase?.start === p.start ? "bg-signal" : p.name === "flex" ? "bg-line" : "bg-muted"}`}
+              />
+            ))}
+          </ol>
+        </a>
+      ) : (
+        current && (
+          <a href="/goal" className="flex h-14 items-center justify-center rounded-2xl border border-line bg-card text-[16px] font-semibold">
+            Set a goal
+          </a>
+        )
       )}
 
       {!tokens && <SetupCard hasCredentials={hasCredentials()} callbackDomain={callbackDomain()} notice={notice} />}

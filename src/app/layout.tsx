@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, Inter } from "next/font/google";
+import { BottomNav } from "@/components/BottomNav";
 import "./globals.css";
 
 const archivo = Archivo({ variable: "--font-archivo", subsets: ["latin"], axes: ["wdth"] });
@@ -17,7 +18,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${archivo.variable} ${inter.variable} antialiased`}>{children}</body>
+      <body className={`${archivo.variable} ${inter.variable} antialiased pb-20`}>
+        {children}
+        <BottomNav />
+      </body>
     </html>
   );
 }
