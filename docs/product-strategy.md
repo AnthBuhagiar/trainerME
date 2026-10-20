@@ -22,7 +22,7 @@ The founding user profile, taken from real Strava history:
 | Current tools | JOIN plans, Strava, MyWhoosh, two power sources (indoor + outdoor) |
 
 ### Core promise
-1. **One number that matters:** hour power, front and centre.
+1. **One number that matters:** hour power, front and centre, with **one goal event** every 4–12 months giving it a purpose.
 2. **Every ride counts:** the estimate improves from any ride, not just tests or prescribed workouts.
 3. **Built around your life:** the plan fits the hours you have, and life stress counts as load.
 4. **Honest and explained:** a confidence range and a reason for every change.
@@ -52,6 +52,29 @@ Ranked by defensibility (how hard they are to copy).
 | B7 | **Late-night-friendly sessions** | Evening sessions are tuned for the most stimulus per minute, without hard efforts so late that they wreck sleep. |
 | B8 | **Gym-aware scheduling** | Places strength sessions so they don't blunt the key ride. |
 
+### D. Goal Event — the ride the season leans towards (high value, medium defensibility)
+
+Every rider picks **one key event every 4–12 months** (a gran fondo, sportive, hill climb, time trial or a
+personal challenge ride) and the whole plan bends towards it. Hour power stays the headline number;
+the goal event gives it a purpose and a deadline.
+
+Example for the founding rider: **Bowral Classic** — 151 km, ~2,140 m climbing, ridden 19 Oct 2025 in
+~6 h 13 min moving. That ride is already in the data, so it doubles as a baseline for next year's attempt.
+
+| # | Feature | What it does |
+|---|---|---|
+| D1 | **Set a goal event** | Name, date, type (gran fondo, sportive, hill climb, TT, challenge ride), distance, elevation, optional target time. Import a route (GPX/Strava route) to get the climbs. One active goal at a time, with the next one queued. |
+| D2 | **Event demands** | Turns the course into requirements: expected duration, the power needed for the target time (from weight, elevation and hour power), the share of hour power sustainable for that long (from late-ride power holding), and the key climbs' length and gradient. |
+| D3 | **Backwards plan from the date** | Phases (base → build → specific → taper) are laid out backwards from the event, **inside the rider's time budget (B1)**. A 5-month gap gets a full build; a 6-week gap gets a sharpened short version. |
+| D4 | **Event readiness score** | Alongside hour power: "Bowral readiness 72%", built from hour power vs required power, long-ride durability, climbing-specific efforts and training consistency. Shows what's holding it back. |
+| D5 | **Key rehearsal rides** | Saturday long rides become event rehearsals: event-pace efforts on climbs, rides of similar length, fuelling practice. Flagged as "key ride" so life admin can be planned around them. |
+| D6 | **Event-specific sessions** | The week builder biases sessions towards the event type: long sweet spot and durability for a gran fondo, 10–30 min threshold for a hill climb, steady 40–60 min efforts for a TT. |
+| D7 | **Taper and event week** | A taper scaled to the rider's load, an event-week checklist (kit, bike check, sleep, travel) and family logistics notes. |
+| D8 | **Pacing and fuelling plan** | Climb-by-climb power targets from hour power and course profile, carbohydrate per hour, and bottle/food plan. Exportable to the bike computer. |
+| D9 | **Goal realism check** | At setup and monthly: "At 6 h/week, a sub-6 h Bowral is realistic (needs ~X W, you're tracking to Y W)" or "stretch — consider 6 h 15". Adjusts honestly instead of failing silently. |
+| D10 | **Post-event review and next goal** | Compares the result with the plan and the prediction, updates the model (it was a real long effort), celebrates the outcome, then proposes the next goal and a recovery block. The yearly cycle becomes 2–3 goal blocks. |
+| D11 | **Life-aware goal calendar** | Family holidays, work crunches and school events are blocked out first, so goal blocks are realistic (links to B6). |
+
 ### C. Experience (lower defensibility, high value)
 | # | Feature | What it does |
 |---|---|---|
@@ -64,7 +87,7 @@ Ranked by defensibility (how hard they are to copy).
 | C7 | **Hour Attempt mode** | Optional real hour effort (indoor or a long climb); the app predicts the result first, then compares. |
 | C8 | **Back-by-time rides** | "Back by 8:30" → a session and distance that fits, with a live turn-around prompt. |
 | C9 | **Partner view** | A shared view of this week's riding slots and total hours away. |
-| C10 | **Event goals** | Realistic targets for real events ("at 6 h/week you can reach ~215 W by March") plus an event pacing plan from hour power. |
+| C10 | **Event goals** | Superseded by the full Goal Event feature set (section D). |
 | C11 | **Works with JOIN/Zwift** | Reads JOIN's planned workouts from Strava descriptions to report whether the plan is moving hour power. |
 | C12 | **Never overwrites zones silently** | New estimates are offered for Accept/Decline before replacing the FTP used for training. |
 
@@ -81,6 +104,7 @@ Goal: a trustworthy hour-power number and a week that fits real life.
 - [ ] **C3** daily recommendation.
 - [ ] **B4** one-tap life-stress check-in.
 - [ ] **C12** accept/decline new FTP.
+- [ ] **D1** set a goal event, **D3** backwards plan from the date (feeding the week builder), and a basic **D9** realism check.
 
 ### Phase 2 — Accuracy and life fit
 - [ ] **A2** condition-corrected heart rate.
@@ -90,6 +114,7 @@ Goal: a trustworthy hour-power number and a week that fits real life.
 - [ ] **B5** time-off forecasts.
 - [ ] **B8** gym-aware scheduling and **B7** evening session tuning.
 - [ ] **C5** "on track" score.
+- [ ] **D2** event demands from the route, **D4** readiness score, **D5** key rehearsal rides, **D6** event-specific sessions.
 
 ### Phase 3 — Family and integrations
 - [ ] **B6** calendar awareness.
@@ -97,7 +122,7 @@ Goal: a trustworthy hour-power number and a week that fits real life.
 - [ ] **C9** partner view.
 - [ ] **C11** JOIN/Zwift companion mode.
 - [ ] **C6** test-as-you-train sessions and **C7** Hour Attempt mode.
-- [ ] **C10** event goals and pacing.
+- [ ] **D7** taper and event week, **D8** pacing and fuelling plan, **D10** post-event review and next goal, **D11** life-aware goal calendar.
 
 ### Phase 4 — Go to market (if validated)
 - [ ] Direct Garmin / Wahoo / FIT-file import (don't rely on Strava alone; see risks).
