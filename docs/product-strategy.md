@@ -63,7 +63,7 @@ Example for the founding rider: **Bowral Classic** — 151 km, ~2,140 m climbing
 
 | # | Feature | What it does |
 |---|---|---|
-| D1 | **Set a goal event** | Name, date, type (gran fondo, sportive, hill climb, TT, challenge ride), distance, elevation, optional target time. Import a route (GPX/Strava route) to get the climbs. One active goal at a time, with the next one queued. |
+| D1 | **Set a goal event** | Enter the ride details manually, import a route file, or both (full spec in section D-1 below). One active goal at a time, with the next one queued. |
 | D2 | **Event demands** | Turns the course into requirements: expected duration, the power needed for the target time (from weight, elevation and hour power), the share of hour power sustainable for that long (from late-ride power holding), and the key climbs' length and gradient. |
 | D3 | **Backwards plan from the date** | Phases (base → build → specific → taper) are laid out backwards from the event, **inside the rider's time budget (B1)**. A 5-month gap gets a full build; a 6-week gap gets a sharpened short version. |
 | D4 | **Event readiness score** | Alongside hour power: "Bowral readiness 72%", built from hour power vs required power, long-ride durability, climbing-specific efforts and training consistency. Shows what's holding it back. |
@@ -74,6 +74,53 @@ Example for the founding rider: **Bowral Classic** — 151 km, ~2,140 m climbing
 | D9 | **Goal realism check** | At setup and monthly: "At 6 h/week, a sub-6 h Bowral is realistic (needs ~X W, you're tracking to Y W)" or "stretch — consider 6 h 15". Adjusts honestly instead of failing silently. |
 | D10 | **Post-event review and next goal** | Compares the result with the plan and the prediction, updates the model (it was a real long effort), celebrates the outcome, then proposes the next goal and a recovery block. The yearly cycle becomes 2–3 goal blocks. |
 | D11 | **Life-aware goal calendar** | Family holidays, work crunches and school events are blocked out first, so goal blocks are realistic (links to B6). |
+
+#### D-1. Goal setup specification
+
+The rider can describe the goal **manually**, by **importing the route**, or both. A file fills in what it can,
+manual entries override it, and anything missing is estimated and marked as an estimate.
+
+**Manual inputs**
+
+| Field | Required | Notes |
+|---|---|---|
+| Event name | Yes | e.g. "Bowral Classic 2026" |
+| Date and start time | Yes | Start time drives expected temperature and the taper/sleep plan |
+| Event type | Yes | Gran fondo, sportive, hill climb, time trial, challenge ride, other |
+| Distance (km) | Yes, unless a route is imported | |
+| Total climbing (m) | Yes, unless a route is imported | |
+| Target | Optional | Any one of: finish time, average speed, average power, or "just finish strong". If blank, the app proposes a realistic target (D9). |
+| Surface | Optional | Road, gravel, mixed; adjusts rolling resistance and speed estimates |
+| Riding style | Optional | Solo or bunch; drafting changes the power needed |
+| Rider + bike weight (kg) | Optional | Defaults to Strava profile weight plus a typical bike weight |
+| Expected conditions | Optional | Temperature and wind; defaults to historical averages for the date and place |
+| Previous attempt | Optional | Link a past Strava activity of the same event (e.g. Bowral Classic, 19 Oct 2025) as a baseline |
+| Priority | Optional | "A" goal (plan bends towards it) or "B" event (trained through, minor taper) |
+
+**Route import**
+
+| Source | Phase |
+|---|---|
+| GPX file upload | MVP |
+| TCX and FIT course files | Phase 2 |
+| Strava route or Strava activity of a previous attempt | Phase 2 |
+| Links from RideWithGPS and Komoot | Phase 3 |
+
+From an imported route the app derives:
+- Distance, total climbing and an elevation profile.
+- **Detected climbs**: start/end km, length, average and maximum gradient, and a difficulty score, which become the key climbs in D2 and D8.
+- Flat, rolling and descending sections, for pacing and fuelling points.
+- Start location, used for the weather defaults.
+
+**Derived goal (shown on save)**
+- Estimated finish time at current fitness, and at projected fitness on the event date.
+- Power needed for the target, overall and on each key climb, as a share of hour power.
+- Feasibility: realistic, stretch or unlikely on the current time budget (D9), with a suggested adjustment.
+- Weeks available, and how they split into base, build, specific and taper (D3).
+
+**Data handling**
+Route files and goal details are personal data. They are stored with the rider's other data in the
+git-ignored `data/` folder and never committed to the public repository.
 
 ### C. Experience (lower defensibility, high value)
 | # | Feature | What it does |
@@ -104,7 +151,8 @@ Goal: a trustworthy hour-power number and a week that fits real life.
 - [ ] **C3** daily recommendation.
 - [ ] **B4** one-tap life-stress check-in.
 - [ ] **C12** accept/decline new FTP.
-- [ ] **D1** set a goal event, **D3** backwards plan from the date (feeding the week builder), and a basic **D9** realism check.
+- [ ] **D1** set a goal event: manual inputs (distance, climbing, date, target time) and **GPX import** with climb detection (D-1).
+- [ ] **D3** backwards plan from the date (feeding the week builder), and a basic **D9** realism check.
 
 ### Phase 2 — Accuracy and life fit
 - [ ] **A2** condition-corrected heart rate.
@@ -115,6 +163,7 @@ Goal: a trustworthy hour-power number and a week that fits real life.
 - [ ] **B8** gym-aware scheduling and **B7** evening session tuning.
 - [ ] **C5** "on track" score.
 - [ ] **D2** event demands from the route, **D4** readiness score, **D5** key rehearsal rides, **D6** event-specific sessions.
+- [ ] Route import from TCX/FIT course files and from Strava routes or a previous attempt's activity.
 
 ### Phase 3 — Family and integrations
 - [ ] **B6** calendar awareness.
@@ -122,6 +171,7 @@ Goal: a trustworthy hour-power number and a week that fits real life.
 - [ ] **C9** partner view.
 - [ ] **C11** JOIN/Zwift companion mode.
 - [ ] **C6** test-as-you-train sessions and **C7** Hour Attempt mode.
+- [ ] Route import from RideWithGPS and Komoot links.
 - [ ] **D7** taper and event week, **D8** pacing and fuelling plan, **D10** post-event review and next goal, **D11** life-aware goal calendar.
 
 ### Phase 4 — Go to market (if validated)
