@@ -226,6 +226,41 @@ export const LIBRARY: Workout[] = [
   },
 ];
 
+const dur = (seconds: number) => (seconds >= 60 ? `${Math.round((seconds / 60) * 10) / 10} min` : `${seconds} s`);
+
+/** Names follow the main set, so a shortened or progressed session says what it really is. */
+const TITLES: Record<string, (m: MainSet) => string> = {
+  "tempo-3x10": (m) => `${m.reps} × ${dur(m.work.seconds)} tempo`,
+  "sweetspot-3x12": (m) => `${m.reps} × ${dur(m.work.seconds)} sweet spot`,
+  "threshold-2x15": (m) => `${m.reps} × ${dur(m.work.seconds)} threshold`,
+  "threshold-over-under": (m) => `Over-unders ${m.sets} × (${m.reps} × 2/1)`,
+  "vo2-30-15": (m) => `30/15s · ${m.sets} × ${m.reps}`,
+  "vo2-5x4": (m) => `${m.reps} × ${dur(m.work.seconds)} VO2`,
+  "climb-pace-2x12": (m) => `${m.reps} × ${dur(m.work.seconds)} steady climb pace`,
+  "long-ride-late-efforts": (m) => `Long ride · ${m.reps} × ${dur(m.work.seconds)} tempo in the final hour`,
+  "sprints-6x15s": (m) => `Endurance + ${m.reps} × ${dur(m.work.seconds)} sprints`,
+};
+
+function retitle(w: Workout): Workout {
+  if (w.main && TITLES[w.id]) w.name = TITLES[w.id](w.main);
+  return w;
+}
+
+/**
+ * Progressive overload across a phase: `step` loading weeks in, long efforts
+ * get ~10% longer each week (whole minutes) and short efforts gain a rep, up
+ * to four steps. The slot length still wins: scaleWorkout trims to fit.
+ */
+export function progressWorkout(w: Workout, step: number): Workout {
+  const k = Math.max(0, Math.min(4, Math.floor(step)));
+  if (!w.main || k === 0) return w;
+  const out = structuredClone(w);
+  const m = out.main!;
+  if (m.work.seconds >= 300) m.work.seconds = Math.round((m.work.seconds * (1 + 0.1 * k)) / 60) * 60;
+  else m.reps += k;
+  return retitle(out);
+}
+
 export function getWorkout(id: string): Workout {
   const w = LIBRARY.find((x) => x.id === id);
   if (!w) throw new Error(`Unknown workout ${id}`);
@@ -284,6 +319,7 @@ export function scaleWorkout(w: Workout, minutes: number): ScaledWorkout {
     // Hand any time freed by a cut back to the warm-up.
     if (over() < 0) out.warmup.seconds -= over();
   }
+  retitle(out);
 
   const kept = out.steady && !out.main ? totalMinutes(out) / original : (workMinutes(out) || totalMinutes(out)) / originalWork;
   return { workout: out, minutes: totalMinutes(out), kept: Math.min(1, Math.round(kept * 100) / 100) };

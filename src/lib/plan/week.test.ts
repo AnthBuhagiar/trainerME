@@ -76,3 +76,19 @@ describe("fuel", () => {
     expect(fuelFor(240, "specific", "moderate")).toMatchObject({ gramsPerHour: 90, totalGrams: 360 });
   });
 });
+
+describe("progression", () => {
+  test("efforts get longer through a phase and names follow", () => {
+    const base = { ...phase("base"), start: "2026-10-26" };
+    const first = planWeek(budget, { monday: "2026-10-26", phase: base }).sessions.find((s) => s.weekday === 2)!;
+    const third = planWeek(budget, { monday: "2026-11-09", phase: base }).sessions.find((s) => s.weekday === 2)!;
+    expect(first.ride!.workout.name).toBe("2 × 15 min threshold");
+    expect(third.ride!.workout.name).toBe("2 × 18 min threshold");
+    expect(third.minutes).toBeLessThanOrEqual(60);
+  });
+
+  test("a shortened session is named for what's left", async () => {
+    const { getWorkout, scaleWorkout } = await import("@/lib/plan/library");
+    expect(scaleWorkout(getWorkout("threshold-2x15"), 40).workout.name).toBe("1 × 15 min threshold");
+  });
+});

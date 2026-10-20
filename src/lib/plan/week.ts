@@ -1,4 +1,4 @@
-import { getWorkout, scaleWorkout, type ScaledWorkout } from "@/lib/plan/library";
+import { getWorkout, progressWorkout, scaleWorkout, type ScaledWorkout } from "@/lib/plan/library";
 import type { Phase, PhaseName } from "@/lib/plan/periodise";
 import type { TimeBudget, TimeSlot } from "@/lib/plan/timeBudget";
 
@@ -140,6 +140,11 @@ export function planWeek(budget: TimeBudget, ctx: WeekContext): WeekPlan {
   const finalWeek = ctx.daysToGoal !== undefined && ctx.daysToGoal < 7;
   const label = recovery ? "Recovery week" : ctx.phase ? ctx.phase.label : "Lead-in week";
   const placed = placeSlots(budget.slots);
+  // Loading weeks already done in this phase drive progression; recovery and taper weeks don't progress.
+  let step = 0;
+  if (ctx.phase && !recovery && name !== "taper" && name !== "flex") {
+    for (let m = ctx.phase.start; m < ctx.monday; m = addDays(m, 7)) if (!ctx.phase.recoveryWeeks.includes(m)) step++;
+  }
 
   const rideDays = placed.filter((p) => p.slot.kind === "ride");
   const long = rideDays.length ? rideDays.reduce((a, b) => (b.slot.minutes > a.slot.minutes ? b : a)) : null;
@@ -185,7 +190,7 @@ export function planWeek(budget: TimeBudget, ctx: WeekContext): WeekPlan {
       workoutId = "endurance";
       why = "Keep most riding easy (E1).";
     }
-    const ride = scaleWorkout(getWorkout(workoutId), minutes);
+    const ride = scaleWorkout(progressWorkout(getWorkout(workoutId), step), minutes);
     sessions.push({ ...base, minutes: ride.minutes, ride, fuel: fuelFor(ride.minutes, name, ride.workout.intensity), why });
   }
   return { monday: ctx.monday, phase: name, label, recovery, sessions };
