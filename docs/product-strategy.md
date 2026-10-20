@@ -43,7 +43,7 @@ Ranked by defensibility (how hard they are to copy).
 ### B. Built for time-crunched riders (medium–high defensibility)
 | # | Feature | What it does |
 |---|---|---|
-| B1 | **Time-budget planning** | The rider enters available slots ("Tue/Thu 60 min, Sat 5–8 am"); the app builds the week with the most expected hour-power gain for that time and shows each session's value. |
+| B1 | **Time-budget planning** | The app **reads the rider's usual week from their own Strava history** (last 12 weeks, recent weeks weighted more): fixed-day slots with typical start time and length, plus flexible habits like "gym 1× a week, evenings, any day". The rider can adjust them. The app builds the week with the most expected hour-power gain for that time and shows each session's value. |
 | B2 | **Session shrinking** | When a 60-min slot becomes 35 min, one tap gives the best 35-min version and shows how much benefit was kept. |
 | B3 | **No catch-up of missed sessions** | Missed sessions are dropped, not crammed into the weekend. |
 | B4 | **Life stress counts as load** | One-tap daily check-in (sleep, stress, kids sick, big work week), plus HRV/resting HR if available, adjusts the plan. |

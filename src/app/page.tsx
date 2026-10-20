@@ -1,10 +1,11 @@
 import { HourRing } from "@/components/HourRing";
 import { SetupCard } from "@/components/SetupCard";
 import { SyncPanel } from "@/components/SyncPanel";
-import { loadRides, loadSettings } from "@/lib/data/store";
+import { loadActivities, loadRides, loadSettings } from "@/lib/data/store";
 import { dateOnly, todayLocal } from "@/lib/engine/dates";
 import { buildHistory } from "@/lib/engine/history";
 import { buildModel } from "@/lib/engine/hourPower";
+import { describeSlot, inferTimeBudget } from "@/lib/plan/timeBudget";
 import { callbackDomain, hasCredentials, loadTokens } from "@/lib/strava/client";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +25,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
   const missing = rides.filter((r) => !r.streams).length;
   const history = rides.length ? buildHistory(buildModel(rides), todayLocal()) : null;
   const current = history?.current ?? null;
+  const budget = inferTimeBudget(loadActivities(), todayLocal());
 
   // Until goals are set up, show progress from the 6-month low towards +20%.
   const recent = history?.points.filter((p) => Date.parse(p.date) > Date.now() - 182 * 86_400_000) ?? [];
@@ -72,6 +74,25 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
       {!tokens && <SetupCard hasCredentials={hasCredentials()} callbackDomain={callbackDomain()} notice={notice} />}
 
       <SyncPanel connected={!!tokens} missing={missing} />
+
+      {budget.slots.length > 0 && (
+        <section className="flex flex-col gap-2 rounded-3xl border border-line bg-card p-5">
+          <div className="flex items-baseline justify-between">
+            <h2 className="label">Your usual week</h2>
+            <span className="display text-[18px]">
+              {Math.floor(budget.totalMinutes / 60)} h {String(budget.totalMinutes % 60).padStart(2, "0")}
+            </span>
+          </div>
+          <ul className="flex flex-col gap-1.5 text-[15px]">
+            {budget.slots.map((slot) => (
+              <li key={`${slot.weekday}-${slot.kind}-${slot.start}`}>{describeSlot(slot)}</li>
+            ))}
+          </ul>
+          <p className="text-[13px] text-muted">
+            Read from your last {budget.weeksAnalysed} weeks of Strava. Your plan will fit inside these slots.
+          </p>
+        </section>
+      )}
 
       {history && history.ledger.length > 0 && (
         <section className="flex flex-col gap-2">
