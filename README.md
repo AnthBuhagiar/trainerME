@@ -29,7 +29,9 @@ it lives in `data/`, which is git-ignored.
    Create `STRAVA_CLIENT_ID` and `STRAVA_CLIENT_SECRET` with the values from
    <https://www.strava.com/settings/api>, and give each access to the **trainerME** repository.
 2. On the repo page, switch to the branch `claude/upbeat-noether-2kf703`, then **Code → Codespaces → Create codespace on this branch**.
-   It installs everything and starts the app; a browser tab opens on port 3000 (or use the **Ports** tab).
+   It installs everything and starts the app automatically. Open the app at
+   `https://<codespace-name>-3000.app.github.dev` (the codespace name is shown at github.com/codespaces),
+   or from the **Ports** tab in the editor. You don't need the editor open for the app to run.
 3. The app's setup card shows an address like `xxxx-3000.app.github.dev`. Paste that into
    **Authorization Callback Domain** in Strava's API settings.
 4. Tap **Connect Strava**, approve, then **Sync**.
