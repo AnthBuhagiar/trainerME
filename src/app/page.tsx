@@ -5,7 +5,7 @@ import { loadActivities, loadRides, loadSettings } from "@/lib/data/store";
 import { dateOnly, todayLocal } from "@/lib/engine/dates";
 import { buildHistory } from "@/lib/engine/history";
 import { buildModel } from "@/lib/engine/hourPower";
-import { describeSlot, inferTimeBudget } from "@/lib/plan/timeBudget";
+import { applyStrengthTarget, describeSlot, inferTimeBudget } from "@/lib/plan/timeBudget";
 import { callbackDomain, hasCredentials, loadTokens } from "@/lib/strava/client";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +25,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
   const missing = rides.filter((r) => !r.streams).length;
   const history = rides.length ? buildHistory(buildModel(rides), todayLocal()) : null;
   const current = history?.current ?? null;
-  const budget = inferTimeBudget(loadActivities(), todayLocal());
+  const budget = applyStrengthTarget(inferTimeBudget(loadActivities(), todayLocal()));
 
   // Until goals are set up, show progress from the 6-month low towards +20%.
   const recent = history?.points.filter((p) => Date.parse(p.date) > Date.now() - 182 * 86_400_000) ?? [];
@@ -85,7 +85,10 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
           </div>
           <ul className="flex flex-col gap-1.5 text-[15px]">
             {budget.slots.map((slot) => (
-              <li key={`${slot.weekday}-${slot.kind}-${slot.start}`}>{describeSlot(slot)}</li>
+              <li key={`${slot.weekday}-${slot.kind}-${slot.start}-${slot.changedFrom ?? ""}`} className="flex flex-col">
+                <span>{describeSlot(slot)}</span>
+                {slot.reason && <span className="text-[13px] text-signal-ink">{slot.reason}</span>}
+              </li>
             ))}
           </ul>
           <p className="text-[13px] text-muted">

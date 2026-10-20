@@ -7,3 +7,10 @@ test("inspect budget", () => {
   for (const s of b.slots) console.log(describeSlot(s), "freq", s.frequency, "indoor", s.indoorShare.toFixed(2));
   console.log("total min", b.totalMinutes);
 });
+
+import { applyStrengthTarget } from "@/lib/plan/timeBudget";
+test("inspect planned budget", () => {
+  const b = applyStrengthTarget(inferTimeBudget(loadActivities(), "2026-10-20T12:00:00"));
+  for (const s of b.slots) console.log("PLAN", describeSlot(s), s.reason ?? "");
+  console.log("PLAN total", b.totalMinutes);
+});

@@ -50,7 +50,7 @@ Ranked by defensibility (how hard they are to copy).
 | B5 | **Time-off forecasts** | "Your 10-day holiday costs ~6 W of hour power; you'll regain it in ~3 weeks." |
 | B6 | **Calendar awareness** *(optional)* | Reads family/work calendars, suggests realistic slots and plans recovery around busy weeks and holidays. |
 | B7 | **Late-night-friendly sessions** | Evening sessions are tuned for the most stimulus per minute, without hard efforts so late that they wreck sleep. |
-| B8 | **Gym-aware scheduling** | Places strength sessions so they don't blunt the key ride. |
+| B8 | **Gym-aware scheduling** | **Two strength sessions a week by default** for every rider (E5). If history shows fewer, the least regular indoor ride is swapped for strength (outdoor and long rides never are). Strength is placed so it doesn't blunt the key ride. |
 
 ### D. Goals — whatever the rider is working towards (high value, medium defensibility)
 

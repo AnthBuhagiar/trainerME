@@ -24,6 +24,9 @@ export interface TimeSlot {
   frequency: number;
   /** For rides: share done indoors. */
   indoorShare: number;
+  /** Set when the planner changed this slot from what the history shows. */
+  changedFrom?: SlotKind;
+  reason?: string;
 }
 
 export interface TimeBudget {
@@ -134,4 +137,43 @@ export function describeSlot(s: TimeSlot): string {
     return `${s.perWeek}× a week · ${what} · ${when} · ${length} · any day`;
   }
   return `${WEEKDAYS[s.weekday]} ${time} · ${what} · ${length}`;
+}
+
+/** Default for every rider: two strength sessions a week (docs/training-science.md, E5). */
+export const DEFAULT_STRENGTH_PER_WEEK = 2;
+const DEFAULT_STRENGTH_MINUTES = 45;
+
+/**
+ * Make room for the strength target by converting indoor rides, least regular
+ * first: flexible-day rides before fixed-day ones. Outdoor and long rides are
+ * never converted. Each converted slot keeps its time and takes the rider's
+ * usual strength-session length.
+ */
+export function applyStrengthTarget(budget: TimeBudget, target = DEFAULT_STRENGTH_PER_WEEK): TimeBudget {
+  const slots = budget.slots.map((s) => ({ ...s }));
+  const strength = slots.filter((s) => s.kind === "strength");
+  let have = strength.reduce((n, s) => n + s.perWeek, 0);
+  if (have >= target) return budget;
+  const strengthMinutes = strength.length ? Math.round(median(strength.map((s) => s.minutes)) / 5) * 5 : DEFAULT_STRENGTH_MINUTES;
+  const candidates = slots
+    .filter((s) => s.kind === "ride" && s.indoorShare >= 0.5 && s.minutes <= 90)
+    .sort((a, b) => Number(b.weekday < 0) - Number(a.weekday < 0) || a.frequency - b.frequency);
+  for (const slot of candidates) {
+    if (have >= target) break;
+    const convert = Math.min(slot.perWeek, target - have);
+    if (convert < slot.perWeek) {
+      // Split a multi-session flexible slot: keep the rest as rides.
+      slots.push({ ...slot, perWeek: slot.perWeek - convert });
+      slot.perWeek = convert;
+    }
+    Object.assign(slot, {
+      changedFrom: "ride" as SlotKind,
+      kind: "strength" as SlotKind,
+      minutes: strengthMinutes,
+      reason: `Swapped from an indoor ride to reach ${target} strength sessions a week`,
+    });
+    have += convert;
+  }
+  slots.sort((a, b) => (a.weekday < 0 ? 7 : a.weekday) - (b.weekday < 0 ? 7 : b.weekday) || a.start.localeCompare(b.start));
+  return { ...budget, slots, totalMinutes: slots.reduce((sum, x) => sum + x.minutes * x.perWeek, 0) };
 }

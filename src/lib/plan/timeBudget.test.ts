@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import type { Activity } from "@/lib/types";
 import { addDays } from "@/lib/engine/dates";
-import { describeSlot, inferTimeBudget } from "@/lib/plan/timeBudget";
+import { applyStrengthTarget, describeSlot, inferTimeBudget } from "@/lib/plan/timeBudget";
 
 const AS_OF = "2026-10-20T12:00:00"; // a Tuesday
 
@@ -58,5 +58,35 @@ describe("time budget", () => {
 
   test("ignores activities older than the window", () => {
     expect(inferTimeBudget([act("old", "2025-01-01T07:00:00", "Ride", 60)], AS_OF).slots).toHaveLength(0);
+  });
+});
+
+describe("strength target", () => {
+  test("converts the least regular indoor ride, never the outdoor long ride", () => {
+    const extra: Activity[] = [];
+    // An extra indoor ride on varying evenings most weeks.
+    for (let w = 0; w < 12; w++) {
+      const day = addDays("2026-10-19T00:00:00", -7 * w + [0, 1, 2, 4][w % 4]).slice(0, 11) + "19:30:00";
+      if (day <= AS_OF) extra.push(act(`x${w}`, day, "Ride", 60, { isTrainer: true, elevationGain: 0 }));
+    }
+    const base = inferTimeBudget([...history(), ...extra], AS_OF);
+    const planned = applyStrengthTarget(base);
+    const strength = planned.slots.filter((s) => s.kind === "strength");
+    expect(strength.reduce((n, s) => n + s.perWeek, 0)).toBe(2);
+    const swapped = strength.find((s) => s.changedFrom === "ride")!;
+    expect(swapped.weekday).toBe(-1); // the flexible ride went first
+    expect(swapped.minutes).toBe(50); // usual strength length
+    expect(planned.slots.find((s) => s.weekday === 5)?.kind).toBe("ride"); // Saturday kept
+    expect(planned.slots.find((s) => s.weekday === 3)?.kind).toBe("ride"); // regular Thursday kept
+  });
+
+  test("leaves the week alone when the target is already met", () => {
+    const base = inferTimeBudget(history(), AS_OF);
+    expect(applyStrengthTarget(base, 1)).toBe(base);
+  });
+
+  test("never converts outdoor rides", () => {
+    const outdoorOnly = inferTimeBudget(history().filter((a) => a.id.startsWith("sat")), AS_OF);
+    expect(applyStrengthTarget(outdoorOnly).slots.every((s) => s.kind === "ride")).toBe(true);
   });
 });
