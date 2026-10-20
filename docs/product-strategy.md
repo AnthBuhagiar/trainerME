@@ -1,4 +1,4 @@
-# trainerME — Product Strategy & Plan
+# Hour Power (trainerME) — Product Strategy & Plan
 
 *Builds on [`market-analysis.md`](market-analysis.md). Last updated October 2026.*
 

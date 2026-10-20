@@ -1,4 +1,4 @@
-# trainerME — Market Analysis (PMI)
+# Hour Power (trainerME) — Market Analysis (PMI)
 
 *Researched October 2026. Prices are as reported by third-party sources or app stores and should be
 re-checked on each vendor's site before relying on them.*
