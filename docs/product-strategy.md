@@ -22,7 +22,7 @@ The founding user profile, taken from real Strava history:
 | Current tools | JOIN plans, Strava, MyWhoosh, two power sources (indoor + outdoor) |
 
 ### Core promise
-1. **One number that matters:** hour power, front and centre, with **one goal event** every 4–12 months giving it a purpose.
+1. **One number that matters:** hour power, front and centre, with **the rider's own goal** (an event, a power target, a climb, a challenge ride or anything else) giving it a purpose.
 2. **Every ride counts:** the estimate improves from any ride, not just tests or prescribed workouts.
 3. **Built around your life:** the plan fits the hours you have, and life stress counts as load.
 4. **Honest and explained:** a confidence range and a reason for every change.
@@ -52,11 +52,49 @@ Ranked by defensibility (how hard they are to copy).
 | B7 | **Late-night-friendly sessions** | Evening sessions are tuned for the most stimulus per minute, without hard efforts so late that they wreck sleep. |
 | B8 | **Gym-aware scheduling** | Places strength sessions so they don't blunt the key ride. |
 
-### D. Goal Event — the ride the season leans towards (high value, medium defensibility)
+### D. Goals — whatever the rider is working towards (high value, medium defensibility)
 
-Every rider picks **one key event every 4–12 months** (a gran fondo, sportive, hill climb, time trial or a
-personal challenge ride) and the whole plan bends towards it. Hour power stays the headline number;
-the goal event gives it a purpose and a deadline.
+Every rider sets **their own goal**, whatever it is, and the whole plan bends towards it. Nothing about
+goals is hard-coded to the founding rider: goal types are a generic model so any user can define any goal.
+Hour power stays the headline number; the goal gives it a purpose and a deadline.
+
+#### Goal types
+
+| Type | Examples | Measured by | How the plan leans |
+|---|---|---|---|
+| **Event** | Gran fondo, sportive, hill climb, time trial, crit, gravel race, charity ride | Finish time, average speed/power, placing, or "finish strong" | Course-specific demands, rehearsal rides, taper (D2–D8) |
+| **Performance** | Hour power 220 W, FTP 230 W, 4 W/kg, 20-min power 250 W, 5-min power 300 W | The chosen power metric (estimated continuously, A1) | Sessions targeting that duration |
+| **Segment or climb** | A local climb under 10 min, a Strava segment PR, a club TT course | Segment time, or the power needed for it | Efforts matched to the segment's length and gradient |
+| **Challenge ride** | First 100 km / 160 km, a 200 km day, Everesting, a multi-day tour | Distance, climbing or duration completed | Long-ride progression, durability, fuelling practice |
+| **Consistency** | Ride 3× a week, 5,000 km this year, 150 h this year | Count, distance or hours over a period | Realistic weekly targets within the time budget; no punishing streaks |
+| **Comeback** | Back to previous fitness after illness, injury or a new baby | Hour power vs a chosen past baseline | Conservative ramp, extra recovery |
+| **Custom** | Anything else | Rider picks a metric (any of the above, or a manual check-in such as "how strong I felt") and a target | General build, plus progress tracking on the chosen metric |
+
+#### Goal model (every goal, any type)
+
+| Field | Notes |
+|---|---|
+| Name | Rider's own words, e.g. "Bowral Classic 2026", "Sub-10 on Mt Keira", "First 200 km" |
+| Type | One of the types above |
+| Target metric and value | e.g. finish time 5:45, hour power 220 W, 3 rides/week |
+| Deadline or date | An event date, or a "by" date for open goals; open-ended allowed for consistency goals |
+| Priority | **A** (the plan bends towards it), **B** (trained through), or **C** (tracked only) |
+| Details | Type-specific fields (event route, segment, distance, baseline) — see D-1 for events |
+| Starting point | Captured automatically from current data when the goal is set |
+
+A rider can have **one A goal** at a time plus any number of B and C goals. When an A goal is finished,
+the app proposes the next one (D10). Typical year: 2–3 A goals, each 4–6 months apart.
+
+Every goal type gets the same four things:
+1. **Progress / readiness** on the goal's own metric (D4 generalised).
+2. **Plan bias**: the week builder leans sessions towards what the goal needs (D6 generalised).
+3. **Realism check** at setup and monthly, within the rider's time budget (D9).
+4. **Review** when the deadline passes or the goal is met (D10).
+
+#### Event goals in detail
+
+Events are the most common A goal for this audience and get the richest support. Example for the
+founding rider:
 
 Example for the founding rider: **Bowral Classic** — 151 km, ~2,140 m climbing, ridden 19 Oct 2025 in
 ~6 h 13 min moving. That ride is already in the data, so it doubles as a baseline for next year's attempt.
@@ -75,9 +113,10 @@ Example for the founding rider: **Bowral Classic** — 151 km, ~2,140 m climbing
 | D10 | **Post-event review and next goal** | Compares the result with the plan and the prediction, updates the model (it was a real long effort), celebrates the outcome, then proposes the next goal and a recovery block. The yearly cycle becomes 2–3 goal blocks. |
 | D11 | **Life-aware goal calendar** | Family holidays, work crunches and school events are blocked out first, so goal blocks are realistic (links to B6). |
 
-#### D-1. Goal setup specification
+#### D-1. Event goal setup specification
 
-The rider can describe the goal **manually**, by **importing the route**, or both. A file fills in what it can,
+For event goals (and segment or challenge goals with a route), the rider can describe the goal
+**manually**, by **importing the route**, or both. A file fills in what it can,
 manual entries override it, and anything missing is estimated and marked as an estimate.
 
 **Manual inputs**
@@ -151,7 +190,8 @@ Goal: a trustworthy hour-power number and a week that fits real life.
 - [ ] **C3** daily recommendation.
 - [ ] **B4** one-tap life-stress check-in.
 - [ ] **C12** accept/decline new FTP.
-- [ ] **D1** set a goal event: manual inputs (distance, climbing, date, target time) and **GPX import** with climb detection (D-1).
+- [ ] Generic **goal model** (any type, any user), with Event, Performance, Challenge and Custom types in the MVP.
+- [ ] **D1** event goal setup: manual inputs (distance, climbing, date, target time) and **GPX import** with climb detection (D-1).
 - [ ] **D3** backwards plan from the date (feeding the week builder), and a basic **D9** realism check.
 
 ### Phase 2 — Accuracy and life fit
@@ -164,6 +204,7 @@ Goal: a trustworthy hour-power number and a week that fits real life.
 - [ ] **C5** "on track" score.
 - [ ] **D2** event demands from the route, **D4** readiness score, **D5** key rehearsal rides, **D6** event-specific sessions.
 - [ ] Route import from TCX/FIT course files and from Strava routes or a previous attempt's activity.
+- [ ] Segment/climb, Consistency and Comeback goal types; multiple B/C goals alongside the A goal.
 
 ### Phase 3 — Family and integrations
 - [ ] **B6** calendar awareness.
