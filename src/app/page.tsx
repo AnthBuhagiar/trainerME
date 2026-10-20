@@ -1,14 +1,10 @@
 import { HourRing } from "@/components/HourRing";
+import { SessionCard } from "@/components/SessionCard";
 import { SetupCard } from "@/components/SetupCard";
 import { SyncPanel } from "@/components/SyncPanel";
-import { loadActivities, loadRides, loadSettings } from "@/lib/data/store";
-import { dateOnly, todayLocal } from "@/lib/engine/dates";
-import { buildHistory } from "@/lib/engine/history";
-import { buildModel } from "@/lib/engine/hourPower";
+import { dateOnly } from "@/lib/engine/dates";
 import { formatDuration } from "@/lib/goals/eventTime";
-import { activeGoal } from "@/lib/goals/model";
-import { goalSummary } from "@/lib/goals/summary";
-import { applyStrengthTarget, describeSlot, inferTimeBudget } from "@/lib/plan/timeBudget";
+import { loadState, nextMonday } from "@/lib/plan/current";
 import { callbackDomain, hasCredentials, loadTokens } from "@/lib/strava/client";
 
 export const dynamic = "force-dynamic";
@@ -23,15 +19,13 @@ function signed(n: number): string {
 export default async function Home({ searchParams }: { searchParams: Promise<{ strava?: string }> }) {
   const { strava: notice } = await searchParams;
   const tokens = loadTokens();
-  const settings = loadSettings();
-  const rides = loadRides();
+  const { today, settings, rides, history, current, goal, summary, thisMonday, week, budget } = loadState();
   const missing = rides.filter((r) => !r.streams).length;
-  const history = rides.length ? buildHistory(buildModel(rides), todayLocal()) : null;
-  const current = history?.current ?? null;
-  const budget = applyStrengthTarget(inferTimeBudget(loadActivities(), todayLocal()));
-
-  const goal = activeGoal(todayLocal());
-  const summary = goal && current ? goalSummary(goal, current.hourPower, settings, todayLocal(), current.durability.factor) : null;
+  const upcoming = budget.slots.length
+    ? [...week(thisMonday).sessions, ...week(nextMonday(thisMonday)).sessions].filter((s) => s.date >= today)
+    : [];
+  const todays = upcoming.filter((s) => s.date === today);
+  const nextUp = upcoming.find((s) => s.date > today);
 
   // Without a goal, show progress from the 6-month low towards +20%.
   const recent = history?.points.filter((p) => Date.parse(p.date) > Date.now() - 182 * 86_400_000) ?? [];
@@ -75,6 +69,22 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
           <p className="mt-2 text-[15px]" style={{ color: "#C9D3DD" }}>
             Connect Strava and sync. Rides with a power meter and heart rate give the best estimate.
           </p>
+        </section>
+      )}
+
+      {upcoming.length > 0 && (
+        <section className="flex flex-col gap-2">
+          <div className="flex items-baseline justify-between px-1">
+            <h2 className="label">{todays.length ? "Today" : "Today · rest"}</h2>
+            <a href="/week" className="label text-signal-ink">
+              Week →
+            </a>
+          </div>
+          {todays.map((s) => (
+            <SessionCard key={s.start} session={s} today={today} />
+          ))}
+          {!todays.length && <p className="px-1 text-[15px] text-muted">Nothing planned today. Recovery is training too.</p>}
+          {nextUp && !todays.length && <SessionCard session={nextUp} today={today} />}
         </section>
       )}
 
@@ -143,28 +153,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
       {!tokens && <SetupCard hasCredentials={hasCredentials()} callbackDomain={callbackDomain()} notice={notice} />}
 
       <SyncPanel connected={!!tokens} missing={missing} />
-
-      {budget.slots.length > 0 && (
-        <section className="flex flex-col gap-2 rounded-3xl border border-line bg-card p-5">
-          <div className="flex items-baseline justify-between">
-            <h2 className="label">Your usual week</h2>
-            <span className="display text-[18px]">
-              {Math.floor(budget.totalMinutes / 60)} h {String(budget.totalMinutes % 60).padStart(2, "0")}
-            </span>
-          </div>
-          <ul className="flex flex-col gap-1.5 text-[15px]">
-            {budget.slots.map((slot) => (
-              <li key={`${slot.weekday}-${slot.kind}-${slot.start}-${slot.changedFrom ?? ""}`} className="flex flex-col">
-                <span>{describeSlot(slot)}</span>
-                {slot.reason && <span className="text-[13px] text-signal-ink">{slot.reason}</span>}
-              </li>
-            ))}
-          </ul>
-          <p className="text-[13px] text-muted">
-            Read from your last {budget.weeksAnalysed} weeks of Strava. Your plan will fit inside these slots.
-          </p>
-        </section>
-      )}
 
       {history && history.ledger.length > 0 && (
         <section className="flex flex-col gap-2">
