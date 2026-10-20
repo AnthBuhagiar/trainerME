@@ -1,0 +1,126 @@
+# trainerME — Product Strategy & Plan
+
+*Builds on [`market-analysis.md`](market-analysis.md). Last updated October 2026.*
+
+## 1. Positioning
+
+> **Get faster on 6 hours a week, with no FTP tests.**
+
+trainerME is the hour-power app for **time-crunched amateur cyclists**: riders aged roughly 30–55
+with a full-time job and a family, training 4–8 hours a week, who have outgrown free plans but don't
+want a coach's demands or prices.
+
+The founding user profile, taken from real Strava history:
+
+| Pattern | Evidence |
+|---|---|
+| Weekday sessions after work and family time | Indoor rides start ~7:30–8 pm, ~60 min |
+| Long ride timed around the family | Saturday starts ~5 am, 2.5–3.5 h |
+| Social and unplanned rides happen | "Ride with dad", "with Joe and dad", "Wet, wet, wet!" |
+| Strength alongside cycling | 1–2 gym sessions/week |
+| Total volume | ~5–7 h/week |
+| Current tools | JOIN plans, Strava, MyWhoosh, two power sources (indoor + outdoor) |
+
+### Core promise
+1. **One number that matters:** hour power, front and centre.
+2. **Every ride counts:** the estimate improves from any ride, not just tests or prescribed workouts.
+3. **Built around your life:** the plan fits the hours you have, and life stress counts as load.
+4. **Honest and explained:** a confidence range and a reason for every change.
+
+## 2. Differentiators
+
+Ranked by defensibility (how hard they are to copy).
+
+### A. The hour-power engine (high defensibility)
+| # | Feature | What it does |
+|---|---|---|
+| A1 | **Every-ride hour-power estimate** | Combines (1) best 3–30 min efforts on a 2-parameter critical-power curve, (2) watts at a fixed heart rate on steady minutes compared with the rider's own history, and (3) how well power holds up in the last hour of long rides, which adjusts FTP to hour power. |
+| A2 | **Condition-corrected heart rate** | Corrects heart rate for temperature (Strava `temp` stream), recent load and time of day before comparing, so a hot day doesn't read as lost fitness. |
+| A3 | **Indoor/outdoor power reconciliation** | Learns the offset between power sources (e.g. outdoor CoospoRide vs indoor trainer) from heart rate at matched power, giving one consistent hour-power number. |
+| A4 | **Confidence range** | Shows "201 W ± 6 W". The range narrows with fresh strong evidence and widens as evidence ages. |
+| A5 | **Published accuracy** | Back-tests predictions against real long/hour efforts (e.g. Bowral Classic 2025, Saturday long rides) and publishes the error. |
+
+### B. Built for time-crunched riders (medium–high defensibility)
+| # | Feature | What it does |
+|---|---|---|
+| B1 | **Time-budget planning** | The rider enters available slots ("Tue/Thu 60 min, Sat 5–8 am"); the app builds the week with the most expected hour-power gain for that time and shows each session's value. |
+| B2 | **Session shrinking** | When a 60-min slot becomes 35 min, one tap gives the best 35-min version and shows how much benefit was kept. |
+| B3 | **No catch-up of missed sessions** | Missed sessions are dropped, not crammed into the weekend. |
+| B4 | **Life stress counts as load** | One-tap daily check-in (sleep, stress, kids sick, big work week), plus HRV/resting HR if available, adjusts the plan. |
+| B5 | **Time-off forecasts** | "Your 10-day holiday costs ~6 W of hour power; you'll regain it in ~3 weeks." |
+| B6 | **Calendar awareness** *(optional)* | Reads family/work calendars, suggests realistic slots and plans recovery around busy weeks and holidays. |
+| B7 | **Late-night-friendly sessions** | Evening sessions are tuned for the most stimulus per minute, without hard efforts so late that they wreck sleep. |
+| B8 | **Gym-aware scheduling** | Places strength sessions so they don't blunt the key ride. |
+
+### C. Experience (lower defensibility, high value)
+| # | Feature | What it does |
+|---|---|---|
+| C1 | **Hour-power main screen** | Current estimate ± range, goal (e.g. 220 W by 30 Nov), watts still to go, projected trend. |
+| C2 | **"Why it changed" log** | Every change attributed: "+3 W: 8-min effort on 7 Oct beat your curve; +1 W: power at 140 bpm up 4% over 6 weeks; −2 W: no hard efforts for 18 days." |
+| C3 | **One decision a day** | "Today: 45 min, 3×10 at 195 W, or rest. Both are fine." Deep analysis is tucked away. |
+| C4 | **Sunday summary** | Weekly push/email: hour power ±W, why, and next week placed into the rider's slots. |
+| C5 | **"On track" consistency score** | A rolling score instead of streaks, which punish parents. |
+| C6 | **Test-as-you-train sessions** | Suggests workouts that also reduce uncertainty in the estimate (e.g. 2×12 min at a set HR), so a dedicated test is never needed. |
+| C7 | **Hour Attempt mode** | Optional real hour effort (indoor or a long climb); the app predicts the result first, then compares. |
+| C8 | **Back-by-time rides** | "Back by 8:30" → a session and distance that fits, with a live turn-around prompt. |
+| C9 | **Partner view** | A shared view of this week's riding slots and total hours away. |
+| C10 | **Event goals** | Realistic targets for real events ("at 6 h/week you can reach ~215 W by March") plus an event pacing plan from hour power. |
+| C11 | **Works with JOIN/Zwift** | Reads JOIN's planned workouts from Strava descriptions to report whether the plan is moving hour power. |
+| C12 | **Never overwrites zones silently** | New estimates are offered for Accept/Decline before replacing the FTP used for training. |
+
+## 3. Roadmap
+
+### Phase 1 — MVP (personal use, founding rider)
+Goal: a trustworthy hour-power number and a week that fits real life.
+
+- [ ] Data pipeline: Strava activities + streams → per-ride summaries (power curve, minute-by-minute power and heart rate, temperature). Personal data stays git-ignored.
+- [ ] **A1** hour-power engine (critical-power curve + watts at fixed heart rate + late-ride power holding).
+- [ ] **A4** confidence range.
+- [ ] **C1** hour-power main screen and **C2** "why it changed" log.
+- [ ] **B1** time-budget week builder, **B2** session shrinking, **B3** no catch-up.
+- [ ] **C3** daily recommendation.
+- [ ] **B4** one-tap life-stress check-in.
+- [ ] **C12** accept/decline new FTP.
+
+### Phase 2 — Accuracy and life fit
+- [ ] **A2** condition-corrected heart rate.
+- [ ] **A3** indoor/outdoor power reconciliation.
+- [ ] **A5** back-testing against long efforts; publish accuracy.
+- [ ] **C4** Sunday summary.
+- [ ] **B5** time-off forecasts.
+- [ ] **B8** gym-aware scheduling and **B7** evening session tuning.
+- [ ] **C5** "on track" score.
+
+### Phase 3 — Family and integrations
+- [ ] **B6** calendar awareness.
+- [ ] **C8** back-by-time rides.
+- [ ] **C9** partner view.
+- [ ] **C11** JOIN/Zwift companion mode.
+- [ ] **C6** test-as-you-train sessions and **C7** Hour Attempt mode.
+- [ ] **C10** event goals and pacing.
+
+### Phase 4 — Go to market (if validated)
+- [ ] Direct Garmin / Wahoo / FIT-file import (don't rely on Strava alone; see risks).
+- [ ] Multi-user accounts, onboarding from a time budget instead of an FTP test.
+- [ ] Pricing at or below JOIN/TrainerRoad; free tier showing hour power only.
+- [ ] Coach dashboard; monthly W/kg hour-power leaderboard (estimated, with range).
+
+## 4. Go-to-market
+
+| Element | Plan |
+|---|---|
+| Message | "Get faster on 6 hours a week, with no FTP tests." |
+| Proof | Published estimate accuracy, and "watts gained per hour trained". |
+| Price | At or below JOIN (~€90/yr) and TrainerRoad. The value is less wasted time and less guilt, not more workouts. |
+| Channels | Local clubs, gran fondo events (e.g. Bowral Classic), Strava clubs, parent/dad cycling communities. |
+| Wedge | Companion to JOIN/Zwift first ("the hour-power layer on top of the plan you already follow"), full planner second. |
+
+## 5. Risks
+
+| Risk | Mitigation |
+|---|---|
+| Strava API terms (as recalled, since late 2024) limit third-party apps to showing a rider their own data and bar using it to train AI models; check the current terms. | Fine for personal use. Build direct Garmin/Wahoo/FIT import before any public launch. |
+| A badly wrong estimate destroys trust | Confidence range from day one; back-testing; accept/decline before zones change. |
+| Experience features (C) are easy to copy | Build the defensible engine (A) and time-budget planning (B) first. |
+| Heart-rate signal is noisy (heat, caffeine, sleep) | Steady-minute filtering, condition correction (A2), long rolling windows. |
+| Two power sources disagree | Power-source reconciliation (A3). |

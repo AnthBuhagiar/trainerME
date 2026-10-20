@@ -11,7 +11,10 @@ continuously from the evidence in every ride:
 Every change to the estimate is explained ("why it changed"), shown with a confidence range,
 and never silently overwrites the FTP used for training zones.
 
-See [`docs/market-analysis.md`](docs/market-analysis.md) for the competitor PMI analysis that shaped these decisions.
+Built for **time-crunched amateur cyclists** — riders with a full-time job and a family, training around 6 hours a week.
+
+- [`docs/product-strategy.md`](docs/product-strategy.md): positioning, differentiators and roadmap.
+- [`docs/market-analysis.md`](docs/market-analysis.md): the competitor PMI analysis that shaped these decisions.
 
 ## Data & privacy
 
