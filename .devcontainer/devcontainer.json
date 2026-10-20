@@ -22,6 +22,10 @@
     "STRAVA_CLIENT_SECRET": {
       "description": "Client Secret of your Strava API app. Stored by GitHub, never in the repo.",
       "documentationUrl": "https://www.strava.com/settings/api"
+    },
+    "INTERVALS_API_KEY": {
+      "description": "Optional. Intervals.icu API key (Settings → Developer Settings) to send workouts on to Garmin Connect.",
+      "documentationUrl": "https://intervals.icu/settings"
     }
   },
   "customizations": {

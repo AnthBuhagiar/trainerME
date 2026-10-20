@@ -1,4 +1,6 @@
+import { SendToGarmin } from "@/components/SendToGarmin";
 import { SessionCard } from "@/components/SessionCard";
+import { hasIntervalsKey } from "@/lib/intervals/client";
 import { nextMonday, loadState } from "@/lib/plan/current";
 import { describeSlot } from "@/lib/plan/timeBudget";
 import { length } from "@/lib/ui/format";
@@ -37,6 +39,7 @@ export default function WeekPage() {
           Built into your usual slots. A missed session is simply skipped; nothing piles up.
         </p>
       </header>
+      <SendToGarmin configured={hasIntervalsKey()} />
       <Week plan={thisWeek} title="This week" today={state.today} />
       <Week plan={next} title="Next week" today={state.today} />
       {state.budget.slots.length > 0 && (

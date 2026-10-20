@@ -40,6 +40,15 @@ Your data stays in the codespace's `data/` folder between sessions (until you de
 Open the same `…app.github.dev` address on your phone while signed in to GitHub.
 If the codespace was stopped, reopen it from github.com/codespaces and the app restarts.
 
+## Send workouts to Garmin (via Intervals.icu)
+
+Planned rides can go to your Garmin Connect calendar, then to your watch or head unit, which can run them on a smart trainer.
+
+1. Create a free account at [intervals.icu](https://intervals.icu) and connect Garmin Connect in its settings, allowing it to upload planned workouts.
+2. In Intervals.icu, open Settings → Developer Settings and generate an API key.
+3. Add it as a Codespaces secret named `INTERVALS_API_KEY` (or put it in `.env.local`), then restart the codespace.
+4. In Hour Power, open **Week** → **Send rides to Garmin**. It sends the rest of this week and next week, with watt targets from your current hour power. Sending again replaces what Hour Power sent before; anything you added yourself in Intervals.icu is left alone.
+
 ## Run it on your computer
 
 You need [Node.js](https://nodejs.org) 20 or newer and git.
