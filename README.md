@@ -23,6 +23,21 @@ Built for **time-crunched amateur cyclists** — riders with a full-time job and
 This repository is public. Personal Strava data (activities, streams, GPS) is **never committed** —
 it lives in `data/`, which is git-ignored.
 
+## Run it in GitHub Codespaces (nothing to install)
+
+1. **Add your Strava keys as Codespaces secrets** (once): GitHub → your avatar → **Settings → Codespaces → Secrets → New secret**.
+   Create `STRAVA_CLIENT_ID` and `STRAVA_CLIENT_SECRET` with the values from
+   <https://www.strava.com/settings/api>, and give each access to the **trainerME** repository.
+2. On the repo page, switch to the branch `claude/upbeat-noether-2kf703`, then **Code → Codespaces → Create codespace on this branch**.
+   It installs everything and starts the app; a browser tab opens on port 3000 (or use the **Ports** tab).
+3. The app's setup card shows an address like `xxxx-3000.app.github.dev`. Paste that into
+   **Authorization Callback Domain** in Strava's API settings.
+4. Tap **Connect Strava**, approve, then **Sync**.
+
+Your data stays in the codespace's `data/` folder between sessions (until you delete the codespace).
+Open the same `…app.github.dev` address on your phone while signed in to GitHub.
+If the codespace was stopped, reopen it from github.com/codespaces and the app restarts.
+
 ## Run it on your computer
 
 You need [Node.js](https://nodejs.org) 20 or newer and git.

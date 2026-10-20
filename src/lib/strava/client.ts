@@ -28,13 +28,30 @@ function credentials(): { clientId: string; clientSecret: string } {
   const clientId = process.env.STRAVA_CLIENT_ID;
   const clientSecret = process.env.STRAVA_CLIENT_SECRET;
   if (!clientId || !clientSecret) {
-    throw new Error("Set STRAVA_CLIENT_ID and STRAVA_CLIENT_SECRET in .env.local (see README).");
+    throw new Error("Add STRAVA_CLIENT_ID and STRAVA_CLIENT_SECRET as Codespaces secrets or in .env.local (see README).");
   }
   return { clientId, clientSecret };
 }
 
+/**
+ * Where the browser reaches the app: APP_URL if set, the forwarded address
+ * inside GitHub Codespaces, otherwise localhost.
+ */
 export function appUrl(): string {
-  return process.env.APP_URL ?? "http://localhost:3000";
+  if (process.env.APP_URL) return process.env.APP_URL;
+  const codespace = process.env.CODESPACE_NAME;
+  const domain = process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN;
+  if (codespace && domain) return `https://${codespace}-3000.${domain}`;
+  return "http://localhost:3000";
+}
+
+/** The value to enter as "Authorization Callback Domain" in Strava's API settings. */
+export function callbackDomain(): string {
+  return new URL(appUrl()).hostname;
+}
+
+export function hasCredentials(): boolean {
+  return !!process.env.STRAVA_CLIENT_ID && !!process.env.STRAVA_CLIENT_SECRET;
 }
 
 export function authorizeUrl(): string {

@@ -1,0 +1,25 @@
+{
+  "name": "Hour Power",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:1-20-bookworm",
+  "hostRequirements": { "cpus": 2 },
+  "postCreateCommand": "npm install",
+  "postAttachCommand": "npm run dev",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": { "label": "Hour Power", "onAutoForward": "openBrowser" }
+  },
+  "secrets": {
+    "STRAVA_CLIENT_ID": {
+      "description": "Client ID of your Strava API app (strava.com/settings/api)",
+      "documentationUrl": "https://www.strava.com/settings/api"
+    },
+    "STRAVA_CLIENT_SECRET": {
+      "description": "Client Secret of your Strava API app. Stored by GitHub, never in the repo.",
+      "documentationUrl": "https://www.strava.com/settings/api"
+    }
+  },
+  "customizations": {
+    "codespaces": { "openFiles": ["README.md"] },
+    "vscode": { "extensions": ["dbaeumer.vscode-eslint", "bradlc.vscode-tailwindcss"] }
+  }
+}

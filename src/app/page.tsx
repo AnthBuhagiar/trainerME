@@ -1,10 +1,11 @@
 import { HourRing } from "@/components/HourRing";
+import { SetupCard } from "@/components/SetupCard";
 import { SyncPanel } from "@/components/SyncPanel";
 import { loadRides, loadSettings } from "@/lib/data/store";
 import { dateOnly, todayLocal } from "@/lib/engine/dates";
 import { buildHistory } from "@/lib/engine/history";
 import { buildModel } from "@/lib/engine/hourPower";
-import { loadTokens } from "@/lib/strava/client";
+import { callbackDomain, hasCredentials, loadTokens } from "@/lib/strava/client";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,8 @@ function signed(n: number): string {
   return `${r > 0 ? "+" : r < 0 ? "−" : "±"}${Math.abs(r)} W`;
 }
 
-export default function Home() {
+export default async function Home({ searchParams }: { searchParams: Promise<{ strava?: string }> }) {
+  const { strava: notice } = await searchParams;
   const tokens = loadTokens();
   const settings = loadSettings();
   const rides = loadRides();
@@ -66,6 +68,8 @@ export default function Home() {
           </p>
         </section>
       )}
+
+      {!tokens && <SetupCard hasCredentials={hasCredentials()} callbackDomain={callbackDomain()} notice={notice} />}
 
       <SyncPanel connected={!!tokens} missing={missing} />
 
