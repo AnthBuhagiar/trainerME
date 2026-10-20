@@ -1,7 +1,7 @@
 # Hour Power
 
-
 *Working repo name: trainerME.*
+
 A personal cycling training app built around one number: **hour power** — the best power you can hold for 60 minutes.
 
 Most apps only move your threshold when you do a test or an all-out effort. trainerME estimates hour power
