@@ -240,6 +240,7 @@ Goal: a trustworthy hour-power number and a week that fits real life.
 - [ ] Multi-user accounts, onboarding from a time budget instead of an FTP test.
 - [ ] Pricing at or below JOIN/TrainerRoad; free tier showing hour power only.
 - [ ] Coach dashboard; monthly W/kg hour-power leaderboard (estimated, with range).
+- [ ] **Calendar-to-trainer player** (once hosted). Each planned session becomes a calendar event (.ics feed) linking to a built-in workout player, which controls the smart trainer over Bluetooth (ERG mode): "Tap the calendar event, ride the workout, nothing to install." Not offered by JOIN or Strava. Limits: a live feed needs a hosted app; Bluetooth needs Chrome (Android/desktop) or Bluefy on iPhone; usually only one device controls the trainer at a time.
 
 ## 4. Go-to-market
 
