@@ -161,6 +161,23 @@ From an imported route the app derives:
 Route files and goal details are personal data. They are stored with the rider's other data in the
 git-ignored `data/` folder and never committed to the public repository.
 
+### E. Fuelling (high value for long real rides)
+
+Under-fuelling is the most common way amateurs lose a long ride, and it is easy to fix with a plan.
+Targets follow established sports-nutrition guidance (to be cited in `docs/training-science.md`):
+little or none needed under ~1 h, roughly 30–60 g carbohydrate per hour for 1–2.5 h, and up to
+~90 g/h for rides over ~2.5 h, using mixed glucose and fructose sources, with the gut trained up
+to higher intakes over several weeks.
+
+| # | Feature | What it does |
+|---|---|---|
+| E1 | **Per-ride fuel target** | Every planned ride over ~75 min shows g carbs/hour and a total, scaled to its duration and intensity (e.g. "Sat 3 h · fuel 70 g/h · ~210 g"). |
+| E2 | **Practical translation** | Turns grams into real items the rider chooses ("2 bottles of mix + 1 gel + 1 bar"), with a reminder to drink and eat every 15–20 min. |
+| E3 | **Gut training progression** | Long rehearsal rides step the target up gradually towards the event target, so 80–90 g/h on the day isn't a first. |
+| E4 | **Event fuel plan** | From the imported route: where to eat before climbs, feed zones/cafés, bottle refills, and the pre-event carb day. Exports to the bike computer with the pacing plan (D8). |
+| E5 | **Post-ride fuel check** | One tap after long rides: "Ran out of energy? / Stomach OK?" Adjusts future targets and helps explain late-ride power fades in the durability model. |
+| E6 | **Fuel-aware durability** | When a long ride faded but was under-fuelled, the "why it changed" log says so instead of marking fitness down. |
+
 ### C. Experience (lower defensibility, high value)
 | # | Feature | What it does |
 |---|---|---|
@@ -193,6 +210,7 @@ Goal: a trustworthy hour-power number and a week that fits real life.
 - [ ] Generic **goal model** (any type, any user), with Event, Performance, Challenge and Custom types in the MVP.
 - [ ] **D1** event goal setup: manual inputs (distance, climbing, date, target time) and **GPX import** with climb detection (D-1).
 - [ ] **D3** backwards plan from the date (feeding the week builder), and a basic **D9** realism check.
+- [ ] **E1** per-ride fuel target and **E2** practical translation.
 
 ### Phase 2 — Accuracy and life fit
 - [ ] **A2** condition-corrected heart rate.
@@ -203,6 +221,7 @@ Goal: a trustworthy hour-power number and a week that fits real life.
 - [ ] **B8** gym-aware scheduling and **B7** evening session tuning.
 - [ ] **C5** "on track" score.
 - [ ] **D2** event demands from the route, **D4** readiness score, **D5** key rehearsal rides, **D6** event-specific sessions.
+- [ ] **E3** gut training progression and **E5** post-ride fuel check.
 - [ ] Route import from TCX/FIT course files and from Strava routes or a previous attempt's activity.
 - [ ] Segment/climb, Consistency and Comeback goal types; multiple B/C goals alongside the A goal.
 
@@ -214,6 +233,7 @@ Goal: a trustworthy hour-power number and a week that fits real life.
 - [ ] **C6** test-as-you-train sessions and **C7** Hour Attempt mode.
 - [ ] Route import from RideWithGPS and Komoot links.
 - [ ] **D7** taper and event week, **D8** pacing and fuelling plan, **D10** post-event review and next goal, **D11** life-aware goal calendar.
+- [ ] **E4** event fuel plan and **E6** fuel-aware durability.
 
 ### Phase 4 — Go to market (if validated)
 - [ ] Direct Garmin / Wahoo / FIT-file import (don't rely on Strava alone; see risks).
