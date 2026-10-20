@@ -1,5 +1,5 @@
 # Personal training data - never commit
-data/
+/data/
 .env
 .env.*
 !.env.example
