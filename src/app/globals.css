@@ -1,26 +1,61 @@
 @import "tailwindcss";
 
+/* Hour Power brand: Asphalt & Signal (see the brand board). */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --asphalt: #12161c;
+  --chalk: #f3f5f7;
+  --card: #ffffff;
+  --line: #e1e6eb;
+  --muted: #4a5562;
+  --signal: #ff6a1a; /* accent on dark */
+  --signal-ink: #c2410c; /* accent on light: passes contrast for text and buttons */
+  --done: #0f6b3a;
+  --background: var(--chalk);
+  --foreground: var(--asphalt);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0b0e12;
+    --foreground: var(--chalk);
+    --card: #12161c;
+    --line: #2a323d;
+    --muted: #9aa6b2;
+  }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-card: var(--card);
+  --color-line: var(--line);
+  --color-muted: var(--muted);
+  --color-asphalt: var(--asphalt);
+  --color-chalk: var(--chalk);
+  --color-signal: var(--signal);
+  --color-signal-ink: var(--signal-ink);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-archivo);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+.display {
+  font-family: var(--font-archivo), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
