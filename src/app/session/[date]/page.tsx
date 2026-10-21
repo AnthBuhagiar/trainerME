@@ -2,10 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { sessionTitle } from "@/components/SessionCard";
 import { WorkoutSteps } from "@/components/WorkoutSteps";
-import { getWorkout, scaleWorkout, workMinutes } from "@/lib/plan/library";
-import { loadState } from "@/lib/plan/current";
-import { mondayOf } from "@/lib/plan/periodise";
-import { fuelFor } from "@/lib/plan/week";
+import { workMinutes } from "@/lib/plan/library";
+import { resolveSession } from "@/lib/plan/session";
 import { clock12, dayLabel, length } from "@/lib/ui/format";
 
 export const dynamic = "force-dynamic";
@@ -19,18 +17,9 @@ export default async function SessionPage({
 }) {
   const { date } = await params;
   const { start, minutes } = await searchParams;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) notFound();
-  const state = loadState();
-  const week = state.week(mondayOf(date));
-  const planned = week.sessions.find((s) => s.date === date && (!start || s.start === start)) ?? week.sessions.find((s) => s.date === date);
-  if (!planned) notFound();
-
-  const hourPower = state.current ? Math.round(state.current.hourPower) : 0;
-  let session = planned;
-  if (planned.ride && minutes) {
-    const ride = scaleWorkout(getWorkout(planned.ride.workout.id), Number(minutes));
-    session = { ...planned, ride, minutes: ride.minutes, fuel: fuelFor(ride.minutes, week.phase, ride.workout.intensity) };
-  }
+  const found = resolveSession(date, start, minutes);
+  if (!found) notFound();
+  const { state, week, planned, session, hourPower } = found;
   // Long rides come down in half hours, weeknight sessions in quarter hours.
   const options = planned.minutes >= 120 ? [planned.minutes - 30, planned.minutes - 60, 90] : [planned.minutes - 15, 45, 30];
   const shorter = planned.ride
@@ -63,6 +52,14 @@ export default async function SessionPage({
           <p className="text-[15px] leading-snug">{session.ride.workout.summary}</p>
           {hourPower > 0 && <WorkoutSteps workout={session.ride.workout} hourPower={hourPower} />}
           {hourPower > 0 && <p className="text-[13px] text-muted">Targets from your hour power of {hourPower} W. They update as it changes.</p>}
+          {hourPower > 0 && session.indoor && (
+            <Link
+              href={`/ride/${date}?start=${planned.start}${minutes ? `&minutes=${minutes}` : ""}`}
+              className="flex h-14 items-center justify-center rounded-2xl bg-signal-ink text-[17px] font-semibold text-white"
+            >
+              Ride it on my trainer
+            </Link>
+          )}
         </>
       )}
 
