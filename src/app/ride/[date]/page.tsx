@@ -26,7 +26,7 @@ export default async function RidePage({
         ← Session
       </Link>
       <h1 className="display text-[22px] leading-tight">{sessionTitle(session)}</h1>
-      <RidePlayer steps={playerSteps(session.ride!.workout, hourPower)} backHref={back} />
+      <RidePlayer name={sessionTitle(session)} steps={playerSteps(session.ride!.workout, hourPower)} backHref={back} />
     </main>
   );
 }

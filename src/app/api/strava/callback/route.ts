@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { appUrl, exchangeCode, STRAVA_SCOPES } from "@/lib/strava/client";
+import { appUrl, exchangeCode, REQUIRED_SCOPES } from "@/lib/strava/client";
 
 export const runtime = "nodejs";
 
@@ -11,10 +11,10 @@ export async function GET(req: NextRequest) {
   if (params.get("error") || !code) {
     return NextResponse.redirect(`${appUrl()}/?strava=declined`);
   }
-  const missing = STRAVA_SCOPES.split(",").filter((s) => !granted.includes(s));
+  const missing = REQUIRED_SCOPES.filter((s) => !granted.includes(s));
   if (missing.length) {
     return NextResponse.redirect(`${appUrl()}/?strava=missing-scope`);
   }
-  await exchangeCode(code);
+  await exchangeCode(code, granted.join(","));
   return NextResponse.redirect(`${appUrl()}/?strava=connected`);
 }
