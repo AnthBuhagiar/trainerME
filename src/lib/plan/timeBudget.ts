@@ -68,6 +68,12 @@ function clock(mins: number): string {
   return `${String(h).padStart(2, "0")}:${String(q % 60).padStart(2, "0")}`;
 }
 
+/** Rounded to 5 min, or to the quarter hour for long rides (2 h 55 reads and plans as 3 h). */
+function slotMinutes(duration: number): number {
+  const step = duration >= 120 ? 15 : 5;
+  return Math.max(15, Math.round(duration / step) * step);
+}
+
 export function inferTimeBudget(activities: Activity[], asOf: string, weeks = 12): TimeBudget {
   const recent = activities.filter((a) => {
     const age = daysBetween(a.startLocal, asOf);
@@ -96,7 +102,7 @@ export function inferTimeBudget(activities: Activity[], asOf: string, weeks = 12
       perWeek: 1,
       kind: kind as SlotKind,
       start: clock(median(list.map((a) => minutesOfDay(a.startLocal)))),
-      minutes: Math.max(15, Math.round(duration / 5) * 5),
+      minutes: slotMinutes(duration),
       frequency: Math.round(frequency * 100) / 100,
       indoorShare: list.filter((a) => a.isTrainer || a.sportType === "VirtualRide" || a.elevationGain === 0).length / list.length,
     });
@@ -117,7 +123,7 @@ export function inferTimeBudget(activities: Activity[], asOf: string, weeks = 12
       perWeek: Math.max(1, Math.round(perWeek)),
       kind,
       start: clock(median(loose.map((a) => minutesOfDay(a.startLocal)))),
-      minutes: Math.max(15, Math.round(duration / 5) * 5),
+      minutes: slotMinutes(duration),
       frequency: Math.round(Math.min(1, perWeek) * 100) / 100,
       indoorShare: loose.filter((a) => a.isTrainer || a.sportType === "VirtualRide" || a.elevationGain === 0).length / loose.length,
     });

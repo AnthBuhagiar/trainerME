@@ -6,7 +6,7 @@ import { activeGoal } from "@/lib/goals/model";
 import { goalSummary } from "@/lib/goals/summary";
 import { mondayOf, phaseOn } from "@/lib/plan/periodise";
 import { applyStrengthTarget, inferTimeBudget } from "@/lib/plan/timeBudget";
-import { planWeek, type WeekPlan } from "@/lib/plan/week";
+import { EXTENDED_LONG_RIDE_MINUTES, extendedLongRideWeeks, planWeek, type WeekPlan } from "@/lib/plan/week";
 
 /** Everything the screens need, read from the local store once per request. */
 export function loadState() {
@@ -20,10 +20,17 @@ export function loadState() {
   const goal = activeGoal(today);
   const summary = goal && current ? goalSummary(goal, current.hourPower, settings, today, current.durability.factor) : null;
 
+  const extended = summary ? extendedLongRideWeeks(summary.phases) : new Set<string>();
+
   const week = (monday: string): WeekPlan => {
     const phase = summary ? phaseOn(summary.phases, monday) : null;
     const daysToGoal = goal ? Math.round((Date.parse(`${goal.date}T00:00:00Z`) - Date.parse(`${monday}T00:00:00Z`)) / 86_400_000) : undefined;
-    return planWeek(budget, { monday, phase, daysToGoal: daysToGoal !== undefined && daysToGoal < 7 ? daysToGoal : undefined });
+    return planWeek(budget, {
+      monday,
+      phase,
+      daysToGoal: daysToGoal !== undefined && daysToGoal < 7 ? daysToGoal : undefined,
+      extendedLongRide: extended.has(monday) ? EXTENDED_LONG_RIDE_MINUTES : undefined,
+    });
   };
 
   return { now, today, settings, rides, history, current, budget, goal, summary, thisMonday: mondayOf(today), week };

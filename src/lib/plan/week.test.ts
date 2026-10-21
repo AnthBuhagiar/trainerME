@@ -92,3 +92,21 @@ describe("progression", () => {
     expect(scaleWorkout(getWorkout("threshold-2x15"), 40).workout.name).toBe("1 × 15 min threshold");
   });
 });
+
+describe("monthly extended long ride", () => {
+  test("about once a month, four weeks apart, skipping recovery, holiday and taper weeks", async () => {
+    const { periodise, christmasWindow } = await import("@/lib/plan/periodise");
+    const { extendedLongRideWeeks } = await import("@/lib/plan/week");
+    const weeks = [...extendedLongRideWeeks(periodise("2026-10-20", "2027-04-18", { holidays: [christmasWindow(2026)] }))];
+    for (let i = 1; i < weeks.length; i++) expect(Date.parse(weeks[i]) - Date.parse(weeks[i - 1])).toBeGreaterThanOrEqual(28 * 86_400_000);
+    expect(weeks.length).toBeGreaterThanOrEqual(5);
+    expect(weeks.every((m) => !["2026-12-21", "2026-12-28", "2027-04-05", "2027-04-12"].includes(m))).toBe(true);
+  });
+
+  test("stretches the long ride to 3.5 h", () => {
+    const week = planWeek(budget, { monday: "2026-11-02", phase: phase("base"), extendedLongRide: 210 });
+    const sat = week.sessions.find((s) => s.weekday === 5)!;
+    expect(sat.minutes).toBe(210);
+    expect(sat.fuel!.totalGrams).toBe(210);
+  });
+});

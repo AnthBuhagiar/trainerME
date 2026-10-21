@@ -132,6 +132,30 @@ export interface WeekContext {
   phase: Phase | null;
   /** Days from this Monday to the goal, if any (for the last taper week). */
   daysToGoal?: number;
+  /** Set on the month's extended long-ride week: the long ride's length in minutes. */
+  extendedLongRide?: number;
+}
+
+/** Once a month a longer long ride; this many minutes. */
+export const EXTENDED_LONG_RIDE_MINUTES = 210;
+
+/**
+ * Mondays of the extended long-ride weeks: about once a month, at least four
+ * weeks apart, in base, build or event-specific loading weeks. Recovery,
+ * holiday and taper weeks are skipped, so the ride moves to the next week.
+ */
+export function extendedLongRideWeeks(phases: Phase[]): Set<string> {
+  const out = new Set<string>();
+  let last = "";
+  for (const p of phases) {
+    if (p.name === "flex" || p.name === "taper") continue;
+    for (let m = p.start; m <= p.end; m = addDays(m, 7)) {
+      if (p.recoveryWeeks.includes(m) || (last && m < addDays(last, 28))) continue;
+      out.add(m);
+      last = m;
+    }
+  }
+  return out;
 }
 
 export function planWeek(budget: TimeBudget, ctx: WeekContext): WeekPlan {
@@ -171,12 +195,16 @@ export function planWeek(budget: TimeBudget, ctx: WeekContext): WeekPlan {
 
     // Volume: recovery weeks ~70%, taper ~60% then ~45% in the final week (E4, E8).
     const volume = finalWeek ? 0.45 : name === "taper" ? 0.6 : recovery ? 0.7 : 1;
-    const minutes = Math.max(30, Math.round((slot.minutes * volume) / 5) * 5);
+    let minutes = Math.max(30, Math.round((slot.minutes * volume) / 5) * 5);
     let workoutId: string;
     let why: string;
     if (long && slot === long.slot && slot.minutes >= 120) {
       workoutId = recovery ? "endurance" : LONG[name];
       why = workoutId === "endurance" ? "Your long ride: steady aerobic time is the base of hour power (E1)." : "Efforts in the last hour build the durability a long event needs (E6).";
+      if (ctx.extendedLongRide && ctx.extendedLongRide > minutes) {
+        minutes = ctx.extendedLongRide;
+        why = `Once a month the long ride stretches to ${minutes / 60} h: durability and fuelling practice for a long event (E6, E7).`;
+      }
     } else if (recovery || name === "flex") {
       workoutId = qualityIndex++ === 0 && recovery ? "sprints-6x15s" : "endurance";
       why = recovery ? "Lighter week so the last three can sink in (E8)." : "Ride if life allows. Nothing to catch up.";

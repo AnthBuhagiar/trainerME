@@ -56,6 +56,11 @@ describe("time budget", () => {
     expect(b.slots.filter((s) => s.kind === "ride")).toHaveLength(2);
   });
 
+  test("long rides round to the quarter hour", () => {
+    const rides = history().map((a) => (a.id.startsWith("sat") ? { ...a, movingTime: 175 * 60 } : a));
+    expect(inferTimeBudget(rides, AS_OF).slots.find((s) => s.weekday === 5)?.minutes).toBe(180);
+  });
+
   test("ignores activities older than the window", () => {
     expect(inferTimeBudget([act("old", "2025-01-01T07:00:00", "Ride", 60)], AS_OF).slots).toHaveLength(0);
   });
