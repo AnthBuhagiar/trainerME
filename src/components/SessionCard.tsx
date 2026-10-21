@@ -19,6 +19,7 @@ export function SessionCard({ session, today, compact = false }: { session: Plan
         <span className="display whitespace-nowrap text-[16px]">{length(session.minutes)}</span>
       </div>
       <div className="text-[16px] font-semibold leading-snug">{sessionTitle(session)}</div>
+      {session.adjusted && <div className="text-[13px] font-semibold text-signal-ink">{session.adjusted}</div>}
       {!compact && (
         <div className="text-[13px] text-muted">
           {where}

@@ -118,6 +118,7 @@ export default async function SessionPage({
         </section>
       )}
 
+      {planned.adjusted && <p className="text-[14px] font-semibold text-signal-ink">{planned.adjusted}</p>}
       <p className="text-[13px] text-muted">Why: {planned.why}</p>
     </main>
   );

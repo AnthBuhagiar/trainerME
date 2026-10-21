@@ -34,6 +34,8 @@ export interface PlannedSession {
   fuel?: Fuel;
   /** Why this session sits here, in plain words. */
   why: string;
+  /** Set when a check-in changed this session. */
+  adjusted?: string;
 }
 
 export interface WeekPlan {
@@ -60,7 +62,7 @@ const LONG: Record<PhaseName, string> = {
   flex: "endurance",
 };
 
-const STRENGTH: Record<"heavy" | "maintenance" | "mobility", StrengthSession> = {
+export const STRENGTH: Record<"heavy" | "maintenance" | "mobility", StrengthSession> = {
   heavy: {
     name: "Heavy strength",
     summary: "Few reps, heavy weight, full rest. Builds force without much bulk (E5).",

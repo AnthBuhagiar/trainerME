@@ -1,3 +1,4 @@
+import { CheckIn } from "@/components/CheckIn";
 import { HourRing } from "@/components/HourRing";
 import { SessionCard } from "@/components/SessionCard";
 import { SetupCard } from "@/components/SetupCard";
@@ -19,7 +20,7 @@ function signed(n: number): string {
 export default async function Home({ searchParams }: { searchParams: Promise<{ strava?: string }> }) {
   const { strava: notice } = await searchParams;
   const tokens = loadTokens();
-  const { today, settings, rides, history, current, goal, summary, thisMonday, week, budget } = loadState();
+  const { checkIns, today, settings, rides, history, current, goal, summary, thisMonday, week, budget } = loadState();
   const missing = rides.filter((r) => !r.streams).length;
   const upcoming = budget.slots.length
     ? [...week(thisMonday).sessions, ...week(nextMonday(thisMonday)).sessions].filter((s) => s.date >= today)
@@ -80,6 +81,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
               Week →
             </a>
           </div>
+          {todays.length > 0 && <CheckIn date={today} mood={checkIns[today]} />}
           {todays.map((s) => (
             <SessionCard key={s.start} session={s} today={today} />
           ))}
