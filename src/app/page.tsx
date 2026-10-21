@@ -3,6 +3,7 @@ import { HourRing } from "@/components/HourRing";
 import { SessionCard } from "@/components/SessionCard";
 import { SetupCard } from "@/components/SetupCard";
 import { SyncPanel } from "@/components/SyncPanel";
+import { UpdateButton } from "@/components/UpdateButton";
 import { dateOnly } from "@/lib/engine/dates";
 import { formatDuration } from "@/lib/goals/eventTime";
 import { loadState, nextMonday } from "@/lib/plan/current";
@@ -178,6 +179,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
           ))}
         </section>
       )}
+      <UpdateButton />
     </main>
   );
 }

@@ -40,6 +40,10 @@ Your data stays in the codespace's `data/` folder between sessions (until you de
 Open the same `…app.github.dev` address on your phone while signed in to GitHub.
 If the codespace was stopped, reopen it from github.com/codespaces and the app restarts.
 
+## Updating
+
+When a new version is pushed, the Today screen shows **Update Hour Power**. Tap it: the app pulls the changes and, if needed, reinstalls packages and restarts itself. (The terminal way still works: `git pull origin claude/upbeat-noether-2kf703`.)
+
 ## Send workouts to Garmin (via Intervals.icu)
 
 Planned rides can go to your Garmin Connect calendar, then to your watch or head unit, which can run them on a smart trainer.
