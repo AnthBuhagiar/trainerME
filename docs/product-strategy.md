@@ -236,6 +236,13 @@ Goal: a trustworthy hour-power number and a week that fits real life.
 - [ ] **E4** event fuel plan and **E6** fuel-aware durability.
 
 ### Phase 4 — Go to market (if validated)
+Onboarding target for the average rider: **Sign in with Strava → Connect Garmin → set a goal.** No accounts elsewhere, no keys, nothing to install.
+
+- [ ] **Hosted web app** with real accounts and a database (replacing the codespace and the local JSON store). Prerequisite for everything below.
+- [ ] **Connect Garmin directly** (Garmin Connect Developer Program, Training API): one button and an approval page, then workouts land on the rider's Garmin Connect calendar and sync to their watch or head unit, as JOIN's do. The **primary export route**.
+  - Gate: access is free but only for *approved business developers*; new requests were reported paused in 2026. Needs a business identity (e.g. an ABN and a website) and an application. Check developer.garmin.com for the current status.
+- [ ] **Connect Intervals.icu** (its OAuth sign-in, not API keys) as the fallback route for Wahoo, Zwift and riders Garmin doesn't cover. Today's personal build uses an API key.
+- [ ] **Strava capacity:** a new Strava API app allows 1 athlete, self-serve up to 10; beyond that Strava reviews the app (no guaranteed timeline, webhooks expected). Apply once the hosted app works.
 - [ ] Direct Garmin / Wahoo / FIT-file import (don't rely on Strava alone; see risks).
 - [ ] Multi-user accounts, onboarding from a time budget instead of an FTP test.
 - [ ] Pricing at or below JOIN/TrainerRoad; free tier showing hour power only.
@@ -261,3 +268,4 @@ Goal: a trustworthy hour-power number and a week that fits real life.
 | Experience features (C) are easy to copy | Build the defensible engine (A) and time-budget planning (B) first. |
 | Heart-rate signal is noisy (heat, caffeine, sleep) | Steady-minute filtering, condition correction (A2), long rolling windows. |
 | Two power sources disagree | Power-source reconciliation (A3). |
+| Garmin or Strava developer access is refused or delayed | Apply early with a working hosted beta; keep Intervals.icu and file export (.fit/.zwo) as fallbacks so the product works without either approval. |
