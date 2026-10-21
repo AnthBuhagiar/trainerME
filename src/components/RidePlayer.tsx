@@ -19,6 +19,8 @@ import { buildTcx, type RideSample } from "@/lib/strava/tcx";
 
 interface Props {
   name: string;
+  /** Save to Strava as soon as the ride finishes. */
+  autoUpload: boolean;
   steps: PlayerStep[];
   backHref: string;
 }
@@ -31,7 +33,7 @@ const clock = (s: number) => {
   return h ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`;
 };
 
-export function RidePlayer({ name, steps, backHref }: Props) {
+export function RidePlayer({ name, autoUpload, steps, backHref }: Props) {
   const [supported, setSupported] = useState(true);
   const [trainer, setTrainer] = useState<string | null>(null);
   const [hrName, setHrName] = useState<string | null>(null);
@@ -45,7 +47,7 @@ export function RidePlayer({ name, steps, backHref }: Props) {
   const samples = useRef<RideSample[]>([]);
   const startMs = useRef<number | null>(null);
   const [ended, setEnded] = useState(false);
-  const [saved, setSaved] = useState<{ url?: string; message: string; reconnect?: boolean } | null>(null);
+  const [saved, setSaved] = useState<{ url?: string; message: string; reconnect?: boolean; ok?: boolean } | null>(null);
   const [saving, setSaving] = useState(false);
   const lastTarget = useRef<number | null>(null);
 
@@ -189,7 +191,7 @@ export function RidePlayer({ name, steps, backHref }: Props) {
       });
       const body = await res.json();
       if (body.activityId) setSaved({ url: `https://www.strava.com/activities/${body.activityId}`, message: "Saved to Strava." });
-      else if (res.ok) setSaved({ message: "Uploaded. Strava is still processing it; it will appear shortly." });
+      else if (res.ok) setSaved({ ok: true, message: "Uploaded. Strava is still processing it; it will appear shortly." });
       else setSaved({ message: body.error ?? "Upload failed.", reconnect: body.reconnect });
     } catch {
       setSaved({ message: "Couldn’t reach the app. Download the file instead and upload it on strava.com." });
@@ -207,6 +209,16 @@ export function RidePlayer({ name, steps, backHref }: Props) {
     a.click();
     URL.revokeObjectURL(a.href);
   }
+
+  // Auto-upload once, when the ride ends with something recorded.
+  const autoSaved = useRef(false);
+  useEffect(() => {
+    if (!done || !autoUpload || autoSaved.current || !samples.current.length) return;
+    autoSaved.current = true;
+    void save();
+    // save() reads refs only; running it once on finish is the intent.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [done, autoUpload]);
 
   function skip() {
     if (!at) return;
@@ -329,11 +341,12 @@ export function RidePlayer({ name, steps, backHref }: Props) {
 
       {done && ridden > 0 && (
         <div className="flex flex-col gap-2">
-          {!saved?.url && (
+          {!saved?.url && !saved?.ok && !saving && (
             <button onClick={save} disabled={saving} className="h-14 rounded-2xl bg-signal-ink text-[17px] font-semibold text-white disabled:opacity-60">
-              {saving ? "Saving to Strava…" : "Save to Strava"}
+              {saved ? "Try again" : "Save to Strava"}
             </button>
           )}
+          {saving && <p className="text-center text-[14px]">Saving to Strava…</p>}
           {saved && (
             <p className="text-center text-[14px]" aria-live="polite">
               {saved.message}{" "}
@@ -382,7 +395,7 @@ export function RidePlayer({ name, steps, backHref }: Props) {
       )}
 
       <p className="text-[13px] text-muted">
-        Hour Power records the ride; save it to Strava when you finish. If your watch records it too, save only one of them so it isn’t
+        Hour Power records the ride{autoUpload ? " and saves it to Strava when you finish" : "; save it to Strava when you finish"}. If your watch records it too, save only one of them so it isn’t
         counted twice. Keep this screen open.{" "}
         <a href={backHref} className="font-semibold">
           Back to session

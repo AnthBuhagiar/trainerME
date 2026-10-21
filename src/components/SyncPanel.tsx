@@ -12,9 +12,22 @@ interface Result {
   error?: string;
 }
 
-export function SyncPanel({ connected, missing }: { connected: boolean; missing: number }) {
+interface Props {
+  connected: boolean;
+  missing: number;
+  autoUpload: boolean;
+  canUpload: boolean;
+}
+
+export function SyncPanel({ connected, missing, autoUpload, canUpload }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [upload, setUpload] = useState(autoUpload);
+
+  async function toggleUpload(on: boolean) {
+    setUpload(on);
+    await fetch("/api/settings", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ autoUpload: on }) });
+  }
   const [result, setResult] = useState<Result | null>(null);
 
   async function sync() {
@@ -57,6 +70,21 @@ export function SyncPanel({ connected, missing }: { connected: boolean; missing:
       <p className="text-center text-[13px] text-muted" aria-live="polite">
         {message}
       </p>
+      <label className="flex items-start gap-3 rounded-2xl border border-line bg-card px-4 py-3 text-[15px]">
+        <input type="checkbox" checked={upload} onChange={(e) => toggleUpload(e.target.checked)} className="mt-1 h-5 w-5 accent-[var(--signal-ink)]" />
+        <span className="flex flex-col gap-0.5">
+          <span>Upload rides I do in Hour Power to Strava automatically</span>
+          {upload && !canUpload && (
+            <span className="text-[13px] text-signal-ink">
+              Strava needs your OK first:{" "}
+              <a href="/api/strava/connect" className="font-semibold underline">
+                reconnect Strava
+              </a>{" "}
+              and tick “Upload your activities”.
+            </span>
+          )}
+        </span>
+      </label>
     </div>
   );
 }
