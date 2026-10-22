@@ -67,7 +67,10 @@ The codespace stops when idle. For an app that's always there, run Hour Power on
 
 **Updating:** run `./deploy/deploy.sh` on the Droplet (it pulls `main` and rebuilds). The in-app Update button is only for the codespace.
 
-**Already running other sites on that Droplet?** Leave out the `caddy` service and point your existing web server at the app on port 3000 instead.
+**Sharing a Droplet with another app?** Deploy with `./deploy/deploy.sh --shared`. That runs only Hour Power, on `127.0.0.1:3100`, which isn't reachable from the internet, and leaves ports 80/443 to your existing web server. Then add a site for your `DOMAIN` that forwards to it:
+
+- nginx: a `server { server_name DOMAIN; location / { proxy_pass http://127.0.0.1:3100; proxy_set_header Host $host; proxy_set_header X-Forwarded-Proto $scheme; } }` block, then a certificate with `certbot --nginx -d DOMAIN`.
+- Caddy: `DOMAIN { reverse_proxy 127.0.0.1:3100 }` in its Caddyfile, then reload.
 
 ## Send workouts to Garmin (via Intervals.icu)
 
