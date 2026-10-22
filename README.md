@@ -46,31 +46,32 @@ When a new version is pushed, the Today screen shows **Update Hour Power**. Tap 
 
 ## Host it (always on, on your phone)
 
-The codespace stops when idle. For an app that's always there, run Hour Power on a small server: a **DigitalOcean Droplet**, with your domain on **Cloudflare** pointing at it. `deploy/` holds everything: Docker Compose runs the app with its data on a persistent volume, and Caddy gets the HTTPS certificate automatically (Bluetooth trainer control needs HTTPS).
+The codespace stops when idle. For an app that's always there, run Hour Power on a server. It's set up for a small **DigitalOcean Droplet that already runs Caddy** (e.g. alongside another app), with the domain on **Cloudflare**:
 
+- **GitHub builds it**, not the server: every merge to `main` publishes a ready-to-run release (`.github/workflows/release.yml`).
+- **The server just runs it**, as its own user on `127.0.0.1:3100`, capped at 350 MB of memory so other apps on the server are never squeezed, and checks for a new release every 15 minutes.
+- **Caddy** serves it on your domain with HTTPS (needed for Bluetooth trainer control).
+
+### Set up (once)
 1. **Back up:** in Hour Power (codespace) open **Settings and data → Download backup**.
-2. **Droplet:** use an existing one, or create one (Ubuntu 24.04, Basic, 1 GB RAM, Sydney region, about US$6 a month). Open it with **Access → Launch Droplet Console**.
-3. **Install Docker and get the code** (paste into the console):
+2. **Cloudflare DNS:** add an **A** record, e.g. name `hourpower`, value = the Droplet's IP. Use the same proxy setting as your other site on that server; if unsure, **DNS only** (grey cloud).
+3. **Install:** in the Droplet console (Access → Launch Droplet Console), run, with your domain:
    ```bash
-   curl -fsSL https://get.docker.com | sh
-   fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile && echo '/swapfile none swap sw 0 0' >> /etc/fstab
-   git clone https://github.com/AnthBuhagiar/trainerME.git hour-power && cd hour-power
-   cp deploy/.env.example deploy/.env && nano deploy/.env
+   curl -fsSL https://raw.githubusercontent.com/AnthBuhagiar/trainerME/main/deploy/install.sh -o install.sh && bash install.sh hourpower.yourdomain.com
    ```
-   (The swap file lets a 1 GB Droplet build the app.) In `deploy/.env` set `DOMAIN` (e.g. `hourpower.yourdomain.com`), your Strava keys, and `SESSION_SECRET` (run `openssl rand -hex 32` to make one). Save with Ctrl+O, Enter, Ctrl+X.
-4. **Cloudflare DNS:** add an **A** record, name `hourpower`, value = the Droplet's IP, **Proxy status: DNS only** (grey cloud) so Caddy can get its certificate. You can switch it to Proxied later with SSL/TLS mode **Full (strict)**.
-5. **Start it:** `./deploy/deploy.sh`. The first build takes a few minutes.
-6. **Strava:** in [Strava API settings](https://www.strava.com/settings/api) set **Authorization Callback Domain** to your `DOMAIN`. (Strava allows one domain, so the codespace can't reconnect after this; it keeps working with the connection it has.)
-7. **Sign in:** open `https://DOMAIN` and **Sign in with Strava**. The first Strava account to sign in owns the app; nobody else can.
-8. **Restore:** **Settings and data → Restore from a backup** with the file from step 1.
-9. **Phone:** open the address and **Add to Home Screen** (Safari: Share → Add to Home Screen; Chrome: ⋮ → Install app).
+   It installs Node.js 20 if needed, adds a swap file if there's none, creates the service, adds the site to Caddy (backing up the Caddyfile and only reloading if the new config validates), and starts the app.
+4. **Keys:** `nano /etc/hour-power.env`, fill in `STRAVA_CLIENT_ID` and `STRAVA_CLIENT_SECRET` (and `INTERVALS_API_KEY` if you use it), save with Ctrl+O, Enter, Ctrl+X, then `systemctl restart hour-power`. The sign-in secret is already generated.
+5. **Strava:** in [Strava API settings](https://www.strava.com/settings/api) set **Authorization Callback Domain** to your domain. (Strava allows one domain, so the codespace can't reconnect after this; it keeps working with the connection it has.)
+6. **Sign in:** open `https://hourpower.yourdomain.com` and **Sign in with Strava**. The first Strava account to sign in owns the app; nobody else can.
+7. **Restore:** **Settings and data → Restore from a backup** with the file from step 1.
+8. **Phone:** open the address and **Add to Home Screen** (Safari: Share → Add to Home Screen; Chrome: ⋮ → Install app).
 
-**Updating:** run `./deploy/deploy.sh` on the Droplet (it pulls `main` and rebuilds). The in-app Update button is only for the codespace.
+### Day to day
+- New versions arrive on their own within about 15 minutes of a merge to `main` (or run `/opt/hour-power/update.sh`).
+- Logs: `journalctl -u hour-power -n 50`. Status: `systemctl status hour-power`.
+- Your data is in `/opt/hour-power/data`; download a backup from Settings now and then.
 
-**Sharing a Droplet with another app?** Deploy with `./deploy/deploy.sh --shared`. That runs only Hour Power, on `127.0.0.1:3100`, which isn't reachable from the internet, and leaves ports 80/443 to your existing web server. Then add a site for your `DOMAIN` that forwards to it:
-
-- nginx: a `server { server_name DOMAIN; location / { proxy_pass http://127.0.0.1:3100; proxy_set_header Host $host; proxy_set_header X-Forwarded-Proto $scheme; } }` block, then a certificate with `certbot --nginx -d DOMAIN`.
-- Caddy: `DOMAIN { reverse_proxy 127.0.0.1:3100 }` in its Caddyfile, then reload.
+A server with nothing else on it can instead use `deploy/docker-compose.yml` (app plus its own Caddy): `./deploy/deploy.sh`.
 
 ## Send workouts to Garmin (via Intervals.icu)
 
