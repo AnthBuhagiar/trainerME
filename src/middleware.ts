@@ -5,7 +5,13 @@ import { SESSION_COOKIE, verifySession } from "@/lib/auth/session";
 const PUBLIC = [/^\/login$/, /^\/api\/strava\/(connect|callback)$/, /^\/(manifest\.webmanifest|icon.*\.png|apple-icon\.png|favicon\.ico)$/, /^\/brand\//];
 
 export async function middleware(req: NextRequest) {
-  if (!process.env.SESSION_SECRET) return NextResponse.next();
+  if (!process.env.SESSION_SECRET) {
+    // A public server without sign-in would show anyone your rides: refuse to serve rather than run open.
+    if (process.env.NODE_ENV === "production" && !process.env.ALLOW_NO_LOGIN) {
+      return new NextResponse("Hour Power is not set up yet: add SESSION_SECRET (see README).", { status: 503 });
+    }
+    return NextResponse.next();
+  }
   const path = req.nextUrl.pathname;
   if (PUBLIC.some((re) => re.test(path))) return NextResponse.next();
   if (await verifySession(req.cookies.get(SESSION_COOKIE)?.value)) return NextResponse.next();

@@ -46,18 +46,28 @@ When a new version is pushed, the Today screen shows **Update Hour Power**. Tap 
 
 ## Host it (always on, on your phone)
 
-The codespace stops when idle. For an app that's always there, run Hour Power on **Render** with a small persistent disk. `render.yaml` sets it all up: a Starter web service (about US$7 a month) in Singapore with a 1 GB disk at `/data`, built from the `Dockerfile`, redeployed whenever `main` changes.
+The codespace stops when idle. For an app that's always there, run Hour Power on a small server: a **DigitalOcean Droplet**, with your domain on **Cloudflare** pointing at it. `deploy/` holds everything: Docker Compose runs the app with its data on a persistent volume, and Caddy gets the HTTPS certificate automatically (Bluetooth trainer control needs HTTPS).
 
-1. In Hour Power (codespace), open **Settings and data → Download backup**.
-2. In the [Render dashboard](https://dashboard.render.com): **New → Blueprint**, connect GitHub if asked, and pick **AnthBuhagiar/trainerME**.
-3. Render reads `render.yaml` and asks for the secret values: paste `STRAVA_CLIENT_ID` and `STRAVA_CLIENT_SECRET` (leave `INTERVALS_API_KEY` blank unless you use it). `SESSION_SECRET` is generated for you. Click **Apply**.
-4. When the first deploy finishes, copy the service address (e.g. `hour-power.onrender.com`).
-5. In [Strava API settings](https://www.strava.com/settings/api), set **Authorization Callback Domain** to that address. (Strava allows one domain, so the codespace can't reconnect after this; it keeps working with the connection it has.)
-6. Open the address and **Sign in with Strava**. The first Strava account to sign in owns the app; nobody else can sign in.
-7. **Settings and data → Restore from a backup** with the file from step 1.
-8. On your phone, open the address and **Add to Home Screen** (Safari: Share → Add to Home Screen; Chrome: ⋮ → Install app).
+1. **Back up:** in Hour Power (codespace) open **Settings and data → Download backup**.
+2. **Droplet:** use an existing one, or create one (Ubuntu 24.04, Basic, 1 GB RAM, Sydney region, about US$6 a month). Open it with **Access → Launch Droplet Console**.
+3. **Install Docker and get the code** (paste into the console):
+   ```bash
+   curl -fsSL https://get.docker.com | sh
+   fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile && echo '/swapfile none swap sw 0 0' >> /etc/fstab
+   git clone https://github.com/AnthBuhagiar/trainerME.git hour-power && cd hour-power
+   cp deploy/.env.example deploy/.env && nano deploy/.env
+   ```
+   (The swap file lets a 1 GB Droplet build the app.) In `deploy/.env` set `DOMAIN` (e.g. `hourpower.yourdomain.com`), your Strava keys, and `SESSION_SECRET` (run `openssl rand -hex 32` to make one). Save with Ctrl+O, Enter, Ctrl+X.
+4. **Cloudflare DNS:** add an **A** record, name `hourpower`, value = the Droplet's IP, **Proxy status: DNS only** (grey cloud) so Caddy can get its certificate. You can switch it to Proxied later with SSL/TLS mode **Full (strict)**.
+5. **Start it:** `./deploy/deploy.sh`. The first build takes a few minutes.
+6. **Strava:** in [Strava API settings](https://www.strava.com/settings/api) set **Authorization Callback Domain** to your `DOMAIN`. (Strava allows one domain, so the codespace can't reconnect after this; it keeps working with the connection it has.)
+7. **Sign in:** open `https://DOMAIN` and **Sign in with Strava**. The first Strava account to sign in owns the app; nobody else can.
+8. **Restore:** **Settings and data → Restore from a backup** with the file from step 1.
+9. **Phone:** open the address and **Add to Home Screen** (Safari: Share → Add to Home Screen; Chrome: ⋮ → Install app).
 
-Any host that runs a Dockerfile with a persistent volume works the same way (set `SESSION_SECRET`, mount the volume at `/data`). The in-app Update button is only for the codespace.
+**Updating:** run `./deploy/deploy.sh` on the Droplet (it pulls `main` and rebuilds). The in-app Update button is only for the codespace.
+
+**Already running other sites on that Droplet?** Leave out the `caddy` service and point your existing web server at the app on port 3000 instead.
 
 ## Send workouts to Garmin (via Intervals.icu)
 
