@@ -10,11 +10,13 @@ services:
       TRAINERME_DATA_DIR: /data
     volumes:
       - hour-power-data:/data # your data: goals, rides, settings (survives rebuilds)
-    expose:
-      - "3000"
+    # Also reachable on the server itself (not the internet) for an existing web server to forward to.
+    ports:
+      - "127.0.0.1:${APP_PORT:-3100}:3000"
 
   # Caddy gets and renews the HTTPS certificate for DOMAIN and forwards to the app.
-  # Skip it (and point your existing web server at port 3000) if the server already serves other sites on 80/443.
+  # On a server that already serves other sites on 80/443, deploy with --shared: Caddy is skipped
+  # and your existing web server forwards DOMAIN to 127.0.0.1:APP_PORT instead.
   caddy:
     image: caddy:2
     restart: unless-stopped
