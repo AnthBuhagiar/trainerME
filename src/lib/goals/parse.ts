@@ -38,6 +38,7 @@ export function parseGoal(body: Record<string, unknown>, existing: Goal[]): Goal
       distanceKm,
       climbingM: num(body.climbingM) ?? 0,
       targetMinutes: hours * 60 + minutes || undefined,
+      routeName: before?.event?.routeName,
     };
   }
   return goal;

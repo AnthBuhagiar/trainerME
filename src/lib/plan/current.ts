@@ -2,7 +2,7 @@ import { loadActivities, loadRides, loadSettings } from "@/lib/data/store";
 import { dateOnly, todayLocal } from "@/lib/engine/dates";
 import { buildHistory } from "@/lib/engine/history";
 import { buildModel } from "@/lib/engine/hourPower";
-import { activeGoal } from "@/lib/goals/model";
+import { activeGoal, loadRoute } from "@/lib/goals/model";
 import { goalSummary } from "@/lib/goals/summary";
 import { applyCheckIns, loadCheckIns } from "@/lib/plan/checkin";
 import { mondayOf, phaseOn } from "@/lib/plan/periodise";
@@ -19,7 +19,7 @@ export function loadState() {
   const current = history?.current ?? null;
   const budget = applyStrengthTarget(inferTimeBudget(loadActivities(), now));
   const goal = activeGoal(today);
-  const summary = goal && current ? goalSummary(goal, current.hourPower, settings, today, current.durability.factor) : null;
+  const summary = goal && current ? goalSummary(goal, current.hourPower, settings, today, current.durability.factor, loadRoute(goal)) : null;
 
   const extended = summary ? extendedLongRideWeeks(summary.phases) : new Set<string>();
 

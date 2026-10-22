@@ -1,4 +1,6 @@
 import type { Goal } from "@/lib/goals/model";
+import type { Route } from "@/lib/route/gpx";
+import { planForTarget, predictRoute, type RoutePlan } from "@/lib/route/pacing";
 import { DEFAULT_PHYSICS, powerForTarget, predictEvent, sustainableFraction, type RiderPhysics } from "@/lib/goals/eventTime";
 import { christmasWindow, periodise, phaseOn, type Phase } from "@/lib/plan/periodise";
 import type { AthleteSettings } from "@/lib/types";
@@ -16,6 +18,8 @@ export interface GoalSummary {
   predicted?: { seconds: number; power: number };
   /** Average power and hour power needed for the rider's target time (events with a target only). */
   needed?: { power: number; hourPower: number };
+  /** With an imported route: pacing at today's hour power, and for the target time. */
+  route?: { name: string; today: RoutePlan; target?: RoutePlan };
 }
 
 const KIT_KG = 1.5;
@@ -24,7 +28,14 @@ export function physicsFor(settings: AthleteSettings): RiderPhysics {
   return { ...DEFAULT_PHYSICS, massKg: settings.weightKg + settings.bikeWeightKg + KIT_KG };
 }
 
-export function goalSummary(goal: Goal, hourPower: number, settings: AthleteSettings, today: string, durability = 0.97): GoalSummary {
+export function goalSummary(
+  goal: Goal,
+  hourPower: number,
+  settings: AthleteSettings,
+  today: string,
+  durability = 0.97,
+  route: Route | null = null,
+): GoalSummary {
   const day = today.slice(0, 10);
   const year = Number(day.slice(0, 4));
   const holidays = [christmasWindow(year - 1), christmasWindow(year), christmasWindow(year + 1)];
@@ -39,7 +50,20 @@ export function goalSummary(goal: Goal, hourPower: number, settings: AthleteSett
     targetHourPower: goal.targetWatts ?? Math.ceil(((goal.startHourPower ?? hourPower) * 1.1) / 5) * 5,
   };
   const ev = goal.event;
-  if (ev && ev.distanceKm > 0) {
+  if (route?.segments.length) {
+    // The real profile replaces the distance-and-climbing estimate.
+    const physics = physicsFor(settings);
+    const todayPlan = predictRoute(route, hourPower, physics, durability);
+    summary.predicted = { seconds: todayPlan.seconds, power: todayPlan.avgPower };
+    summary.route = { name: route.name, today: todayPlan };
+    if (ev?.targetMinutes) {
+      const target = planForTarget(route, ev.targetMinutes * 60, physics);
+      const needHp = Math.round(target.avgPower / sustainableFraction(ev.targetMinutes / 60, durability));
+      summary.route.target = target;
+      summary.needed = { power: target.avgPower, hourPower: needHp };
+      if (!goal.targetWatts) summary.targetHourPower = needHp;
+    }
+  } else if (ev && ev.distanceKm > 0) {
     const physics = physicsFor(settings);
     summary.predicted = predictEvent(ev.distanceKm, ev.climbingM, hourPower, physics, durability);
     if (ev.targetMinutes) {

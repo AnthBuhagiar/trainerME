@@ -93,3 +93,16 @@ describe("goal summary", () => {
     expect(s.targetHourPower).toBe(195);
   });
 });
+
+describe("event fuel plan", () => {
+  test("scales with weight and time", async () => {
+    const { eventFuelPlan } = await import("@/lib/goals/fuelPlan");
+    const plan = eventFuelPlan(77, 6 * 3600 + 20 * 60);
+    expect(plan.gramsPerHour).toBe(90);
+    expect(plan.totalGrams).toBe(570);
+    expect(plan.loadingPerDay).toEqual([620, 770]);
+    expect(plan.breakfast).toBe(150);
+    expect(plan.hour.reduce((n, i) => n + i.grams, 0)).toBe(90);
+    expect(plan.fluidTotal).toEqual([3.2, 4.8]);
+  });
+});

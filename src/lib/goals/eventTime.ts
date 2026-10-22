@@ -16,7 +16,7 @@ export interface RiderPhysics {
 
 export const DEFAULT_PHYSICS: Omit<RiderPhysics, "massKg"> = { cda: 0.28, crr: 0.005, rho: 1.15 };
 
-function speedFor(power: number, grade: number, p: RiderPhysics, vmax = 15.3): number {
+export function speedFor(power: number, grade: number, p: RiderPhysics, vmax = 15.3): number {
   const theta = Math.atan(grade);
   let lo = 0.3;
   let hi = 30;

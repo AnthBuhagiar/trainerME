@@ -1,4 +1,5 @@
 import { readJson, writeJson } from "@/lib/data/store";
+import type { Route } from "@/lib/route/gpx";
 
 /**
  * Generic goal model: any rider, any goal type (docs/product-strategy.md, D).
@@ -17,6 +18,8 @@ export interface EventDetails {
   riding?: "solo" | "bunch";
   /** Strava activity ID of a previous attempt or similar ride, as a baseline. */
   baselineActivityId?: string;
+  /** Name of the imported route file, if any (stored in data/routes/<goal id>.json). */
+  routeName?: string;
 }
 
 export interface Goal {
@@ -56,4 +59,14 @@ export function upsertGoal(goal: Goal): Goal[] {
   goals.push(goal);
   saveGoals(goals);
   return loadGoals();
+}
+
+const routeFile = (goalId: string) => `routes/${goalId.replace(/[^a-z0-9-]/gi, "")}.json`;
+
+export function saveRoute(goalId: string, route: Route): void {
+  writeJson(routeFile(goalId), route);
+}
+
+export function loadRoute(goal: Goal): Route | null {
+  return goal.event?.routeName ? readJson<Route | null>(routeFile(goal.id), null) : null;
 }

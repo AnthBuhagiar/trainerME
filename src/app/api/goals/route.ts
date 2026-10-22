@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { loadGoals, saveGoals, upsertGoal } from "@/lib/goals/model";
+import { loadGoals, saveGoals, saveRoute, upsertGoal } from "@/lib/goals/model";
 import { parseGoal } from "@/lib/goals/parse";
 
 export async function GET() {
@@ -7,8 +7,17 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const parsed = parseGoal(await request.json(), loadGoals());
+  const body = await request.json();
+  const parsed = parseGoal(body, loadGoals());
   if (typeof parsed === "string") return NextResponse.json({ error: parsed }, { status: 400 });
+  // An imported route (parsed in the browser) replaces any earlier one.
+  const route = body.route;
+  if (route && Array.isArray(route.segments) && route.segments.length && parsed.event) {
+    saveRoute(parsed.id, route);
+    parsed.event.routeName = String(route.name ?? "Route").slice(0, 120);
+  } else if (body.removeRoute && parsed.event) {
+    parsed.event.routeName = undefined;
+  }
   return NextResponse.json(upsertGoal(parsed));
 }
 

@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { Goal, GoalType } from "@/lib/goals/model";
+import { parseGpx, type Route } from "@/lib/route/gpx";
 
 const TYPES: { value: GoalType; label: string }[] = [
   { value: "event", label: "Event" },
@@ -22,13 +23,36 @@ export function GoalForm({ goal, hourPower }: { goal: Goal | null; hourPower: nu
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const target = goal?.event?.targetMinutes;
+  const [route, setRoute] = useState<Route | null>(null);
+  const [routeName, setRouteName] = useState(goal?.event?.routeName);
+  const [routeError, setRouteError] = useState<string | null>(null);
+  const distanceRef = useRef<HTMLInputElement>(null);
+  const climbingRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+
+  async function importRoute(file: File | undefined) {
+    if (!file) return;
+    setRouteError(null);
+    try {
+      const r = parseGpx(await file.text());
+      setRoute(r);
+      setRouteName(r.name);
+      if (distanceRef.current) distanceRef.current.value = String(r.distanceKm);
+      if (climbingRef.current && r.hasElevation) climbingRef.current.value = String(r.climbingM);
+      if (nameRef.current && !nameRef.current.value) nameRef.current.value = r.name;
+    } catch (e) {
+      setRouteError((e as Error).message);
+    }
+  }
   const hasRoute = type === "event" || type === "challenge" || type === "climb";
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const body = { ...Object.fromEntries(new FormData(e.currentTarget)), type, id: goal?.id, startHourPower: hourPower ?? undefined };
+    const form = Object.fromEntries(new FormData(e.currentTarget));
+    delete form.routeFile;
+    const body = { ...form, type, id: goal?.id, startHourPower: hourPower ?? undefined, route: route ?? undefined, removeRoute: !routeName };
     const res = await fetch("/api/goals", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
     setBusy(false);
     if (!res.ok) return setError((await res.json()).error ?? "Couldn’t save the goal.");
@@ -66,7 +90,7 @@ export function GoalForm({ goal, hourPower }: { goal: Goal | null; hourPower: nu
 
       <label className="flex flex-col gap-1.5">
         <span className="label">Name</span>
-        <input name="name" required defaultValue={goal?.name} placeholder="e.g. Bathurst Cycling Festival" className={input} />
+        <input ref={nameRef} name="name" required defaultValue={goal?.name} placeholder="e.g. Bathurst Cycling Festival" className={input} />
       </label>
 
       <label className="flex flex-col gap-1.5">
@@ -78,11 +102,11 @@ export function GoalForm({ goal, hourPower }: { goal: Goal | null; hourPower: nu
         <div className="grid grid-cols-2 gap-3">
           <label className="flex flex-col gap-1.5">
             <span className="label">Distance (km)</span>
-            <input name="distanceKm" inputMode="decimal" defaultValue={goal?.event?.distanceKm} className={input} />
+            <input ref={distanceRef} name="distanceKm" inputMode="decimal" defaultValue={goal?.event?.distanceKm} className={input} />
           </label>
           <label className="flex flex-col gap-1.5">
             <span className="label">Climbing (m)</span>
-            <input name="climbingM" inputMode="numeric" defaultValue={goal?.event?.climbingM} className={input} />
+            <input ref={climbingRef} name="climbingM" inputMode="numeric" defaultValue={goal?.event?.climbingM} className={input} />
           </label>
         </div>
       )}
@@ -117,7 +141,42 @@ export function GoalForm({ goal, hourPower }: { goal: Goal | null; hourPower: nu
         </select>
       </fieldset>
 
-      <p className="text-[13px] text-muted">Route file (GPX) import is coming; distance and climbing are enough for now.</p>
+      {hasRoute && (
+        <div className="flex flex-col gap-1.5 rounded-2xl border border-line bg-card px-4 py-3">
+          <span className="label">Route file (optional)</span>
+          {routeName ? (
+            <div className="flex items-baseline justify-between gap-3 text-[15px]">
+              <span>
+                {routeName}
+                {route && (
+                  <span className="block text-[13px] text-muted">
+                    {route.distanceKm} km · {route.climbingM.toLocaleString("en-AU")} m · {route.climbs.length}{" "}
+                    {route.climbs.length === 1 ? "climb" : "climbs"} found
+                  </span>
+                )}
+              </span>
+              <button type="button" onClick={() => {
+                  setRoute(null);
+                  setRouteName(undefined);
+                }} className="shrink-0 text-[14px] font-semibold text-muted">
+                Remove
+              </button>
+            </div>
+          ) : (
+            <p className="text-[13px] text-muted">
+              Import a GPX from Strava, RideWithGPS, Komoot or the event website for climb-by-climb pacing and a better finish time.
+            </p>
+          )}
+          <input
+            name="routeFile"
+            type="file"
+            accept=".gpx,application/gpx+xml,application/xml,text/xml"
+            onChange={(e) => importRoute(e.target.files?.[0])}
+            className="text-[14px] file:mr-3 file:h-10 file:rounded-full file:border file:border-line file:bg-background file:px-4 file:font-semibold"
+          />
+          {routeError && <p className="text-[13px] font-semibold text-signal-ink">{routeError}</p>}
+        </div>
+      )}
 
       {error && <p className="text-[14px] font-semibold text-signal-ink">{error}</p>}
 
