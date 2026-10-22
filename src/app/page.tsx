@@ -8,6 +8,7 @@ import { dateOnly } from "@/lib/engine/dates";
 import { formatDuration } from "@/lib/goals/eventTime";
 import { loadState, nextMonday } from "@/lib/plan/current";
 import { callbackDomain, canUpload, hasCredentials, loadTokens } from "@/lib/strava/client";
+import { lastSyncedAt } from "@/lib/strava/sync";
 
 export const dynamic = "force-dynamic";
 
@@ -155,7 +156,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
 
       {!tokens && <SetupCard hasCredentials={hasCredentials()} callbackDomain={callbackDomain()} notice={notice} />}
 
-      <SyncPanel connected={!!tokens} missing={missing} autoUpload={!!settings.autoUpload} canUpload={canUpload(tokens)} />
+      <SyncPanel connected={!!tokens} missing={missing} autoUpload={!!settings.autoUpload} canUpload={canUpload(tokens)} lastSync={lastSyncedAt()} />
 
       {history && history.ledger.length > 0 && (
         <section className="flex flex-col gap-2">

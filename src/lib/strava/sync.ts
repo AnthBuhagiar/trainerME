@@ -2,9 +2,11 @@ import {
   hasRideSummary,
   loadRawActivities,
   loadSettings,
+  readJson,
   saveRawActivities,
   saveRideSummary,
   saveSettings,
+  writeJson,
 } from "@/lib/data/store";
 import { StravaRateLimitError, stravaGet } from "@/lib/strava/client";
 import { summariseStreams, type RawStreams } from "@/lib/strava/process";
@@ -107,6 +109,13 @@ async function fetchStreams(id: string): Promise<RawStreams> {
   };
 }
 
+const SYNC_STATE = "sync-state.json";
+
+/** When the last sync finished (epoch ms), or null if never. */
+export function lastSyncedAt(): number | null {
+  return readJson<{ lastSyncedAt?: number }>(SYNC_STATE, {}).lastSyncedAt ?? null;
+}
+
 export async function syncStrava(streamBudget = DEFAULT_STREAM_BUDGET): Promise<SyncResult> {
   let rateLimited = false;
   let newActivities = 0;
@@ -127,6 +136,7 @@ export async function syncStrava(streamBudget = DEFAULT_STREAM_BUDGET): Promise<
     rateLimited = true;
   }
   const all = loadRawActivities();
+  writeJson(SYNC_STATE, { lastSyncedAt: Date.now() });
   return {
     newActivities,
     totalActivities: all.length,
