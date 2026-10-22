@@ -46,19 +46,18 @@ When a new version is pushed, the Today screen shows **Update Hour Power**. Tap 
 
 ## Host it (always on, on your phone)
 
-The codespace stops when idle. For an app that's always there, run Hour Power on a host with a persistent disk. Below uses **Railway** (Hobby plan, about US$5 a month); any host that runs a Dockerfile with a volume works the same way.
+The codespace stops when idle. For an app that's always there, run Hour Power on **Render** with a small persistent disk. `render.yaml` sets it all up: a Starter web service (about US$7 a month) in Singapore with a 1 GB disk at `/data`, built from the `Dockerfile`, redeployed whenever `main` changes.
 
 1. In Hour Power (codespace), open **Settings and data → Download backup**.
-2. At [railway.com](https://railway.com), sign in with GitHub → **New project → Deploy from GitHub repo** → choose **trainerME** (branch `main`). It builds from the `Dockerfile`.
-3. In the service: **Settings → Volumes → Add volume**, mount path `/data`. Your data lives there.
-4. **Variables**: add `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`, and `SESSION_SECRET` (any long random text; it turns on sign-in). Optional: `INTERVALS_API_KEY`.
-5. **Settings → Networking → Generate domain.** Copy it (e.g. `hour-power.up.railway.app`).
-6. In [Strava API settings](https://www.strava.com/settings/api), set **Authorization Callback Domain** to that domain. (Strava allows one domain, so the codespace can't reconnect after this; it keeps working with the connection it has.)
-7. Open the domain, **Sign in with Strava**. The first Strava account to sign in owns the app; nobody else can sign in.
-8. **Settings and data → Restore from a backup** with the file from step 1.
-9. On your phone, open the domain and **Add to Home Screen** (Safari: Share → Add to Home Screen; Chrome: ⋮ → Install app).
+2. In the [Render dashboard](https://dashboard.render.com): **New → Blueprint**, connect GitHub if asked, and pick **AnthBuhagiar/trainerME**.
+3. Render reads `render.yaml` and asks for the secret values: paste `STRAVA_CLIENT_ID` and `STRAVA_CLIENT_SECRET` (leave `INTERVALS_API_KEY` blank unless you use it). `SESSION_SECRET` is generated for you. Click **Apply**.
+4. When the first deploy finishes, copy the service address (e.g. `hour-power.onrender.com`).
+5. In [Strava API settings](https://www.strava.com/settings/api), set **Authorization Callback Domain** to that address. (Strava allows one domain, so the codespace can't reconnect after this; it keeps working with the connection it has.)
+6. Open the address and **Sign in with Strava**. The first Strava account to sign in owns the app; nobody else can sign in.
+7. **Settings and data → Restore from a backup** with the file from step 1.
+8. On your phone, open the address and **Add to Home Screen** (Safari: Share → Add to Home Screen; Chrome: ⋮ → Install app).
 
-New versions deploy automatically when `main` changes. The in-app Update button is only for the codespace.
+Any host that runs a Dockerfile with a persistent volume works the same way (set `SESSION_SECRET`, mount the volume at `/data`). The in-app Update button is only for the codespace.
 
 ## Send workouts to Garmin (via Intervals.icu)
 

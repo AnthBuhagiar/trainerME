@@ -1,0 +1,24 @@
+# Render Blueprint: Dashboard → New → Blueprint → pick this repo.
+# One web service from the Dockerfile, with a small persistent disk for your data.
+services:
+  - type: web
+    name: hour-power
+    runtime: docker
+    plan: starter # a persistent disk needs a paid instance
+    region: singapore # closest Render region to Sydney
+    branch: main
+    autoDeploy: true
+    healthCheckPath: /login
+    disk:
+      name: hour-power-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: STRAVA_CLIENT_ID
+        sync: false # you paste it in when creating the service
+      - key: STRAVA_CLIENT_SECRET
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true # turns on Strava sign-in; Render makes a random one
+      - key: INTERVALS_API_KEY
+        sync: false # optional
