@@ -5,6 +5,8 @@ import { SetupCard } from "@/components/SetupCard";
 import { SyncPanel } from "@/components/SyncPanel";
 import { TargetsPrompt } from "@/components/TargetsPrompt";
 import { UpdateButton } from "@/components/UpdateButton";
+import { WeekReviewCard } from "@/components/WeekReviewCard";
+import { reviewMonday, weekReview } from "@/lib/plan/review";
 import { dateOnly } from "@/lib/engine/dates";
 import { formatDuration } from "@/lib/goals/eventTime";
 import { loadState, nextMonday } from "@/lib/plan/current";
@@ -23,12 +25,16 @@ function signed(n: number): string {
 export default async function Home({ searchParams }: { searchParams: Promise<{ strava?: string }> }) {
   const { strava: notice } = await searchParams;
   const tokens = loadTokens();
-  const { targets, checkIns, today, settings, rides, history, current, goal, summary, thisMonday, week, budget } = loadState();
+  const { activities, targets, checkIns, today, settings, rides, history, current, goal, summary, thisMonday, week, budget } = loadState();
   const missing = rides.filter((r) => !r.streams).length;
   const upcoming = budget.slots.length
     ? [...week(thisMonday).sessions, ...week(nextMonday(thisMonday)).sessions].filter((s) => s.date >= today)
     : [];
   const todays = upcoming.filter((s) => s.date === today);
+  // Sunday: recap the week just ridden, with a look at next week. Monday: last week's recap.
+  const weekday = new Date(`${today}T00:00:00Z`).getUTCDay();
+  const recapMonday = reviewMonday(today, thisMonday);
+  const recap = budget.slots.length && (weekday === 0 || weekday === 1) ? weekReview(week(recapMonday), activities, history) : null;
   const nextUp = upcoming.find((s) => s.date > today);
 
   // Without a goal, show progress from the 6-month low towards +20%.
@@ -74,6 +80,14 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
             Connect Strava and sync. Rides with a power meter and heart rate give the best estimate.
           </p>
         </section>
+      )}
+
+      {recap && (
+        <WeekReviewCard
+          review={recap}
+          next={weekday === 0 ? week(nextMonday(thisMonday)) : undefined}
+          title={weekday === 0 ? "Your week" : "Last week"}
+        />
       )}
 
       {targets?.proposal && <TargetsPrompt training={targets.training} proposal={targets.proposal} />}

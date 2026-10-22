@@ -1,5 +1,7 @@
 import { SendToGarmin } from "@/components/SendToGarmin";
 import { SessionCard } from "@/components/SessionCard";
+import { WeekReviewCard } from "@/components/WeekReviewCard";
+import { reviewMonday, weekReview } from "@/lib/plan/review";
 import { hasIntervalsKey } from "@/lib/intervals/client";
 import { nextMonday, loadState } from "@/lib/plan/current";
 import { describeSlot } from "@/lib/plan/timeBudget";
@@ -31,6 +33,9 @@ export default function WeekPage() {
   const state = loadState();
   const thisWeek = state.week(state.thisMonday);
   const next = state.week(nextMonday(state.thisMonday));
+  const recapMonday = reviewMonday(state.today, state.thisMonday);
+  const review = weekReview(state.week(recapMonday), state.activities, state.history);
+  const isSunday = recapMonday === state.thisMonday;
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 px-5 py-6">
       <header className="flex flex-col gap-1">
@@ -39,6 +44,7 @@ export default function WeekPage() {
           Built into your usual slots. A missed session is simply skipped; nothing piles up.
         </p>
       </header>
+      <WeekReviewCard review={review} next={isSunday ? next : undefined} title={isSunday ? "Your week" : "Last week"} />
       <SendToGarmin configured={hasIntervalsKey()} />
       <Week plan={thisWeek} title="This week" today={state.today} />
       <Week plan={next} title="Next week" today={state.today} />
