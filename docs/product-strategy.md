@@ -215,9 +215,9 @@ Goal: a trustworthy hour-power number and a week that fits real life.
 ### Phase 2 — Accuracy and life fit
 - [ ] **A2** condition-corrected heart rate.
 - [ ] **A3** indoor/outdoor power reconciliation.
-- [ ] **A5** back-testing against long efforts; publish accuracy.
+- [x] **A5** back-testing against long efforts; publish accuracy (Progress → How accurate is it?).
 - [ ] **C4** Sunday summary.
-- [ ] **B5** time-off forecasts.
+- [x] **B5** time-off forecasts: away and busy days, planned months ahead (Plan tab).
 - [ ] **B8** gym-aware scheduling and **B7** evening session tuning.
 - [ ] **C5** "on track" score.
 - [ ] **D2** event demands from the route, **D4** readiness score, **D5** key rehearsal rides, **D6** event-specific sessions.

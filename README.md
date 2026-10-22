@@ -44,6 +44,22 @@ If the codespace was stopped, reopen it from github.com/codespaces and the app r
 
 When a new version is pushed, the Today screen shows **Update Hour Power**. Tap it: the app pulls the changes and, if needed, reinstalls packages and restarts itself. (The terminal way still works: `git pull origin claude/upbeat-noether-2kf703`.)
 
+## Host it (always on, on your phone)
+
+The codespace stops when idle. For an app that's always there, run Hour Power on a host with a persistent disk. Below uses **Railway** (Hobby plan, about US$5 a month); any host that runs a Dockerfile with a volume works the same way.
+
+1. In Hour Power (codespace), open **Settings and data → Download backup**.
+2. At [railway.com](https://railway.com), sign in with GitHub → **New project → Deploy from GitHub repo** → choose **trainerME** (branch `main`). It builds from the `Dockerfile`.
+3. In the service: **Settings → Volumes → Add volume**, mount path `/data`. Your data lives there.
+4. **Variables**: add `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`, and `SESSION_SECRET` (any long random text; it turns on sign-in). Optional: `INTERVALS_API_KEY`.
+5. **Settings → Networking → Generate domain.** Copy it (e.g. `hour-power.up.railway.app`).
+6. In [Strava API settings](https://www.strava.com/settings/api), set **Authorization Callback Domain** to that domain. (Strava allows one domain, so the codespace can't reconnect after this; it keeps working with the connection it has.)
+7. Open the domain, **Sign in with Strava**. The first Strava account to sign in owns the app; nobody else can sign in.
+8. **Settings and data → Restore from a backup** with the file from step 1.
+9. On your phone, open the domain and **Add to Home Screen** (Safari: Share → Add to Home Screen; Chrome: ⋮ → Install app).
+
+New versions deploy automatically when `main` changes. The in-app Update button is only for the codespace.
+
 ## Send workouts to Garmin (via Intervals.icu)
 
 Planned rides can go to your Garmin Connect calendar, then to your watch or head unit, which can run them on a smart trainer.
