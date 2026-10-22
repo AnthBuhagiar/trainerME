@@ -1,0 +1,38 @@
+# Build Hour Power on GitHub (not on the small server) and publish it as the "latest" release.
+# The server's update timer downloads it from there.
+name: Build release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npx next build
+      - run: ./scripts/package-release.sh
+      - name: Publish as the latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --yes --cleanup-tag 2>/dev/null || true
+          gh release create latest release/hour-power.tar.gz \
+            --title "Hour Power $(cat release/hour-power/VERSION)" \
+            --notes "Built from ${GITHUB_SHA}. Servers pick this up automatically." \
+            --target "${GITHUB_SHA}" --latest

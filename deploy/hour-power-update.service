@@ -1,0 +1,6 @@
+[Unit]
+Description=Update Hour Power to the latest release
+
+[Service]
+Type=oneshot
+ExecStart=/opt/hour-power/update.sh

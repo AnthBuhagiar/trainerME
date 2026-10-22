@@ -1,0 +1,26 @@
+[Unit]
+Description=Hour Power
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=hourpower
+WorkingDirectory=/opt/hour-power/current
+EnvironmentFile=/etc/hour-power.env
+Environment=NODE_ENV=production
+Environment=HOSTNAME=127.0.0.1
+Environment=TRAINERME_DATA_DIR=/opt/hour-power/data
+ExecStart=/usr/bin/node --max-old-space-size=256 server.js
+Restart=always
+RestartSec=5
+# Share the server politely: hard memory cap so another app on this server is never squeezed.
+MemoryMax=350M
+# Hardening: read-only system, writes only to the data folder.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/hour-power/data /opt/hour-power/releases
+
+[Install]
+WantedBy=multi-user.target
