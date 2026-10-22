@@ -15,5 +15,5 @@ export function resolveSession(date: string, start?: string, minutes?: string) {
     const ride = scaleWorkout(getWorkout(planned.ride.workout.id), Number(minutes));
     session = { ...planned, ride, minutes: ride.minutes, fuel: fuelFor(ride.minutes, week.phase, ride.workout.intensity) };
   }
-  return { state, week, planned, session, hourPower: state.current ? Math.round(state.current.hourPower) : 0 };
+  return { state, week, planned, session, hourPower: state.targets?.training ?? 0 };
 }

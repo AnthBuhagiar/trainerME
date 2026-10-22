@@ -3,6 +3,7 @@ import { HourRing } from "@/components/HourRing";
 import { SessionCard } from "@/components/SessionCard";
 import { SetupCard } from "@/components/SetupCard";
 import { SyncPanel } from "@/components/SyncPanel";
+import { TargetsPrompt } from "@/components/TargetsPrompt";
 import { UpdateButton } from "@/components/UpdateButton";
 import { dateOnly } from "@/lib/engine/dates";
 import { formatDuration } from "@/lib/goals/eventTime";
@@ -22,7 +23,7 @@ function signed(n: number): string {
 export default async function Home({ searchParams }: { searchParams: Promise<{ strava?: string }> }) {
   const { strava: notice } = await searchParams;
   const tokens = loadTokens();
-  const { checkIns, today, settings, rides, history, current, goal, summary, thisMonday, week, budget } = loadState();
+  const { targets, checkIns, today, settings, rides, history, current, goal, summary, thisMonday, week, budget } = loadState();
   const missing = rides.filter((r) => !r.streams).length;
   const upcoming = budget.slots.length
     ? [...week(thisMonday).sessions, ...week(nextMonday(thisMonday)).sessions].filter((s) => s.date >= today)
@@ -74,6 +75,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
           </p>
         </section>
       )}
+
+      {targets?.proposal && <TargetsPrompt training={targets.training} proposal={targets.proposal} />}
 
       {upcoming.length > 0 && (
         <section className="flex flex-col gap-2">

@@ -1,10 +1,11 @@
-import { loadActivities, loadRides, loadSettings } from "@/lib/data/store";
+import { loadActivities, loadRides, loadSettings, saveSettings } from "@/lib/data/store";
 import { dateOnly, todayLocal } from "@/lib/engine/dates";
 import { buildHistory } from "@/lib/engine/history";
 import { buildModel } from "@/lib/engine/hourPower";
 import { activeGoal, loadRoute } from "@/lib/goals/model";
 import { goalSummary } from "@/lib/goals/summary";
 import { applyCheckIns, loadCheckIns } from "@/lib/plan/checkin";
+import { targetsState } from "@/lib/plan/targets";
 import { mondayOf, phaseOn } from "@/lib/plan/periodise";
 import { applyStrengthTarget, inferTimeBudget } from "@/lib/plan/timeBudget";
 import { EXTENDED_LONG_RIDE_MINUTES, extendedLongRideWeeks, planWeek, type WeekPlan } from "@/lib/plan/week";
@@ -24,6 +25,12 @@ export function loadState() {
   const extended = summary ? extendedLongRideWeeks(summary.phases) : new Set<string>();
 
   const checkIns = loadCheckIns();
+  const targets = targetsState(settings, current?.hourPower ?? null);
+  if (targets?.initial) {
+    // First run: start training from today's estimate; later changes are offered, not applied.
+    saveSettings({ ...settings, trainingHourPower: targets.training });
+    settings.trainingHourPower = targets.training;
+  }
 
   const week = (monday: string): WeekPlan => {
     const phase = summary ? phaseOn(summary.phases, monday) : null;
@@ -37,7 +44,7 @@ export function loadState() {
     return applyCheckIns(plan, checkIns);
   };
 
-  return { checkIns, now, today, settings, rides, history, current, budget, goal, summary, thisMonday: mondayOf(today), week };
+  return { targets, checkIns, now, today, settings, rides, history, current, budget, goal, summary, thisMonday: mondayOf(today), week };
 }
 
 export function nextMonday(monday: string): string {

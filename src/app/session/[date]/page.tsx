@@ -51,7 +51,7 @@ export default async function SessionPage({
         <>
           <p className="text-[15px] leading-snug">{session.ride.workout.summary}</p>
           {hourPower > 0 && <WorkoutSteps workout={session.ride.workout} hourPower={hourPower} />}
-          {hourPower > 0 && <p className="text-[13px] text-muted">Targets from your hour power of {hourPower} W. They update as it changes.</p>}
+          {hourPower > 0 && <p className="text-[13px] text-muted">Targets from your training hour power of {hourPower} W. When your estimate moves, Today asks before changing it.</p>}
           {hourPower > 0 && session.indoor && (
             <Link
               href={`/ride/${date}?start=${planned.start}${minutes ? `&minutes=${minutes}` : ""}`}

@@ -43,4 +43,8 @@ export interface AthleteSettings {
   bikeWeightKg: number;
   /** Upload rides ridden in Hour Power's player to Strava as soon as they finish. */
   autoUpload?: boolean;
+  /** Hour power the rider accepted for training targets (W). */
+  trainingHourPower?: number;
+  /** An offered update the rider chose not to take (W). */
+  declinedHourPower?: number;
 }

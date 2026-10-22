@@ -10,7 +10,7 @@ export async function POST() {
   const sessions = [...state.week(state.thisMonday).sessions, ...state.week(next).sessions].filter((s) => s.date >= state.today);
   const newest = new Date(Date.parse(`${next}T00:00:00Z`) + 6 * 86_400_000).toISOString().slice(0, 10);
   try {
-    return NextResponse.json(await sendSessions(sessions, Math.round(state.current.hourPower), state.today, newest));
+    return NextResponse.json(await sendSessions(sessions, state.targets!.training, state.today, newest));
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 502 });
   }
