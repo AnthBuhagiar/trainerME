@@ -16,7 +16,8 @@ export function loadState() {
   const today = dateOnly(now);
   const settings = loadSettings();
   const rides = loadRides();
-  const history = rides.length ? buildHistory(buildModel(rides), now) : null;
+  const model = rides.length ? buildModel(rides) : null;
+  const history = model ? buildHistory(model, now) : null;
   const current = history?.current ?? null;
   const activities = loadActivities();
   const budget = applyStrengthTarget(inferTimeBudget(activities, now));
@@ -45,7 +46,7 @@ export function loadState() {
     return applyCheckIns(plan, checkIns);
   };
 
-  return { activities, targets, checkIns, now, today, settings, rides, history, current, budget, goal, summary, thisMonday: mondayOf(today), week };
+  return { model, activities, targets, checkIns, now, today, settings, rides, history, current, budget, goal, summary, thisMonday: mondayOf(today), week };
 }
 
 export function nextMonday(monday: string): string {
