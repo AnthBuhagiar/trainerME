@@ -42,7 +42,11 @@ function credentials(): { clientId: string; clientSecret: string } {
  * inside GitHub Codespaces, otherwise localhost.
  */
 export function appUrl(): string {
-  if (process.env.APP_URL) return process.env.APP_URL;
+  if (process.env.APP_URL) return process.env.APP_URL.replace(/\/$/, "");
+  // Hosts that publish the app's address: Railway, Fly.io, Render.
+  if (process.env.RAILWAY_PUBLIC_DOMAIN) return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
+  if (process.env.FLY_APP_NAME) return `https://${process.env.FLY_APP_NAME}.fly.dev`;
+  if (process.env.RENDER_EXTERNAL_URL) return process.env.RENDER_EXTERNAL_URL;
   const codespace = process.env.CODESPACE_NAME;
   const domain = process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN;
   if (codespace && domain) return `https://${codespace}-3000.${domain}`;
@@ -85,10 +89,13 @@ async function tokenRequest(body: Record<string, string>): Promise<StravaTokens>
   return (await res.json()) as StravaTokens;
 }
 
+/** Swap the approval code for tokens. Doesn't save them: the caller checks who signed in first. */
 export async function exchangeCode(code: string, scope?: string): Promise<StravaTokens> {
-  const tokens = { ...(await tokenRequest({ code, grant_type: "authorization_code" })), scope };
+  return { ...(await tokenRequest({ code, grant_type: "authorization_code" })), scope };
+}
+
+export function saveTokens(tokens: StravaTokens): void {
   writeJson(TOKENS_FILE, tokens);
-  return tokens;
 }
 
 export function canUpload(tokens = loadTokens()): boolean {

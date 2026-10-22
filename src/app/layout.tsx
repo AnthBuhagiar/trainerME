@@ -9,6 +9,7 @@ const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Hour Power",
   description: "Your hour power, estimated from every ride.",
+  appleWebApp: { capable: true, title: "Hour Power", statusBarStyle: "black" },
 };
 
 export const viewport: Viewport = {

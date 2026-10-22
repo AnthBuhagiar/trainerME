@@ -35,10 +35,11 @@ export function goalSummary(
   today: string,
   durability = 0.97,
   route: Route | null = null,
+  extraHolidays: [string, string][] = [],
 ): GoalSummary {
   const day = today.slice(0, 10);
   const year = Number(day.slice(0, 4));
-  const holidays = [christmasWindow(year - 1), christmasWindow(year), christmasWindow(year + 1)];
+  const holidays = [christmasWindow(year - 1), christmasWindow(year), christmasWindow(year + 1), ...extraHolidays];
   const phases = periodise(day, goal.date, { holidays });
   const daysToGo = Math.round((Date.parse(`${goal.date}T00:00:00Z`) - Date.parse(`${day}T00:00:00Z`)) / 86_400_000);
   const summary: GoalSummary = {

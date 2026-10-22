@@ -198,6 +198,9 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
         </section>
       )}
       <UpdateButton />
+      <a href="/settings" className="text-center text-[13px] font-semibold text-muted">
+        Settings and data
+      </a>
     </main>
   );
 }

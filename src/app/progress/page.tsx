@@ -1,4 +1,5 @@
 import { HourPowerChart } from "@/components/HourPowerChart";
+import { backtest } from "@/lib/engine/backtest";
 import { dateOnly } from "@/lib/engine/dates";
 import { loadState } from "@/lib/plan/current";
 
@@ -12,7 +13,7 @@ function signed(n: number): string {
 }
 
 export default function ProgressPage() {
-  const { history, current, summary, goal, settings, now } = loadState();
+  const { model, history, current, summary, goal, settings, now } = loadState();
   if (!history || !current) {
     return (
       <main className="mx-auto flex min-h-screen max-w-md flex-col gap-4 px-5 py-6">
@@ -22,6 +23,7 @@ export default function ProgressPage() {
     );
   }
   const hp = current.hourPower;
+  const test = model ? backtest(model) : null;
   const sixWeeksAgo = [...history.points].reverse().find((p) => Date.parse(p.date) <= Date.parse(now) - 42 * 86_400_000);
   const target = summary?.targetHourPower;
   const stats: [string, string, string?][] = [
@@ -48,6 +50,48 @@ export default function ProgressPage() {
       <section className="rounded-3xl border border-line bg-card p-4">
         <HourPowerChart points={history.points} goal={target} goalName={goal?.name} />
       </section>
+
+      {test && test.checks.length > 0 && (
+        <section className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-5">
+          <h2 className="label">How accurate is it?</h2>
+          <p className="text-[15px] leading-snug">
+            {test.hour.n > 0 && (
+              <>
+                On your {test.hour.n} hardest hours, the estimate made beforehand was off by a typical <strong>{test.hour.medianAbsError} W</strong>, and{" "}
+                {test.hour.inRange} of {test.hour.n} landed inside its likely range.{" "}
+              </>
+            )}
+            {test.long.n > 0 && (
+              <>
+                On {test.long.n} {test.long.n === 1 ? "ride" : "rides"} over 4 hours, the predicted average power was off by {test.long.medianAbsError} W.
+              </>
+            )}
+          </p>
+          <ol className="flex flex-col divide-y divide-line rounded-2xl border border-line">
+            {test.checks.slice(0, 8).map((c) => (
+              <li key={`${c.rideId}-${c.kind}`} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                <span className="min-w-0 text-[14px]">
+                  <span className="block truncate font-semibold">
+                    {fmt.format(new Date(dateOnly(c.date)))} · {c.name}
+                  </span>
+                  <span className="text-[13px] text-muted">
+                    {c.kind === "hour" ? "Best hour" : "Long-ride average"}: predicted {c.predicted} W ({c.low}–{c.high})
+                  </span>
+                </span>
+                <span className="shrink-0 text-right">
+                  <span className="display block text-[17px]">{c.actual} W</span>
+                  <span className={`text-[12px] font-semibold ${c.verdict === "in range" ? "text-done" : "text-muted"}`}>
+                    {c.verdict === "in range" ? "in range" : `${signed(c.error)}`}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ol>
+          <p className="text-[13px] text-muted">
+            Each check uses only rides before that day. Rides below the range may not have been flat out, so they aren&apos;t counted as misses.
+          </p>
+        </section>
+      )}
 
       <section className="flex flex-col gap-2">
         <h2 className="label px-1">Why it changed · every ride</h2>

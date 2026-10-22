@@ -1,5 +1,7 @@
 import { SendToGarmin } from "@/components/SendToGarmin";
 import { SessionCard } from "@/components/SessionCard";
+import { kindOn, type AwayPeriod } from "@/lib/plan/away";
+import { dayLabel } from "@/lib/ui/format";
 import { WeekReviewCard } from "@/components/WeekReviewCard";
 import { reviewMonday, weekReview } from "@/lib/plan/review";
 import { hasIntervalsKey } from "@/lib/intervals/client";
@@ -10,8 +12,11 @@ import type { WeekPlan } from "@/lib/plan/week";
 
 export const dynamic = "force-dynamic";
 
-function Week({ plan, title, today }: { plan: WeekPlan; title: string; today: string }) {
+function Week({ plan, title, today, away }: { plan: WeekPlan; title: string; today: string; away: AwayPeriod[] }) {
   const sessions = plan.sessions.filter((s) => s.date >= today);
+  const awayDates = Array.from({ length: 7 }, (_, i) => new Date(Date.parse(`${plan.monday}T00:00:00Z`) + i * 86_400_000).toISOString().slice(0, 10)).filter(
+    (d) => d >= today && kindOn(away, d) === "away",
+  );
   const total = sessions.reduce((n, s) => n + s.minutes, 0);
   return (
     <section className="flex flex-col gap-2">
@@ -21,6 +26,11 @@ function Week({ plan, title, today }: { plan: WeekPlan; title: string; today: st
         </h2>
         <span className="display text-[16px]">{length(total)}{sessions.length < plan.sessions.length ? " left" : ""}</span>
       </div>
+      {awayDates.length > 0 && (
+        <p className="px-1 text-[14px] text-muted">
+          Away {awayDates.map((d) => dayLabel(d, today)).join(", ")}: nothing planned.
+        </p>
+      )}
       {sessions.length === 0 && <p className="px-1 text-[15px] text-muted">Nothing left this week.</p>}
       {sessions.map((s) => (
         <SessionCard key={`${s.date}-${s.start}`} session={s} today={today} />
@@ -46,8 +56,8 @@ export default function WeekPage() {
       </header>
       <WeekReviewCard review={review} next={isSunday ? next : undefined} title={isSunday ? "Your week" : "Last week"} />
       <SendToGarmin configured={hasIntervalsKey()} />
-      <Week plan={thisWeek} title="This week" today={state.today} />
-      <Week plan={next} title="Next week" today={state.today} />
+      <Week plan={thisWeek} title="This week" today={state.today} away={state.away} />
+      <Week plan={next} title="Next week" today={state.today} away={state.away} />
       {state.budget.slots.length > 0 && (
         <section className="flex flex-col gap-2 rounded-3xl border border-line bg-card p-5">
           <h2 className="label">Your usual week</h2>
