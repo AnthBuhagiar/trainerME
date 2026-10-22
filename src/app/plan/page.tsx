@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { AwayManager } from "@/components/AwayManager";
+import { kindOn } from "@/lib/plan/away";
 import { loadState, nextMonday } from "@/lib/plan/current";
 import type { PhaseName } from "@/lib/plan/periodise";
 import type { WeekPlan } from "@/lib/plan/week";
@@ -44,6 +46,10 @@ export default function PlanPage() {
     );
   }
 
+  const awayDays = (monday: string) =>
+    Array.from({ length: 7 }, (_, i) => new Date(Date.parse(`${monday}T00:00:00Z`) + i * 86_400_000).toISOString().slice(0, 10)).filter(
+      (d) => kindOn(state.away, d) === "away",
+    ).length;
   const weeks: WeekPlan[] = [];
   for (let m = state.thisMonday; m <= summary.goal.date; m = nextMonday(m)) weeks.push(state.week(m));
   const totalWeeks = summary.phases.reduce((n, p) => n + p.weeks, 0);
@@ -85,6 +91,8 @@ export default function PlanPage() {
         </p>
       </section>
 
+      <AwayManager periods={state.away} today={state.today} />
+
       <section className="flex flex-col gap-2">
         <h2 className="label px-1">Week by week</h2>
         <ol className="flex flex-col divide-y divide-line rounded-2xl border border-line bg-card">
@@ -96,6 +104,7 @@ export default function PlanPage() {
               line.key.join(" + ") || null,
               line.long ? `long ride ${length(line.long.minutes)}${line.long.fuel ? ` at ${line.long.fuel.gramsPerHour} g/h` : ""}` : null,
               line.strength ? `${line.strength}× ${w.phase === "taper" ? "mobility" : "strength"}` : null,
+              awayDays(w.monday) ? `away ${awayDays(w.monday)} ${awayDays(w.monday) === 1 ? "day" : "days"}` : null,
             ].filter(Boolean);
             return (
               <li key={w.monday} className="flex gap-3 px-4 py-3">

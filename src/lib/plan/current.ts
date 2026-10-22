@@ -4,6 +4,7 @@ import { buildHistory } from "@/lib/engine/history";
 import { buildModel } from "@/lib/engine/hourPower";
 import { activeGoal, loadRoute } from "@/lib/goals/model";
 import { goalSummary } from "@/lib/goals/summary";
+import { applyAway, awayWeeks, loadAway } from "@/lib/plan/away";
 import { applyCheckIns, loadCheckIns } from "@/lib/plan/checkin";
 import { targetsState } from "@/lib/plan/targets";
 import { mondayOf, phaseOn } from "@/lib/plan/periodise";
@@ -22,7 +23,10 @@ export function loadState() {
   const activities = loadActivities();
   const budget = applyStrengthTarget(inferTimeBudget(activities, now));
   const goal = activeGoal(today);
-  const summary = goal && current ? goalSummary(goal, current.hourPower, settings, today, current.durability.factor, loadRoute(goal)) : null;
+  const away = loadAway();
+  const awayHolidays = goal ? awayWeeks(away, today, goal.date) : [];
+  const summary =
+    goal && current ? goalSummary(goal, current.hourPower, settings, today, current.durability.factor, loadRoute(goal), awayHolidays) : null;
 
   const extended = summary ? extendedLongRideWeeks(summary.phases) : new Set<string>();
 
@@ -43,10 +47,10 @@ export function loadState() {
       daysToGoal: daysToGoal !== undefined && daysToGoal < 7 ? daysToGoal : undefined,
       extendedLongRide: extended.has(monday) ? EXTENDED_LONG_RIDE_MINUTES : undefined,
     });
-    return applyCheckIns(plan, checkIns);
+    return applyCheckIns(applyAway(plan, away), checkIns);
   };
 
-  return { model, activities, targets, checkIns, now, today, settings, rides, history, current, budget, goal, summary, thisMonday: mondayOf(today), week };
+  return { away, model, activities, targets, checkIns, now, today, settings, rides, history, current, budget, goal, summary, thisMonday: mondayOf(today), week };
 }
 
 export function nextMonday(monday: string): string {
