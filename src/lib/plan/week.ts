@@ -1,4 +1,5 @@
 import { getWorkout, progressWorkout, scaleWorkout, type ScaledWorkout } from "@/lib/plan/library";
+import { MAX_QUALITY_PER_WEEK, MENU, progressionStep, rotate } from "@/lib/plan/protocol";
 import type { Phase, PhaseName } from "@/lib/plan/periodise";
 import type { TimeBudget, TimeSlot } from "@/lib/plan/timeBudget";
 
@@ -45,22 +46,6 @@ export interface WeekPlan {
   recovery: boolean;
   sessions: PlannedSession[];
 }
-
-/** Quality sessions per phase: the key session, the second, and the second when it falls the day after the key one. */
-const QUALITY: Record<PhaseName, [string, string, string]> = {
-  base: ["threshold-2x15", "sweetspot-3x12", "sweetspot-3x12"],
-  build: ["vo2-30-15", "threshold-over-under", "sweetspot-3x12"],
-  specific: ["climb-pace-2x12", "threshold-2x15", "tempo-3x10"],
-  taper: ["climb-pace-2x12", "sprints-6x15s", "sprints-6x15s"],
-  flex: ["endurance", "endurance", "endurance"],
-};
-const LONG: Record<PhaseName, string> = {
-  base: "endurance",
-  build: "long-ride-late-efforts",
-  specific: "long-ride-late-efforts",
-  taper: "endurance",
-  flex: "endurance",
-};
 
 export const STRENGTH: Record<"heavy" | "maintenance" | "mobility", StrengthSession> = {
   heavy: {
@@ -201,7 +186,7 @@ export function planWeek(budget: TimeBudget, ctx: WeekContext): WeekPlan {
     let workoutId: string;
     let why: string;
     if (long && slot === long.slot && slot.minutes >= 120) {
-      workoutId = recovery ? "endurance" : LONG[name];
+      workoutId = recovery ? "endurance" : MENU[name].long; // P10
       why = workoutId === "endurance" ? "Your long ride: steady aerobic time is the base of hour power (E1)." : "Efforts in the last hour build the durability a long event needs (E6).";
       if (ctx.extendedLongRide && ctx.extendedLongRide > minutes) {
         minutes = ctx.extendedLongRide;
@@ -210,17 +195,22 @@ export function planWeek(budget: TimeBudget, ctx: WeekContext): WeekPlan {
     } else if (recovery || name === "flex") {
       workoutId = qualityIndex++ === 0 && recovery ? "sprints-6x15s" : "endurance";
       why = recovery ? "Lighter week so the last three can sink in (E8)." : "Ride if life allows. Nothing to catch up.";
-    } else if (qualityIndex < 2) {
-      const [key, second, softer] = QUALITY[name];
-      workoutId = qualityIndex === 0 ? key : weekday - lastQualityDay === 1 ? softer : second;
-      why = qualityIndex === 0 ? "Key session of the week." : workoutId === softer && softer !== second ? "Day after the key session, so slightly easier." : "Second quality session.";
+    } else if (qualityIndex < MAX_QUALITY_PER_WEEK) {
+      // P3–P5, P8: the phase's rotating menu; the day after the key session is never hard.
+      const menu = MENU[name];
+      const pick = qualityIndex === 0 ? rotate(menu.key, step) : rotate(menu.second, step);
+      const dayAfter = qualityIndex === 1 && weekday - lastQualityDay === 1 && getWorkout(pick).intensity === "hard";
+      workoutId = dayAfter ? menu.dayAfter : pick;
+      why = qualityIndex === 0 ? "Key session of the week." : dayAfter ? "Day after the key session, so slightly easier." : "Second quality session.";
       qualityIndex++;
       lastQualityDay = weekday;
     } else {
       workoutId = "endurance";
       why = "Keep most riding easy (E1).";
     }
-    const ride = scaleWorkout(progressWorkout(getWorkout(workoutId), step), minutes);
+    // P6: progression within the rotation block.
+    const k = progressionStep(step, Math.max(MENU[name].key.length, MENU[name].second.length));
+    const ride = scaleWorkout(progressWorkout(getWorkout(workoutId), k), minutes);
     sessions.push({ ...base, minutes: ride.minutes, ride, fuel: fuelFor(ride.minutes, name, ride.workout.intensity), why });
   }
   return { monday: ctx.monday, phase: name, label, recovery, sessions };

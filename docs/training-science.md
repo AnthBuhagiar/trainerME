@@ -1,6 +1,6 @@
 # Hour Power — Training Science
 
-*Version 1.0 · October 2026 · next review January 2027*
+*Version 1.1 · October 2026 · next review January 2027*
 
 This is the evidence behind every workout and planning rule in Hour Power. Workouts in
 `src/lib/plan/library.ts` reference these entries by ID, and the app shows the reason for each
@@ -114,6 +114,28 @@ roughly 30–40% less volume with one short quality session kept.
 
 ---
 
+## E9 · Training on 5–6 hours a week
+**Confidence: Moderate** (trained, mostly male cyclists, 4–12 week studies; little on riders over 40 or on women)
+
+- **Polarised beat threshold at about 6 h a week.** Neal et al. (2013, *J Appl Physiol*) put 12 trained
+  cyclists through 6-week blocks: polarised (about 6.4 h/week) improved lactate threshold power about 9% and
+  peak power about 8%, more than a threshold-heavy block of about 7.5 h/week.
+- **Polarised was broadest; HIIT alone was hardest for less.** Stöggl & Sperlich (2014, *Front Physiol*),
+  48 well-trained athletes, 9 weeks.
+- **How much matters less than doing it.** In a multilevel meta-analysis of 41 studies and 797 trained
+  cyclists (Cove et al., *JSAMS*), every approach improved VO2max and time trials, with no clear winner
+  between polarised and other mixes, and weekly volume wasn't linked to bigger gains.
+- **Short intervals are efficient.** Effort-matched 30/15s beat 4 × 5 min for peak aerobic power
+  (Rønnestad et al. 2015; 2020 in elite riders; 2021 one-week block). See E2.
+- **Intervals work fast, then level off.** Adding 4 weeks of 6–8 × 5 min to base training improved 40 km
+  time trials (Lindsay, Hawley et al. 1996); only some interval formats helped (Stepto et al. 1999).
+- **Sequence:** pyramidal then polarised did best in runners (Filipas et al. 2022).
+- **Low-volume HIIT raises VO2max** even in short, small doses (Wen et al. 2019 meta-analysis; mostly non-elite).
+
+**How Hour Power uses it:** the training protocol (`docs/training-protocol.md`): two
+quality sessions a week at most, at least 70–75% of riding time easy, a pyramidal base then a polarised
+build, interval types rotated every three loading weeks, and the day after a hard session kept easy.
+
 ## Sources
 
 - [Effects of tapering on performance: a meta-analysis (Bosquet et al., 2007) — PubMed](https://pubmed.ncbi.nlm.nih.gov/17762369/)
@@ -130,7 +152,16 @@ roughly 30–40% less volume with one short quality session kept.
 - [Durability as an index of endurance exercise performance: methodological considerations](https://openrepository.aut.ac.nz/items/e4ed557d-8c56-44ba-9eac-520fc0ae1aae/full)
 - [Dietary carbohydrate and the endurance athlete (GSSI Sports Science Exchange)](https://www.gssiweb.org/sports-science-exchange/article/dietary-carbohydrate-and-the-endurance-athlete-contemporary-perspectives/1000)
 - [Glucose and fructose in endurance sport (TrainingPeaks)](https://trainingpeaks.com/blog/glucose-and-fructose-in-endurance-sport)
+- [Six weeks of a polarized training-intensity distribution… (Neal et al., 2013, J Appl Physiol)](https://journals.physiology.org/doi/full/10.1152/japplphysiol.00652.2012)
+- [Polarized training has greater impact on key endurance variables… (Stöggl & Sperlich, 2014, Front Physiol)](https://www.frontiersin.org/journals/physiology/articles/10.3389/fphys.2014.00033/full)
+- [The effect of training distribution, duration, and volume on VO2max and performance in trained cyclists (Cove et al., JSAMS)](https://www.jsams.org/article/S1440-2440(24)00596-6/pdf)
+- [Improved athletic performance in highly trained cyclists after interval training (Lindsay, Hawley et al., 1996), summary](https://coachsci.sdsu.edu/csa/vol41/lindsay.htm)
+- [Effects of different interval-training programs on cycling time-trial performance (Stepto et al., 1999)](https://researchgate.net/profile/Nigel_Stepto/publication/12966624_Effects_of_different_interval-training_programs_on_cycling_time-trial_performance/links/0fcfd5101a14fe1590000000/Effects-of-different-interval-training-programs-on-cycling-time-trial-performance.pdf)
+- [Effects of different protocols of HIIT for VO2max improvements in adults (Wen et al., 2019, JSAMS)](https://www.jsams.org/article/S1440-2440(18)30919-8/abstract)
+- [Which training intensity distribution intervention will produce the greatest improvements (Rosenblat et al., 2025, Sports Med)](https://www.fisiologiadelejercicio.com/wp-content/uploads/2025/02/Which-Training-Intensity-Distribution-Intervention-will.pdf)
+- [Effects of polarized, pyramidal and combined periodisations, with Luca Filipas (Filipas et al., 2022)](https://scientifictriathlon.com/tts328/)
 
 ## Changelog
 
+- **1.1 (Oct 2026)** — Added E9 (training on 5–6 hours a week) and the training protocol built on it.
 - **1.0 (Oct 2026)** — Initial library: E1–E8.

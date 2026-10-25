@@ -14,6 +14,7 @@ A personal training app for Anthony: hour power (best 60-min power) as the headl
 
 ## Where things are
 - `docs/product-strategy.md`: positioning, feature IDs (A1, B2, …) and the roadmap. Update it when scope changes.
-- `docs/training-science.md`: evidence (E1–E8) that workouts and plans cite.
+- `docs/training-science.md`: evidence (E1–E9) that workouts and plans cite.
+- `docs/training-protocol.md`: the fixed rules (P1–P12) every plan follows. The app is rule-based with no AI at runtime; change the rules there, in `src/lib/plan/protocol.ts` and in `protocol.test.ts` together.
 - `src/lib/engine`: hour-power estimate. `src/lib/plan`: weeks, phases, check-ins and targets. `src/lib/goals`: goals, finish time and fuel. `src/lib/route`: GPX and pacing. `src/lib/player`: Bluetooth trainer control. `src/lib/strava` and `src/lib/intervals`: integrations.
 - `npm run inspect` runs the real-data inspection scripts in `scripts/` (needs a synced `data/`).
