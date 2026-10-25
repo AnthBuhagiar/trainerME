@@ -17,6 +17,7 @@ import {
 import { clearRide, elapsedAt, emptyRide, end, isRunning, loadRide, pause, record, saveRide, skip, start, type RideState } from "@/lib/player/session";
 import { stepAt, type PlayerStep } from "@/lib/player/steps";
 import { buildTcx } from "@/lib/strava/tcx";
+import { WorkoutDashboard } from "@/components/WorkoutDashboard";
 
 interface Props {
   name: string;
@@ -42,6 +43,7 @@ export function RidePlayer({ name, autoUpload, steps, backHref, storageKey }: Pr
   const [hrName, setHrName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [resumed, setResumed] = useState(false);
+  const [minimised, setMinimised] = useState(false);
   const [ride, setRide] = useState<RideState>(emptyRide);
   const [now, setNow] = useState(() => Date.now());
   const [live, setLive] = useState<{ power?: number; cadence?: number; hr?: number }>({});
@@ -314,12 +316,42 @@ export function RidePlayer({ name, autoUpload, steps, backHref, storageKey }: Pr
     );
   }
 
+  const stepStart = at ? steps.slice(0, at.index).reduce((n, st) => n + st.seconds, 0) : 0;
+  const stepWatts = ride.samples.filter((x) => x.t >= stepStart && x.power !== undefined).map((x) => x.power!);
+  const stepAvg = stepWatts.length ? Math.round(stepWatts.reduce((a, b) => a + b, 0) / stepWatts.length) : null;
+  const showDashboard = !!ride.startedAt && !done && !minimised && !!at;
   const watts = ride.samples.filter((x) => x.power !== undefined).map((x) => x.power!);
   const avg = watts.length ? Math.round(watts.reduce((a, b) => a + b, 0) / watts.length) : null;
   const ridden = done ? elapsed : ride.samples.length;
 
   return (
     <div className="flex flex-col gap-4">
+      {showDashboard && (
+        <WorkoutDashboard
+          steps={steps}
+          index={at!.index}
+          remaining={at!.remaining}
+          elapsed={elapsed}
+          total={total}
+          target={target}
+          offset={offset}
+          live={live}
+          stepAvg={stepAvg}
+          running={running}
+          trainer={!!trainer}
+          error={error}
+          onToggle={toggle}
+          onSkip={skipStep}
+          onOffset={(d) => setRide((r) => ({ ...r, offset: Math.max(-20, Math.min(10, r.offset + d)) }))}
+          onMinimise={() => setMinimised(true)}
+          onConnect={connectTrainer}
+        />
+      )}
+      {ride.startedAt && !done && minimised && (
+        <button onClick={() => setMinimised(false)} className="h-12 rounded-2xl border border-line bg-card text-[15px] font-semibold">
+          Back to the workout dashboard
+        </button>
+      )}
       <section className="flex flex-col gap-4 rounded-3xl bg-asphalt p-5 text-chalk">
         <div className="flex items-baseline justify-between gap-3">
           <span className="label" style={{ color: "#B9C4D0" }}>
