@@ -5,6 +5,7 @@ import { buildModel } from "@/lib/engine/hourPower";
 import { activeGoal, loadRoute } from "@/lib/goals/model";
 import { goalSummary } from "@/lib/goals/summary";
 import { adapt, afterHardRide } from "@/lib/plan/adapt";
+import { budgetFromChoices, loadAvailability } from "@/lib/plan/availability";
 import { applyAway, awayWeeks, loadAway } from "@/lib/plan/away";
 import { applyCheckIns, loadCheckIns } from "@/lib/plan/checkin";
 import { targetsState } from "@/lib/plan/targets";
@@ -22,7 +23,10 @@ export function loadState() {
   const history = model ? buildHistory(model, now) : null;
   const current = history?.current ?? null;
   const activities = loadActivities();
-  const budget = applyStrengthTarget(inferTimeBudget(activities, now));
+  // The rider's chosen days win; otherwise the usual week is read from their ride history.
+  const learnedBudget = applyStrengthTarget(inferTimeBudget(activities, now));
+  const chosenDays = loadAvailability();
+  const budget = chosenDays ? budgetFromChoices(chosenDays) : learnedBudget;
   const goal = activeGoal(today);
   const away = loadAway();
   const awayHolidays = goal ? awayWeeks(away, today, goal.date) : [];
@@ -59,7 +63,7 @@ export function loadState() {
     return weekStart === thisWeekStart && targets ? afterHardRide(plan, rides, targets.training, today) : plan;
   };
 
-  return { away, model, activities, targets, checkIns, now, today, settings, rides, history, current, budget, goal, summary, thisWeekStart, week, adaptation };
+  return { learnedBudget, chosenDays, away, model, activities, targets, checkIns, now, today, settings, rides, history, current, budget, goal, summary, thisWeekStart, week, adaptation };
 }
 
 export function nextWeekStart(weekStart: string): string {

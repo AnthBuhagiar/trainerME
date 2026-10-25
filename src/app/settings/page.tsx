@@ -1,14 +1,15 @@
 import { AutoUploadToggle } from "@/components/AutoUploadToggle";
+import { DaysEditor } from "@/components/DaysEditor";
+import { choicesFromBudget } from "@/lib/plan/availability";
 import { RestoreBackup } from "@/components/RestoreBackup";
 import { authEnabled } from "@/lib/auth/session";
 import { loadState } from "@/lib/plan/current";
-import { describeSlot } from "@/lib/plan/timeBudget";
 import { canUpload } from "@/lib/strava/client";
 
 export const dynamic = "force-dynamic";
 
 export default function SettingsPage() {
-  const { settings, budget } = loadState();
+  const { settings, chosenDays, learnedBudget } = loadState();
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 px-5 py-6">
       <h1 className="display text-[24px]">Settings and data</h1>
@@ -30,20 +31,15 @@ export default function SettingsPage() {
         <AutoUploadToggle initial={!!settings.autoUpload} canUpload={canUpload()} />
       </section>
 
-      {budget.slots.length > 0 && (
-        <section className="flex flex-col gap-2 rounded-3xl border border-line bg-card p-5">
-          <h2 className="label">Your usual week</h2>
-          <ul className="flex flex-col gap-1.5 text-[15px]">
-            {budget.slots.map((slot) => (
-              <li key={`${slot.weekday}-${slot.kind}-${slot.start}-${slot.changedFrom ?? ""}`} className="flex flex-col">
-                <span>{describeSlot(slot)}</span>
-                {slot.reason && <span className="text-[13px] text-signal-ink">{slot.reason}</span>}
-              </li>
-            ))}
-          </ul>
-          <p className="text-[13px] text-muted">Read from your last {budget.weeksAnalysed} weeks of rides; your plan fits inside these slots and follows changes in routine.</p>
-        </section>
-      )}
+      <section id="days" className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-5">
+        <h2 className="label">Your days</h2>
+        <p className="text-[14px] leading-snug text-muted">
+          {chosenDays
+            ? "Your plan uses the days you chose."
+            : "Filled in from your last 12 weeks of rides. Change any day you’re not free, then save."}
+        </p>
+        <DaysEditor initial={chosenDays ?? choicesFromBudget(learnedBudget)} custom={!!chosenDays} />
+      </section>
 
       <section className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-5">
         <h2 className="label">Back up or move your data</h2>

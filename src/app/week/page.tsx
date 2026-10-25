@@ -51,7 +51,10 @@ export default function WeekPage() {
       <header className="flex flex-col gap-1">
         <h1 className="display text-[24px]">Week</h1>
         <p className="text-[15px] text-muted">
-          Built into your usual slots. A missed session is simply skipped; nothing piles up.
+          Built around the days you’re free. A missed session is simply skipped; nothing piles up.{" "}
+          <a href="/settings#days" className="font-semibold text-signal-ink">
+            Change my days
+          </a>
         </p>
       </header>
       <WeekReviewCard review={review} next={isSunday ? next : undefined} title={isSunday ? "Your week" : "Last week"} />

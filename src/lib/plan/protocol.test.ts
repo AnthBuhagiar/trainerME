@@ -70,3 +70,19 @@ describe("training protocol", () => {
     expect(JSON.stringify(bathurstBlock())).toBe(JSON.stringify(weeks));
   });
 });
+
+describe("mostly easy by construction (P2)", () => {
+  test("two separate weeknight sessions plus a long ride with efforts are eased until the week complies", async () => {
+    const { budgetFromChoices } = await import("@/lib/plan/availability");
+    const off = (weekday: number) => ({ weekday, kind: "off" as const, start: "18:00", minutes: 0, indoor: true });
+    const days = Array.from({ length: 7 }, (_, i) => off(i)) as Parameters<typeof budgetFromChoices>[0];
+    days[1] = { weekday: 1, kind: "ride", start: "06:00", minutes: 75, indoor: true };
+    days[3] = { weekday: 3, kind: "ride", start: "06:00", minutes: 75, indoor: true };
+    days[6] = { weekday: 6, kind: "ride", start: "07:00", minutes: 180, indoor: false };
+    const phases = periodise("2026-10-25", "2027-04-18");
+    const build = phases.find((p) => p.name === "build")!;
+    const week = planWeek(budgetFromChoices(days), { weekStart: "2027-02-14", phase: build, step: 4 });
+    expect(auditWeek(week)).toEqual([]);
+    expect(week.sessions.some((s) => s.why.includes("(P2)"))).toBe(true);
+  });
+});
