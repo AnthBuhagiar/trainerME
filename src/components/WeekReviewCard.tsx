@@ -19,7 +19,7 @@ export function WeekReviewCard({ review, next, title }: { review: WeekReview; ne
         <h2 className="label">{title}</h2>
         <span className="text-[13px] text-muted">from {fmt.format(new Date(`${review.weekStart}T00:00:00Z`))}</span>
       </div>
-      <p className="display text-[19px] leading-snug">{review.headline}</p>
+      <p className="text-[16px] font-semibold leading-snug">{review.headline}</p>
       <dl className="grid grid-cols-3 gap-2 text-center">
         <div className="rounded-2xl bg-background px-2 py-2.5">
           <dt className="label">Done</dt>

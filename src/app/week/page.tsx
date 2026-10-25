@@ -6,7 +6,6 @@ import { WeekReviewCard } from "@/components/WeekReviewCard";
 import { reviewWeekStart, weekReview } from "@/lib/plan/review";
 import { hasIntervalsKey } from "@/lib/intervals/client";
 import { nextWeekStart, loadState } from "@/lib/plan/current";
-import { describeSlot } from "@/lib/plan/timeBudget";
 import { length } from "@/lib/ui/format";
 import type { WeekPlan } from "@/lib/plan/week";
 
@@ -59,20 +58,6 @@ export default function WeekPage() {
       <Week plan={thisWeek} title="This week" today={state.today} away={state.away} />
       <Week plan={next} title="Next week" today={state.today} away={state.away} />
       <SendExternal intervals={hasIntervalsKey()} />
-      {state.budget.slots.length > 0 && (
-        <section className="flex flex-col gap-2 rounded-3xl border border-line bg-card p-5">
-          <h2 className="label">Your usual week</h2>
-          <ul className="flex flex-col gap-1.5 text-[15px]">
-            {state.budget.slots.map((slot) => (
-              <li key={`${slot.weekday}-${slot.kind}-${slot.start}-${slot.changedFrom ?? ""}`} className="flex flex-col">
-                <span>{describeSlot(slot)}</span>
-                {slot.reason && <span className="text-[13px] text-signal-ink">{slot.reason}</span>}
-              </li>
-            ))}
-          </ul>
-          <p className="text-[13px] text-muted">Read from your last {state.budget.weeksAnalysed} weeks of Strava.</p>
-        </section>
-      )}
     </main>
   );
 }

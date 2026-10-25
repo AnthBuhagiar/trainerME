@@ -109,10 +109,21 @@ export default function GoalPage() {
         </section>
       )}
 
-      <section className="flex flex-col gap-3">
-        {goal && <h2 className="label px-1">Edit goal</h2>}
+      {goal ? (
+        <details className="group rounded-2xl border border-line bg-card">
+          <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-[15px] font-semibold">
+            Edit goal or import route
+            <span className="text-muted transition-transform group-open:rotate-180" aria-hidden="true">
+              ▾
+            </span>
+          </summary>
+          <div className="border-t border-line p-4">
+            <GoalForm goal={goal} hourPower={current ? Math.round(current.hourPower) : null} />
+          </div>
+        </details>
+      ) : (
         <GoalForm goal={goal} hourPower={current ? Math.round(current.hourPower) : null} />
-      </section>
+      )}
     </main>
   );
 }
