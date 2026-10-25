@@ -56,6 +56,9 @@ describe("adaptation (P13–P17)", () => {
 
     const comeback = run(didEverything("2026-10-15"));
     expect(comeback.context(THIS_MONDAY).mode).toBe("comeback");
+    // The week after a comeback starts where the earned steps left off, not a step higher.
+    const earned = comeback.context(THIS_MONDAY).step!;
+    expect(comeback.context("2026-11-08").step).toBe(earned);
     const easy = planWeek(budget, { weekStart: THIS_MONDAY, phase: base, ...comeback.context(THIS_MONDAY) });
     expect(easy.sessions.every((s) => s.ride?.workout.intensity !== "hard")).toBe(true);
     expect(auditWeek(easy)).toEqual([]);

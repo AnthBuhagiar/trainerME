@@ -54,49 +54,7 @@ export default function PlanPage() {
   for (let m = state.thisWeekStart; m <= summary.goal.date; m = nextWeekStart(m)) weeks.push(state.week(m));
   const totalWeeks = summary.phases.reduce((n, p) => n + p.weeks, 0);
 
-  return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 px-5 py-6">
-      <header className="flex flex-col gap-1">
-        <h1 className="display text-[24px]">Plan</h1>
-        <p className="text-[15px] text-muted">
-          {summary.goal.name} · {day(summary.goal.date)} · {summary.weeksToGo} weeks
-        </p>
-      </header>
-
-      <section className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-5">
-        <div className="flex h-3 gap-1">
-          {summary.phases.map((p) => (
-            <div key={p.start} style={{ flexGrow: p.weeks }} className={`rounded-full ${PHASE_COLOUR[p.name]}`} title={p.label} />
-          ))}
-        </div>
-        <ol className="flex flex-col gap-3">
-          {summary.phases.map((p) => (
-            <li key={p.start} className="flex gap-3">
-              <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${PHASE_COLOUR[p.name]}`} />
-              <div className="flex flex-col">
-                <span className="text-[15px] font-semibold">
-                  {p.label} · {p.weeks} {p.weeks === 1 ? "week" : "weeks"}
-                </span>
-                <span className="text-[13px] text-muted">
-                  {day(p.start)} – {day(p.end)}
-                  {p.recoveryWeeks.length > 0 && ` · recovery: ${p.recoveryWeeks.map(day).join(", ")}`}
-                </span>
-                <span className="text-[13px] leading-snug">{p.focus}</span>
-              </div>
-            </li>
-          ))}
-        </ol>
-        <p className="text-[13px] text-muted">
-          {totalWeeks} weeks from {day(summary.phases[0].start)}, laid out backwards from event day.
-        </p>
-      </section>
-
-      <AwayManager periods={state.away} today={state.today} />
-
-      <section className="flex flex-col gap-2">
-        <h2 className="label px-1">Week by week</h2>
-        <ol className="flex flex-col divide-y divide-line rounded-2xl border border-line bg-card">
-          {weeks.map((w, i) => {
+  const row = (w: WeekPlan, i: number) => {
             const line = weekLine(w);
             const current = w.weekStart === state.thisWeekStart;
             const eventWeek = i === weeks.length - 1;
@@ -127,12 +85,66 @@ export default function PlanPage() {
                 </div>
               </li>
             );
-          })}
+  };
+  const SHOWN = 6;
+
+  return (
+    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 px-5 py-6">
+      <header className="flex flex-col gap-1">
+        <h1 className="display text-[24px]">Plan</h1>
+        <p className="text-[15px] text-muted">
+          {summary.goal.name} · {day(summary.goal.date)} · {summary.weeksToGo} weeks
+        </p>
+      </header>
+
+      <section className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-5">
+        <div className="flex h-3 gap-1">
+          {summary.phases.map((p) => (
+            <div key={p.start} style={{ flexGrow: p.weeks }} className={`rounded-full ${PHASE_COLOUR[p.name]}`} title={p.label} />
+          ))}
+        </div>
+        <ol className="flex flex-col gap-3">
+          {summary.phases.map((p) => (
+            <li key={p.start} className="flex gap-3">
+              <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${PHASE_COLOUR[p.name]}`} />
+              <div className="flex flex-col">
+                <span className="text-[15px] font-semibold">
+                  {p.label} · {p.weeks} {p.weeks === 1 ? "week" : "weeks"}
+                </span>
+                <span className="text-[13px] text-muted">
+                  {day(p.start)} – {day(p.end)}
+                  {p.recoveryWeeks.length > 0 && ` · recovery: ${p.recoveryWeeks.map(day).join(", ")}`}
+                </span>
+                {p.start === (summary.phase ?? summary.phases[0]).start && <span className="text-[13px] leading-snug">{p.focus}</span>}
+              </div>
+            </li>
+          ))}
         </ol>
+        <p className="text-[13px] text-muted">
+          {totalWeeks} weeks from {day(summary.phases[0].start)}, laid out backwards from event day.
+        </p>
+      </section>
+
+      <section className="flex flex-col gap-2">
+        <h2 className="label px-1">Week by week</h2>
+        <ol className="flex flex-col divide-y divide-line rounded-2xl border border-line bg-card">
+          {weeks.slice(0, SHOWN).map(row)}
+        </ol>
+        {weeks.length > SHOWN && (
+          <details className="group">
+            <summary className="cursor-pointer list-none px-1 py-2 text-[14px] font-semibold text-signal-ink">
+              <span className="group-open:hidden">Show all {weeks.length} weeks to {summary.goal.name} →</span>
+              <span className="hidden group-open:inline">Hide later weeks</span>
+            </summary>
+            <ol className="flex flex-col divide-y divide-line rounded-2xl border border-line bg-card">{weeks.slice(SHOWN).map((w, i) => row(w, i + SHOWN))}</ol>
+          </details>
+        )}
         <p className="px-1 text-[13px] text-muted">
           Weeks further out are a guide: targets and sessions adjust as your hour power changes.
         </p>
       </section>
+
+      <AwayManager periods={state.away} today={state.today} />
     </main>
   );
 }

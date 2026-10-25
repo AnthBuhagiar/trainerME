@@ -113,7 +113,8 @@ export function adapt(input: AdaptInput): Adaptation {
       const samePhase = !!phase && weekStart <= phase.end;
       // Project future progression from what's been earned, counting loading weeks from this one.
       let ahead = 0;
-      for (let m = thisWeekStart; m < weekStart; m = addDays(m, 7)) if (!isRecovery(m)) ahead++;
+      // A comeback, easing-back or extra recovery week this week isn't a full loading week, so it doesn't count as a step.
+      for (let m = thisWeekStart; m < weekStart; m = addDays(m, 7)) if (!isRecovery(m) && !(m === thisWeekStart && mode)) ahead++;
       const ctx: Pick<WeekContext, "step" | "mode" | "adaptation" | "skipRecovery"> = samePhase ? { step: earned + ahead } : {};
       if (weekStart === thisWeekStart) {
         if (mode) Object.assign(ctx, { mode, adaptation: note });

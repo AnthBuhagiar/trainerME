@@ -39,10 +39,7 @@ export function AwayManager({ periods, today }: { periods: AwayPeriod[]; today: 
   return (
     <section className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-5">
       <h2 className="label">Away and busy days</h2>
-      <p className="text-[14px] leading-snug text-muted">
-        Add them as soon as you know, even months ahead. A mostly-away week becomes a holiday week and the block re-plans around it; single days just
-        drop or shorten that day’s session.
-      </p>
+      <p className="text-[14px] leading-snug text-muted">Add them as soon as you know, even months ahead; the plan works around them.</p>
       {upcoming.length > 0 && (
         <ul className="flex flex-col divide-y divide-line rounded-2xl border border-line">
           {upcoming.map((p) => (
@@ -59,7 +56,9 @@ export function AwayManager({ periods, today }: { periods: AwayPeriod[]; today: 
           ))}
         </ul>
       )}
-      <form onSubmit={add} className="flex flex-col gap-2">
+      <details className="group">
+        <summary className="cursor-pointer list-none text-[14px] font-semibold text-signal-ink">+ Add away or busy days</summary>
+      <form onSubmit={add} className="mt-3 flex flex-col gap-2">
         <div className="flex gap-2" role="group" aria-label="Kind">
           {(["away", "busy"] as AwayKind[]).map((k) => (
             <button
@@ -91,6 +90,7 @@ export function AwayManager({ periods, today }: { periods: AwayPeriod[]; today: 
           Add
         </button>
       </form>
+      </details>
     </section>
   );
 }

@@ -1,3 +1,4 @@
+import { ChangeList } from "@/components/ChangeList";
 import { CheckIn } from "@/components/CheckIn";
 import { HourRing } from "@/components/HourRing";
 import { SessionCard } from "@/components/SessionCard";
@@ -7,21 +8,15 @@ import { TargetsPrompt } from "@/components/TargetsPrompt";
 import { UpdateButton } from "@/components/UpdateButton";
 import { WeekReviewCard } from "@/components/WeekReviewCard";
 import { reviewWeekStart, weekReview } from "@/lib/plan/review";
-import { dateOnly } from "@/lib/engine/dates";
 import { formatDuration } from "@/lib/goals/eventTime";
 import { isLastDayOfWeek } from "@/lib/plan/calendar";
 import { loadState, nextWeekStart } from "@/lib/plan/current";
-import { callbackDomain, canUpload, hasCredentials, loadTokens } from "@/lib/strava/client";
+import { callbackDomain, hasCredentials, loadTokens } from "@/lib/strava/client";
 import { lastSyncedAt } from "@/lib/strava/sync";
 
 export const dynamic = "force-dynamic";
 
 const fmtDate = new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short" });
-
-function signed(n: number): string {
-  const r = Math.round(n * 10) / 10;
-  return `${r > 0 ? "+" : r < 0 ? "−" : "±"}${Math.abs(r)} W`;
-}
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ strava?: string }> }) {
   const { strava: notice } = await searchParams;
@@ -73,16 +68,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
               {summary ? `Goal ${target} W` : `Example goal ${target} W`}
             </span>
           </div>
-          <dl className="grid w-full grid-cols-2 gap-3 text-[13px]" style={{ color: "#B9C4D0" }}>
-            <div>
-              <dt>From best efforts</dt>
-              <dd className="display text-[18px] text-chalk">{current.cp ? `${Math.round(current.cp.hourPower)} W` : "–"}</dd>
-            </div>
-            <div>
-              <dt>From heart rate at {current.hr?.refHr ?? "–"} bpm</dt>
-              <dd className="display text-[18px] text-chalk">{current.hr ? `${Math.round(current.hr.hourPower)} W` : "–"}</dd>
-            </div>
-          </dl>
         </section>
       ) : (
         <section className="rounded-3xl bg-asphalt p-6 text-chalk">
@@ -93,24 +78,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
         </section>
       )}
 
-      {recap && (
-        <WeekReviewCard
-          review={recap}
-          next={endOfWeek ? week(nextWeekStart(thisWeekStart)) : undefined}
-          title={endOfWeek ? "Your week" : "Last week"}
-        />
-      )}
-
-      {adaptation.note && (
-        <section className="rounded-2xl border border-line bg-card px-4 py-3">
-          <div className="label" style={{ color: "var(--signal-ink)" }}>
-            Plan adjusted
-          </div>
-          <p className="text-[15px] leading-snug">{adaptation.note}</p>
-        </section>
-      )}
-
-      {targets?.proposal && <TargetsPrompt training={targets.training} proposal={targets.proposal} />}
+      {!tokens && <SetupCard hasCredentials={hasCredentials()} callbackDomain={callbackDomain()} notice={notice} />}
 
       {upcoming.length > 0 && (
         <section className="flex flex-col gap-2">
@@ -129,59 +97,40 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
         </section>
       )}
 
+      {adaptation.note && (
+        <section className="rounded-2xl border border-line bg-card px-4 py-3">
+          <div className="label" style={{ color: "var(--signal-ink)" }}>
+            Plan adjusted
+          </div>
+          <p className="text-[15px] leading-snug">{adaptation.note}</p>
+        </section>
+      )}
+
+      {targets?.proposal && <TargetsPrompt training={targets.training} proposal={targets.proposal} />}
+
       {summary ? (
-        <a href="/goal" className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-5">
+        <a href="/plan" className="flex flex-col gap-2 rounded-3xl border border-line bg-card p-5">
           <div className="flex items-baseline justify-between gap-3">
-            <h2 className="label">Goal · {summary.goal.priority}</h2>
-            <span className="display text-[18px] whitespace-nowrap">
+            <h2 className="label">Goal</h2>
+            <span className="display whitespace-nowrap text-[18px]">
               {summary.weeksToGo > 1 ? `${summary.weeksToGo} weeks` : `${summary.daysToGo} days`}
             </span>
           </div>
-          <div>
-            <div className="display text-[20px] leading-tight">{summary.goal.name}</div>
-            <div className="text-[14px] text-muted">
-              {new Intl.DateTimeFormat("en-AU", { weekday: "short", day: "numeric", month: "long", year: "numeric" }).format(new Date(`${summary.goal.date}T00:00:00`))}
-              {summary.goal.event && ` · ${summary.goal.event.distanceKm} km · ${summary.goal.event.climbingM.toLocaleString("en-AU")} m`}
-            </div>
-          </div>
+          <div className="display text-[20px] leading-tight">{summary.goal.name}</div>
           {summary.predicted && (
-            <dl className="grid grid-cols-2 gap-3 text-[13px] text-muted">
-              <div>
-                <dt>If it were today</dt>
-                <dd className="display text-[18px] text-foreground">{formatDuration(summary.predicted.seconds)}</dd>
-                <dd>at {summary.predicted.power} W average</dd>
-              </div>
-              {summary.needed && summary.goal.event?.targetMinutes && (
-                <div>
-                  <dt>For {formatDuration(summary.goal.event.targetMinutes * 60)}</dt>
-                  <dd className="display text-[18px] text-foreground">{summary.needed.hourPower} W</dd>
-                  <dd>hour power ({summary.needed.power} W average)</dd>
-                </div>
-              )}
-            </dl>
+            <p className="text-[15px] leading-snug">
+              Today you’d finish in <strong>{formatDuration(summary.predicted.seconds)}</strong>
+              {summary.needed && summary.goal.event?.targetMinutes
+                ? `. ${formatDuration(summary.goal.event.targetMinutes * 60)} needs ${summary.needed.hourPower} W hour power.`
+                : "."}
+            </p>
           )}
-          <div className="rounded-2xl bg-[#E6EAEE] px-4 py-3 text-asphalt">
-            {summary.phase ? (
-              <>
-                <div className="text-[15px] font-semibold">{summary.phase.label} · until {fmtDate.format(new Date(`${summary.phase.end}T00:00:00`))}</div>
-                <div className="text-[13px] leading-snug">{summary.phase.focus}</div>
-              </>
-            ) : (
-              <div className="text-[15px] font-semibold">
-                Plan starts Sunday {fmtDate.format(new Date(`${summary.phases[0].start}T00:00:00`))} with {summary.phases[0].label.toLowerCase()}
-              </div>
-            )}
+          <div className="text-[13px] text-muted">
+            {summary.phase
+              ? `${summary.phase.label} until ${fmtDate.format(new Date(`${summary.phase.end}T00:00:00`))}`
+              : `Plan starts ${fmtDate.format(new Date(`${summary.phases[0].start}T00:00:00`))}`}{" "}
+            · see the plan →
           </div>
-          <ol className="flex gap-1" aria-label="Training phases">
-            {summary.phases.map((p) => (
-              <li
-                key={p.start}
-                title={`${p.label}: ${p.weeks} weeks`}
-                style={{ flexGrow: p.weeks }}
-                className={`h-2 rounded-full ${summary.phase?.start === p.start ? "bg-signal" : p.name === "flex" ? "bg-line" : "bg-muted"}`}
-              />
-            ))}
-          </ol>
         </a>
       ) : (
         current && (
@@ -191,36 +140,20 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
         )
       )}
 
-      {!tokens && <SetupCard hasCredentials={hasCredentials()} callbackDomain={callbackDomain()} notice={notice} />}
-
-      <SyncPanel connected={!!tokens} missing={missing} autoUpload={!!settings.autoUpload} canUpload={canUpload(tokens)} lastSync={lastSyncedAt()} />
-
-      {history && history.ledger.length > 0 && (
-        <section className="flex flex-col gap-2">
-          <h2 className="label px-1">Why it changed</h2>
-          {history.ledger.slice(0, 6).map((entry) => (
-            <article key={entry.rideId} className="flex gap-3 rounded-2xl border border-line bg-card px-4 py-3">
-              <div className="flex h-8 shrink-0 items-center justify-center whitespace-nowrap rounded-xl bg-[#E6EAEE] px-2.5 text-[14px] font-bold text-asphalt">
-                {signed(entry.delta)}
-              </div>
-              <div className="flex flex-col gap-0.5">
-                <div className="text-[15px] font-semibold">
-                  {fmtDate.format(new Date(dateOnly(entry.date)))} · {entry.rideName}
-                </div>
-                {entry.reasons.map((r) => (
-                  <div key={r} className="text-[13px] leading-snug text-muted">
-                    {r}
-                  </div>
-                ))}
-              </div>
-            </article>
-          ))}
-        </section>
+      {recap && (
+        <WeekReviewCard
+          review={recap}
+          next={endOfWeek ? week(nextWeekStart(thisWeekStart)) : undefined}
+          title={endOfWeek ? "Your week" : "Last week"}
+        />
       )}
+
+
+      <SyncPanel connected={!!tokens} missing={missing} lastSync={lastSyncedAt()} />
+
+      {history && history.ledger.length > 0 && <ChangeList entries={history.ledger} limit={1} />}
+
       <UpdateButton />
-      <a href="/settings" className="text-center text-[13px] font-semibold text-muted">
-        Settings and data
-      </a>
     </main>
   );
 }
