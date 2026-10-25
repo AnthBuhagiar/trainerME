@@ -48,7 +48,7 @@ describe("week plan", () => {
   });
 
   test("build phase adds VO2 work and late efforts in the long ride", () => {
-    const week = planWeek(budget, { monday: "2027-01-11", phase: phase("build") });
+    const week = planWeek(budget, { monday: "2027-01-11", phase: { ...phase("build"), start: "2027-01-11" } });
     expect(week.sessions.find((s) => s.weekday === 2)!.ride!.workout.id).toBe("vo2-30-15");
     expect(week.sessions.find((s) => s.weekday === 5)!.ride!.workout.id).toBe("long-ride-late-efforts");
   });
