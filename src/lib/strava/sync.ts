@@ -51,6 +51,7 @@ export interface SyncResult {
 function toRaw(a: StravaActivity) {
   return {
     id: String(a.id),
+    source: "strava" as const,
     name: a.name,
     sport_type: a.sport_type,
     start_local: a.start_date_local.replace(/Z$/, ""),
@@ -78,7 +79,7 @@ async function syncProfile(): Promise<void> {
 async function syncActivities(): Promise<number> {
   const existing = loadRawActivities();
   const byId = new Map(existing.map((a) => [a.id, a]));
-  const latest = existing.reduce((max, a) => (a.start_local > max ? a.start_local : max), "");
+  const latest = existing.filter((a) => a.source !== "intervals").reduce((max, a) => (a.start_local > max ? a.start_local : max), "");
   // Re-read the last week each time so edits (names, trainer flag) are picked up.
   const after = latest ? Math.floor(Date.parse(`${latest}Z`) / 1000) - 7 * 86_400 : 0;
   let added = 0;
@@ -125,7 +126,7 @@ export async function syncStrava(streamBudget = DEFAULT_STREAM_BUDGET): Promise<
     newActivities = await syncActivities();
     // Newest rides first: they matter most for today's estimate.
     const pending = loadRawActivities()
-      .filter((a) => a.sport_type.includes("Ride") && !hasRideSummary(a.id))
+      .filter((a) => a.source !== "intervals" && a.sport_type.includes("Ride") && !hasRideSummary(a.id))
       .reverse();
     for (const ride of pending.slice(0, streamBudget)) {
       saveRideSummary(summariseStreams(ride.id, await fetchStreams(ride.id)));
@@ -141,7 +142,7 @@ export async function syncStrava(streamBudget = DEFAULT_STREAM_BUDGET): Promise<
     newActivities,
     totalActivities: all.length,
     streamsFetched,
-    ridesMissingStreams: all.filter((a) => a.sport_type.includes("Ride") && !hasRideSummary(a.id)).length,
+    ridesMissingStreams: all.filter((a) => a.source !== "intervals" && a.sport_type.includes("Ride") && !hasRideSummary(a.id)).length,
     rateLimited,
   };
 }

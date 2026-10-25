@@ -10,6 +10,8 @@ interface Result {
   ridesMissingStreams: number;
   rateLimited: boolean;
   error?: string;
+  sources?: string[];
+  intervalsError?: string;
 }
 
 interface Props {
@@ -81,6 +83,8 @@ export function SyncPanel({ connected, missing, autoUpload, canUpload, lastSync 
   if (result?.error) message = result.error;
   else if (result?.rateLimited) message = `Strava's limit reached. ${remaining} rides left; sync again in 15 minutes.`;
   else if (result) message = result.newActivities || result.streamsFetched ? `${result.newActivities} new activities, ${result.streamsFetched} rides downloaded. ${message}` : `Synced just now. ${message}`;
+  if (result?.sources && result.sources.length > 1) message += ` From ${result.sources.join(" and ")}.`;
+  if (result?.intervalsError) message += ` ${result.intervalsError}`;
 
   return (
     <div className="flex flex-col gap-2">

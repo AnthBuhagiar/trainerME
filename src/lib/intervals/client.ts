@@ -7,7 +7,8 @@ import type { PlannedSession } from "@/lib/plan/week";
  * connected), so they appear on the watch or head unit.
  */
 
-const API = "https://intervals.icu/api/v1/athlete/0"; // 0 = the athlete who owns the key
+const API = "https://intervals.icu/api/v1";
+const ME = "/athlete/0"; // 0 = the athlete who owns the key
 const MARKER = "Planned by Hour Power";
 export const EXTERNAL_PREFIX = "hourpower-";
 
@@ -22,6 +23,10 @@ function headers(): HeadersInit {
     Authorization: `Basic ${Buffer.from(`API_KEY:${key}`).toString("base64")}`,
     "Content-Type": "application/json",
   };
+}
+
+export async function intervalsGet<T>(path: string): Promise<T> {
+  return call<T>(path);
 }
 
 async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -65,9 +70,9 @@ export interface SendResult {
  */
 export async function sendSessions(sessions: PlannedSession[], hourPower: number, oldest: string, newest: string): Promise<SendResult> {
   const rides = sessions.filter((s) => s.ride);
-  const existing = await call<IntervalsEvent[]>(`/events?oldest=${oldest}&newest=${newest}&category=WORKOUT`);
+  const existing = await call<IntervalsEvent[]>(`${ME}/events?oldest=${oldest}&newest=${newest}&category=WORKOUT`);
   const ours = existing.filter((e) => e.external_id?.startsWith(EXTERNAL_PREFIX) || e.description?.includes(MARKER));
-  for (const e of ours) await call(`/events/${e.id}`, { method: "DELETE" });
-  if (rides.length) await call(`/events/bulk?upsert=true`, { method: "POST", body: JSON.stringify(rides.map((s) => toEvent(s, hourPower))) });
+  for (const e of ours) await call(`${ME}/events/${e.id}`, { method: "DELETE" });
+  if (rides.length) await call(`${ME}/events/bulk?upsert=true`, { method: "POST", body: JSON.stringify(rides.map((s) => toEvent(s, hourPower))) });
   return { sent: rides.length, replaced: ours.length };
 }
