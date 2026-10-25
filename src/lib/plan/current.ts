@@ -8,7 +8,7 @@ import { adapt, afterHardRide } from "@/lib/plan/adapt";
 import { applyAway, awayWeeks, loadAway } from "@/lib/plan/away";
 import { applyCheckIns, loadCheckIns } from "@/lib/plan/checkin";
 import { targetsState } from "@/lib/plan/targets";
-import { mondayOf, phaseOn } from "@/lib/plan/periodise";
+import { weekStartOf, phaseOn } from "@/lib/plan/periodise";
 import { applyStrengthTarget, inferTimeBudget } from "@/lib/plan/timeBudget";
 import { EXTENDED_LONG_RIDE_MINUTES, extendedLongRideWeeks, planWeek, type WeekPlan } from "@/lib/plan/week";
 
@@ -39,29 +39,29 @@ export function loadState() {
     settings.trainingHourPower = targets.training;
   }
 
-  const baseContext = (monday: string) => {
-    const phase = summary ? phaseOn(summary.phases, monday) : null;
-    const daysToGoal = goal ? Math.round((Date.parse(`${goal.date}T00:00:00Z`) - Date.parse(`${monday}T00:00:00Z`)) / 86_400_000) : undefined;
+  const baseContext = (weekStart: string) => {
+    const phase = summary ? phaseOn(summary.phases, weekStart) : null;
+    const daysToGoal = goal ? Math.round((Date.parse(`${goal.date}T00:00:00Z`) - Date.parse(`${weekStart}T00:00:00Z`)) / 86_400_000) : undefined;
     return {
-      monday,
+      weekStart,
       phase,
-      daysToGoal: daysToGoal !== undefined && daysToGoal < 7 ? daysToGoal : undefined,
-      extendedLongRide: extended.has(monday) ? EXTENDED_LONG_RIDE_MINUTES : undefined,
+      daysToGoal: daysToGoal !== undefined && daysToGoal <= 7 ? daysToGoal : undefined,
+      extendedLongRide: extended.has(weekStart) ? EXTENDED_LONG_RIDE_MINUTES : undefined,
     };
   };
   // The week as planned, before adapting to what was actually ridden (used to measure what got done).
-  const planned = (monday: string): WeekPlan => applyCheckIns(applyAway(planWeek(budget, baseContext(monday)), away), checkIns);
-  const thisMonday = mondayOf(today);
-  const adaptation = adapt({ today, thisMonday, phases: summary?.phases ?? [], activities, history, planned });
+  const planned = (weekStart: string): WeekPlan => applyCheckIns(applyAway(planWeek(budget, baseContext(weekStart)), away, today), checkIns);
+  const thisWeekStart = weekStartOf(today);
+  const adaptation = adapt({ today, thisWeekStart, phases: summary?.phases ?? [], activities, history, planned });
 
-  const week = (monday: string): WeekPlan => {
-    const plan = applyCheckIns(applyAway(planWeek(budget, { ...baseContext(monday), ...adaptation.context(monday) }), away), checkIns);
-    return monday === thisMonday && targets ? afterHardRide(plan, rides, targets.training, today) : plan;
+  const week = (weekStart: string): WeekPlan => {
+    const plan = applyCheckIns(applyAway(planWeek(budget, { ...baseContext(weekStart), ...adaptation.context(weekStart) }), away, today), checkIns);
+    return weekStart === thisWeekStart && targets ? afterHardRide(plan, rides, targets.training, today) : plan;
   };
 
-  return { away, model, activities, targets, checkIns, now, today, settings, rides, history, current, budget, goal, summary, thisMonday, week, adaptation };
+  return { away, model, activities, targets, checkIns, now, today, settings, rides, history, current, budget, goal, summary, thisWeekStart, week, adaptation };
 }
 
-export function nextMonday(monday: string): string {
-  return new Date(Date.parse(`${monday}T00:00:00Z`) + 7 * 86_400_000).toISOString().slice(0, 10);
+export function nextWeekStart(weekStart: string): string {
+  return new Date(Date.parse(`${weekStart}T00:00:00Z`) + 7 * 86_400_000).toISOString().slice(0, 10);
 }

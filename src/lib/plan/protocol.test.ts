@@ -26,7 +26,7 @@ function bathurstBlock(): WeekPlan[] {
   for (const p of phases) {
     for (let m = p.start; m <= p.end; m = new Date(Date.parse(`${m}T00:00:00Z`) + 7 * 86_400_000).toISOString().slice(0, 10)) {
       const days = Math.round((Date.parse("2027-04-18T00:00:00Z") - Date.parse(`${m}T00:00:00Z`)) / 86_400_000);
-      weeks.push(planWeek(budget, { monday: m, phase: p, daysToGoal: days < 7 ? days : undefined, extendedLongRide: extended.has(m) ? EXTENDED_LONG_RIDE_MINUTES : undefined }));
+      weeks.push(planWeek(budget, { weekStart: m, phase: p, daysToGoal: days <= 7 ? days : undefined, extendedLongRide: extended.has(m) ? EXTENDED_LONG_RIDE_MINUTES : undefined }));
     }
   }
   return weeks;
@@ -36,7 +36,7 @@ describe("training protocol", () => {
   const weeks = bathurstBlock();
 
   test("every week to Bathurst follows the protocol (P1, P2, P7, P8)", () => {
-    const problems = weeks.flatMap((w) => auditWeek(w).map((v) => `${w.monday} ${w.label}: ${v.rule} ${v.message}`));
+    const problems = weeks.flatMap((w) => auditWeek(w).map((v) => `${w.weekStart} ${w.label}: ${v.rule} ${v.message}`));
     expect(problems).toEqual([]);
   });
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { erg, ics, zwo } from "@/lib/export/formats";
 import { zip } from "@/lib/export/zip";
-import { loadState, nextMonday } from "@/lib/plan/current";
+import { loadState, nextWeekStart } from "@/lib/plan/current";
 import { resolveSession } from "@/lib/plan/session";
 import { appUrl } from "@/lib/strava/client";
 
@@ -34,7 +34,7 @@ export function GET(request: Request) {
     hourPower = found.hourPower;
   } else {
     const state = loadState();
-    sessions = [...state.week(state.thisMonday).sessions, ...state.week(nextMonday(state.thisMonday)).sessions].filter((s) => s.date >= state.today);
+    sessions = [...state.week(state.thisWeekStart).sessions, ...state.week(nextWeekStart(state.thisWeekStart)).sessions].filter((s) => s.date >= state.today);
     hourPower = state.targets?.training ?? 0;
   }
   if (!hourPower) return NextResponse.json({ error: "Sync your rides first so targets can be set." }, { status: 400 });

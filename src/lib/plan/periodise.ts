@@ -4,18 +4,20 @@
  * 4th week (E8) and an optional holiday window that becomes a "flex" block.
  */
 
+import { addDays, weekStartOf } from "@/lib/plan/calendar";
+
 export type PhaseName = "base" | "build" | "specific" | "taper" | "flex";
 
 export interface Phase {
   name: PhaseName;
   label: string;
-  /** Monday of the first week, YYYY-MM-DD. */
+  /** First day (Sunday) of the first week, YYYY-MM-DD. */
   start: string;
   /** Sunday of the last week, YYYY-MM-DD. */
   end: string;
   weeks: number;
   focus: string;
-  /** ISO Mondays of recovery weeks inside this phase. */
+  /** Week starts (Sundays) of recovery weeks inside this phase. */
   recoveryWeeks: string[];
 }
 
@@ -41,12 +43,8 @@ function d(iso: string): number {
 function iso(ms: number): string {
   return new Date(ms).toISOString().slice(0, 10);
 }
-/** Monday on or before the date. */
-export function mondayOf(isoDate: string): string {
-  const ms = d(isoDate);
-  const dow = (new Date(ms).getUTCDay() + 6) % 7;
-  return iso(ms - dow * DAY);
-}
+/** Weeks run Sunday to Saturday; see calendar.ts. */
+export { weekStartOf };
 
 export interface PeriodiseOptions {
   /** Holiday windows [start, end] (YYYY-MM-DD) that become flex weeks. */
@@ -54,9 +52,11 @@ export interface PeriodiseOptions {
 }
 
 export function periodise(today: string, goalDate: string, opts: PeriodiseOptions = {}): Phase[] {
-  const firstMonday = iso(d(mondayOf(today)) + (((new Date(d(today)).getUTCDay() + 6) % 7 === 0) ? 0 : 7 * DAY));
-  const eventMonday = mondayOf(goalDate);
-  const totalWeeks = Math.max(1, Math.round((d(eventMonday) - d(firstMonday)) / (7 * DAY)) + 1);
+  // The block starts at the next week start (today, if today is one).
+  const firstWeekStart = weekStartOf(today) === today.slice(0, 10) ? today.slice(0, 10) : addDays(weekStartOf(today), 7);
+  // The last training week is the one holding the day before the event (an event on a Sunday starts a new week).
+  const lastWeekStart = weekStartOf(addDays(goalDate, -1));
+  const totalWeeks = Math.max(1, Math.round((d(lastWeekStart) - d(firstWeekStart)) / (7 * DAY)) + 1);
 
   // Week index -> phase, filled backwards from the event week.
   const names: PhaseName[] = new Array(totalWeeks);
@@ -68,12 +68,16 @@ export function periodise(today: string, goalDate: string, opts: PeriodiseOption
     const fromEnd = totalWeeks - 1 - w;
     names[w] = fromEnd < taper ? "taper" : fromEnd < taper + specific ? "specific" : fromEnd < taper + specific + build ? "build" : "base";
   }
-  const weekStart = (w: number) => iso(d(firstMonday) + w * 7 * DAY);
+  const weekStart = (w: number) => iso(d(firstWeekStart) + w * 7 * DAY);
   for (const [hs, he] of opts.holidays ?? []) {
     for (let w = 0; w < totalWeeks; w++) {
       const ws = weekStart(w);
       const we = iso(d(ws) + 6 * DAY);
-      if (we >= hs && ws <= he && names[w] !== "taper") names[w] = "flex";
+      // A holiday week is one that's mostly holiday (4+ of its 7 days), so a window that just touches a week doesn't take it.
+      const from = ws > hs ? ws : hs;
+      const to = we < he ? we : he;
+      const overlap = to >= from ? Math.round((d(to) - d(from)) / DAY) + 1 : 0;
+      if (overlap >= 4 && names[w] !== "taper") names[w] = "flex";
     }
   }
 

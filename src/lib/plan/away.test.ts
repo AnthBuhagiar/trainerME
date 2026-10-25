@@ -8,7 +8,7 @@ const ride = (date: string, weekday: number, id: string, minutes: number): Plann
   return { date, weekday, start: weekday === 5 ? "05:00" : "19:30", minutes: r.minutes, kind: "ride", indoor: weekday !== 5, ride: r, why: "" };
 };
 const week: WeekPlan = {
-  monday: "2026-11-02",
+  weekStart: "2026-11-01",
   phase: "base",
   label: "Base",
   recovery: false,
@@ -23,10 +23,13 @@ describe("away days", () => {
     expect(kindOn([p("2026-11-04", "2026-11-06", "busy")], "2026-11-07")).toBeNull();
   });
 
-  test("an away day drops its session; the long ride moves to Sunday", () => {
-    const out = applyAway(week, [p("2026-11-07", "2026-11-07"), p("2026-11-04", "2026-11-04")]);
-    expect(out.sessions.map((s) => s.date)).toEqual(["2026-11-05", "2026-11-08"]);
-    expect(out.sessions[1].adjusted).toMatch(/Moved from Saturday/);
+  test("an away day drops its session; the long ride moves to the week's Sunday if that's still ahead", () => {
+    const away = [p("2026-11-07", "2026-11-07"), p("2026-11-04", "2026-11-04")];
+    const out = applyAway(week, away, "2026-10-30");
+    expect(out.sessions.map((s) => s.date)).toEqual(["2026-11-01", "2026-11-05"]);
+    expect(out.sessions[0].adjusted).toMatch(/Moved from Saturday/);
+    // Once that Sunday has passed, the long ride is simply dropped.
+    expect(applyAway(week, away, "2026-11-03").sessions.map((s) => s.date)).toEqual(["2026-11-05"]);
   });
 
   test("busy days shorten sessions", () => {
@@ -35,7 +38,7 @@ describe("away days", () => {
   });
 
   test("mostly-away weeks become holiday weeks", () => {
-    // Away Thursday 5 Nov to Friday 13 Nov: only the week of 9 Nov has 5+ away days.
-    expect(awayWeeks([p("2026-11-05", "2026-11-13")], "2026-10-26", "2027-04-18")).toEqual([["2026-11-09", "2026-11-15"]]);
+    // Away Thursday 5 Nov to Friday 13 Nov: only the week of Sunday 8 Nov has 5+ away days.
+    expect(awayWeeks([p("2026-11-05", "2026-11-13")], "2026-10-25", "2027-04-18")).toEqual([["2026-11-08", "2026-11-14"]]);
   });
 });

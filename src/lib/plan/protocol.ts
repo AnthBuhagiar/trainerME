@@ -89,7 +89,8 @@ export function auditWeek(week: WeekPlan): Violation[] {
 
   if (week.recovery && rides.some((s) => s.ride!.workout.intensity === "hard")) out.push({ rule: "P7", message: "hard session in a recovery week" });
 
-  const hardDays = rides.filter((s) => s.ride!.workout.intensity === "hard").map((s) => s.weekday);
+  // Consecutive by date, so it holds whatever day the week starts on.
+  const hardDays = rides.filter((s) => s.ride!.workout.intensity === "hard").map((s) => Math.round((Date.parse(s.date) - Date.parse(week.weekStart)) / 86_400_000));
   for (const d of hardDays) if (hardDays.includes(d - 1)) out.push({ rule: "P8", message: `hard sessions on consecutive days (${d - 1}, ${d})` });
 
   return out;

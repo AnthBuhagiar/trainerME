@@ -35,17 +35,17 @@ const day = (iso: string) => iso.slice(0, 10);
 
 export interface AdaptInput {
   today: string;
-  thisMonday: string;
+  thisWeekStart: string;
   phases: Phase[];
   activities: Activity[];
   history: History | null;
   /** The week as planned without adaptation, used to measure what got done. */
-  planned: (monday: string) => WeekPlan;
+  planned: (weekStart: string) => WeekPlan;
 }
 
 export interface Adaptation {
   /** Settings for planWeek for this week (and progression for later weeks). */
-  context: (monday: string) => Pick<WeekContext, "step" | "mode" | "adaptation" | "skipRecovery">;
+  context: (weekStart: string) => Pick<WeekContext, "step" | "mode" | "adaptation" | "skipRecovery">;
   /** Shown on Today and Week when the current week was adapted. */
   note?: string;
 }
@@ -60,14 +60,14 @@ function estimateOn(history: History | null, date: string): number | null {
 }
 
 export function adapt(input: AdaptInput): Adaptation {
-  const { today, thisMonday, phases, activities, history, planned } = input;
-  const phase = phases.find((p) => p.start <= thisMonday && thisMonday <= p.end) ?? null;
-  const reviewOf = (monday: string) => weekReview(planned(monday), activities, history);
+  const { today, thisWeekStart, phases, activities, history, planned } = input;
+  const phase = phases.find((p) => p.start <= thisWeekStart && thisWeekStart <= p.end) ?? null;
+  const reviewOf = (weekStart: string) => weekReview(planned(weekStart), activities, history);
 
   // P13
   const lastRide = activities.filter((a) => a.sportType.includes("Ride") && day(a.startLocal) <= today).map((a) => day(a.startLocal)).sort().at(-1);
   const daysOff = lastRide ? Math.round((Date.parse(`${today}T00:00:00Z`) - Date.parse(`${lastRide}T00:00:00Z`)) / DAY) : Infinity;
-  const lastWeek = reviewOf(addDays(thisMonday, -7));
+  const lastWeek = reviewOf(addDays(thisWeekStart, -7));
   let mode: WeekContext["mode"];
   let note: string | undefined;
   if (lastRide && daysOff >= COMEBACK_DAYS) {
@@ -82,7 +82,7 @@ export function adapt(input: AdaptInput): Adaptation {
   let earned = 0;
   const pastLoading: string[] = [];
   if (phase) {
-    for (let m = phase.start; m < thisMonday; m = addDays(m, 7)) {
+    for (let m = phase.start; m < thisWeekStart; m = addDays(m, 7)) {
       if (phase.recoveryWeeks.includes(m)) continue;
       pastLoading.push(m);
       const r = reviewOf(m);
@@ -97,7 +97,7 @@ export function adapt(input: AdaptInput): Adaptation {
   // P16: sliding despite doing the work → extra recovery.
   const now = estimateOn(history, today);
   const before = estimateOn(history, addDays(today, -21));
-  const recentShares = [reviewOf(addDays(thisMonday, -7)), reviewOf(addDays(thisMonday, -14))].map((r) => share(r.done, r.planned));
+  const recentShares = [reviewOf(addDays(thisWeekStart, -7)), reviewOf(addDays(thisWeekStart, -14))].map((r) => share(r.done, r.planned));
   const fatigued =
     !mode && now !== null && before !== null && now <= before * (1 - FATIGUE_DROP) && recentShares.every((x) => x >= FATIGUE_MIN_SHARE) && phase?.name !== "taper";
   if (fatigued) {
@@ -107,17 +107,17 @@ export function adapt(input: AdaptInput): Adaptation {
 
   const isRecovery = (m: string) => !!phase?.recoveryWeeks.includes(m);
   return {
-    note: note ?? (lightBlock && isRecovery(thisMonday) ? "Recovery week skipped: the last three weeks were light, so there's little to recover from." : undefined),
-    context: (monday) => {
-      if (monday < thisMonday) return {};
-      const samePhase = !!phase && monday <= phase.end;
+    note: note ?? (lightBlock && isRecovery(thisWeekStart) ? "Recovery week skipped: the last three weeks were light, so there's little to recover from." : undefined),
+    context: (weekStart) => {
+      if (weekStart < thisWeekStart) return {};
+      const samePhase = !!phase && weekStart <= phase.end;
       // Project future progression from what's been earned, counting loading weeks from this one.
       let ahead = 0;
-      for (let m = thisMonday; m < monday; m = addDays(m, 7)) if (!isRecovery(m)) ahead++;
+      for (let m = thisWeekStart; m < weekStart; m = addDays(m, 7)) if (!isRecovery(m)) ahead++;
       const ctx: Pick<WeekContext, "step" | "mode" | "adaptation" | "skipRecovery"> = samePhase ? { step: earned + ahead } : {};
-      if (monday === thisMonday) {
+      if (weekStart === thisWeekStart) {
         if (mode) Object.assign(ctx, { mode, adaptation: note });
-        if (lightBlock && isRecovery(monday)) Object.assign(ctx, { skipRecovery: true, adaptation: "Recovery week skipped: the last three weeks were light." });
+        if (lightBlock && isRecovery(weekStart)) Object.assign(ctx, { skipRecovery: true, adaptation: "Recovery week skipped: the last three weeks were light." });
       }
       return ctx;
     },

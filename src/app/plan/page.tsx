@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AwayManager } from "@/components/AwayManager";
 import { kindOn } from "@/lib/plan/away";
-import { loadState, nextMonday } from "@/lib/plan/current";
+import { loadState, nextWeekStart } from "@/lib/plan/current";
 import type { PhaseName } from "@/lib/plan/periodise";
 import type { WeekPlan } from "@/lib/plan/week";
 import { length } from "@/lib/ui/format";
@@ -46,12 +46,12 @@ export default function PlanPage() {
     );
   }
 
-  const awayDays = (monday: string) =>
-    Array.from({ length: 7 }, (_, i) => new Date(Date.parse(`${monday}T00:00:00Z`) + i * 86_400_000).toISOString().slice(0, 10)).filter(
+  const awayDays = (weekStart: string) =>
+    Array.from({ length: 7 }, (_, i) => new Date(Date.parse(`${weekStart}T00:00:00Z`) + i * 86_400_000).toISOString().slice(0, 10)).filter(
       (d) => kindOn(state.away, d) === "away",
     ).length;
   const weeks: WeekPlan[] = [];
-  for (let m = state.thisMonday; m <= summary.goal.date; m = nextMonday(m)) weeks.push(state.week(m));
+  for (let m = state.thisWeekStart; m <= summary.goal.date; m = nextWeekStart(m)) weeks.push(state.week(m));
   const totalWeeks = summary.phases.reduce((n, p) => n + p.weeks, 0);
 
   return (
@@ -98,21 +98,21 @@ export default function PlanPage() {
         <ol className="flex flex-col divide-y divide-line rounded-2xl border border-line bg-card">
           {weeks.map((w, i) => {
             const line = weekLine(w);
-            const current = w.monday === state.thisMonday;
+            const current = w.weekStart === state.thisWeekStart;
             const eventWeek = i === weeks.length - 1;
             const detail = [
               line.key.join(" + ") || null,
               line.long ? `long ride ${length(line.long.minutes)}${line.long.fuel ? ` at ${line.long.fuel.gramsPerHour} g/h` : ""}` : null,
               line.strength ? `${line.strength}× ${w.phase === "taper" ? "mobility" : "strength"}` : null,
-              awayDays(w.monday) ? `away ${awayDays(w.monday)} ${awayDays(w.monday) === 1 ? "day" : "days"}` : null,
+              awayDays(w.weekStart) ? `away ${awayDays(w.weekStart)} ${awayDays(w.weekStart) === 1 ? "day" : "days"}` : null,
             ].filter(Boolean);
             return (
-              <li key={w.monday} className="flex gap-3 px-4 py-3">
+              <li key={w.weekStart} className="flex gap-3 px-4 py-3">
                 <span className={`w-1 shrink-0 rounded-full ${PHASE_COLOUR[w.phase]} ${w.recovery ? "opacity-40" : ""}`} />
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="text-[15px] font-semibold">
-                      {day(w.monday)}
+                      {day(w.weekStart)}
                       {current && <span className="text-signal-ink"> · this week</span>}
                     </span>
                     <span className="display whitespace-nowrap text-[15px]">{length(line.total)}</span>
