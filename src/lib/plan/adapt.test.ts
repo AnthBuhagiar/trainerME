@@ -1,6 +1,5 @@
 import { describe, expect, test } from "vitest";
 import { adapt, afterHardRide } from "@/lib/plan/adapt";
-import { getWorkout, scaleWorkout } from "@/lib/plan/library";
 import { periodise } from "@/lib/plan/periodise";
 import { auditWeek } from "@/lib/plan/protocol";
 import type { TimeBudget, TimeSlot } from "@/lib/plan/timeBudget";

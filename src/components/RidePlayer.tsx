@@ -14,11 +14,14 @@ import {
   startOrResume,
   stopOrPause,
 } from "@/lib/player/ftms";
+import { clearRide, elapsedAt, emptyRide, end, isRunning, loadRide, pause, record, saveRide, skip, start, type RideState } from "@/lib/player/session";
 import { stepAt, type PlayerStep } from "@/lib/player/steps";
-import { buildTcx, type RideSample } from "@/lib/strava/tcx";
+import { buildTcx } from "@/lib/strava/tcx";
 
 interface Props {
   name: string;
+  /** Identifies this workout's saved progress on the device. */
+  storageKey: string;
   /** Save to Strava as soon as the ride finishes. */
   autoUpload: boolean;
   steps: PlayerStep[];
@@ -33,32 +36,58 @@ const clock = (s: number) => {
   return h ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`;
 };
 
-export function RidePlayer({ name, autoUpload, steps, backHref }: Props) {
+export function RidePlayer({ name, autoUpload, steps, backHref, storageKey }: Props) {
   const [supported, setSupported] = useState(true);
   const [trainer, setTrainer] = useState<string | null>(null);
   const [hrName, setHrName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [running, setRunning] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
-  const [offset, setOffset] = useState(0); // % adjustment to all targets
+  const [resumed, setResumed] = useState(false);
+  const [ride, setRide] = useState<RideState>(emptyRide);
+  const [now, setNow] = useState(() => Date.now());
   const [live, setLive] = useState<{ power?: number; cadence?: number; hr?: number }>({});
   const control = useRef<BluetoothRemoteGATTCharacteristic | null>(null);
+  const device = useRef<BluetoothDevice | null>(null);
   const queue = useRef<Promise<unknown>>(Promise.resolve());
-  const samples = useRef<RideSample[]>([]);
-  const startMs = useRef<number | null>(null);
-  const [ended, setEnded] = useState(false);
   const [saved, setSaved] = useState<{ url?: string; message: string; reconnect?: boolean; ok?: boolean } | null>(null);
   const [saving, setSaving] = useState(false);
   const lastTarget = useRef<number | null>(null);
+  const rideRef = useRef(ride);
+  rideRef.current = ride;
 
+  const running = isRunning(ride);
+  const elapsed = elapsedAt(ride, now);
+  const offset = ride.offset;
   const total = steps.reduce((n, s) => n + s.seconds, 0);
   const at = stepAt(steps, elapsed);
   const current = at ? steps[at.index] : null;
   const next = at ? steps[at.index + 1] : null;
   const target = current ? Math.round((current.watts * (1 + offset / 100)) / 5) * 5 : 0;
-  const done = ended || elapsed >= total;
+  const done = ride.ended || elapsed >= total;
 
   useEffect(() => setSupported(typeof navigator !== "undefined" && !!navigator.bluetooth), []);
+
+  // A ride in progress on this device (the app was closed or frozen): pick it up where it is now.
+  useEffect(() => {
+    const restored = loadRide(storageKey);
+    if (restored) {
+      setRide(restored);
+      setResumed(true);
+    }
+  }, [storageKey]);
+
+  // Save to the device every few seconds and whenever the app is hidden.
+  useEffect(() => {
+    if (!ride.startedAt) return;
+    const id = setInterval(() => saveRide(storageKey, rideRef.current), 5000);
+    const hide = () => document.visibilityState === "hidden" && saveRide(storageKey, rideRef.current);
+    document.addEventListener("visibilitychange", hide);
+    window.addEventListener("pagehide", hide);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", hide);
+      window.removeEventListener("pagehide", hide);
+    };
+  }, [ride.startedAt, storageKey]);
 
   // Writes must not overlap: trainers reject a second GATT operation in flight.
   const write = useCallback((bytes: Uint8Array) => {
@@ -67,10 +96,8 @@ export function RidePlayer({ name, autoUpload, steps, backHref }: Props) {
     queue.current = queue.current.then(() => c.writeValueWithResponse(bytes)).catch((e) => setError(`Trainer didn't accept a command: ${(e as Error).message}`));
   }, []);
 
-  async function connectTrainer() {
-    setError(null);
-    try {
-      const d = await navigator.bluetooth!.requestDevice({ filters: [{ services: [FTMS_SERVICE] }] });
+  const setupTrainer = useCallback(
+    async (d: BluetoothDevice) => {
       const server = await d.gatt!.connect();
       const service = await server.getPrimaryService(FTMS_SERVICE);
       const data = await service.getCharacteristic(INDOOR_BIKE_DATA);
@@ -83,17 +110,47 @@ export function RidePlayer({ name, autoUpload, steps, backHref }: Props) {
       const cp = await service.getCharacteristic(CONTROL_POINT);
       await cp.startNotifications(); // control point replies come as indications
       control.current = cp;
-      d.addEventListener("gattserverdisconnected", () => {
-        setTrainer(null);
-        setRunning(false);
-        setError("Trainer disconnected. Reconnect to carry on where you left off.");
-      });
+      device.current = d;
       write(requestControl());
+      if (isRunning(rideRef.current)) write(startOrResume());
+      lastTarget.current = null; // re-send the current target
       setTrainer(d.name ?? "Smart trainer");
+      setError(null);
+    },
+    [write],
+  );
+
+  async function connectTrainer() {
+    setError(null);
+    try {
+      const d = await navigator.bluetooth!.requestDevice({ filters: [{ services: [FTMS_SERVICE] }] });
+      d.addEventListener("gattserverdisconnected", () => {
+        // The workout clock keeps going (you're still pedalling); try to get the trainer back.
+        setTrainer(null);
+        control.current = null;
+        setError("Trainer connection dropped. Reconnecting…");
+        void reconnect();
+      });
+      await setupTrainer(d);
     } catch (e) {
       if ((e as Error).name !== "NotFoundError") setError(`Couldn't connect: ${(e as Error).message}`);
     }
   }
+
+  /** Reconnect to the same trainer without the chooser, when the phone still knows it. */
+  const reconnect = useCallback(async () => {
+    const d = device.current;
+    if (!d) return;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        await setupTrainer(d);
+        return;
+      } catch {
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+    }
+    setError("Trainer not reachable. Tap Connect trainer to carry on: your workout and recording are kept.");
+  }, [setupTrainer]);
 
   async function connectHr() {
     try {
@@ -111,26 +168,36 @@ export function RidePlayer({ name, autoUpload, steps, backHref }: Props) {
     }
   }
 
-  // Clock: one tick a second while riding.
+  // Clock: refresh every second from the wall clock, and straight away when the app comes back.
   useEffect(() => {
     if (!running) return;
-    const id = setInterval(() => setElapsed((t) => t + 1), 1000);
-    return () => clearInterval(id);
-  }, [running]);
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    const back = () => {
+      if (document.visibilityState !== "visible") return;
+      setNow(Date.now());
+      lastTarget.current = null; // re-send the target for wherever the workout is now
+      if (device.current && !device.current.gatt?.connected) void reconnect();
+    };
+    document.addEventListener("visibilitychange", back);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", back);
+    };
+  }, [running, reconnect]);
 
-  // Record one sample a second while riding (pauses aren't recorded).
+  // Record one sample a second while riding.
   const liveRef = useRef(live);
   liveRef.current = live;
   useEffect(() => {
     if (!running) return;
     const l = liveRef.current;
-    if (samples.current.at(-1)?.t !== elapsed) samples.current.push({ t: elapsed, power: l.power, cadence: l.cadence, hr: l.hr });
+    setRide((r) => record(r, elapsed, { power: l.power, cadence: l.cadence, hr: l.hr }));
   }, [elapsed, running]);
 
   // Don't lose an unsaved ride to a stray tap.
   useEffect(() => {
     const warn = (e: BeforeUnloadEvent) => {
-      if (samples.current.length > 60 && !saved?.url) e.preventDefault();
+      if (rideRef.current.samples.length > 60 && !saved?.url) e.preventDefault();
     };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
@@ -145,11 +212,11 @@ export function RidePlayer({ name, autoUpload, steps, backHref }: Props) {
 
   // Finished: release the trainer.
   useEffect(() => {
-    if (done && running) {
-      setRunning(false);
+    if (done && !ride.ended && ride.startedAt) {
+      setRide((r) => end(r, Date.now()));
       write(stopOrPause());
     }
-  }, [done, running, write]);
+  }, [done, ride.ended, ride.startedAt, write]);
 
   // Keep the screen awake while riding.
   useEffect(() => {
@@ -163,36 +230,45 @@ export function RidePlayer({ name, autoUpload, steps, backHref }: Props) {
   }, [running]);
 
   function toggle() {
+    const t = Date.now();
     if (running) {
-      setRunning(false);
+      setRide((r) => pause(r, t));
       write(stopOrPause(true));
     } else {
       lastTarget.current = null; // re-send the target on resume
-      startMs.current ??= Date.now();
+      setRide((r) => start(r, t));
+      setNow(t);
       write(startOrResume());
-      setRunning(true);
     }
+    setResumed(false);
   }
 
-  function end() {
-    setRunning(false);
-    setEnded(true);
+  function finish() {
+    setRide((r) => end(r, Date.now()));
     write(stopOrPause());
   }
 
+  function discard() {
+    clearRide(storageKey);
+    setRide(emptyRide());
+    setResumed(false);
+  }
+
   async function save() {
-    if (!startMs.current) return;
+    const r = rideRef.current;
+    if (!r.startedAt) return;
     setSaving(true);
     try {
       const res = await fetch("/api/rides/upload", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name, startMs: startMs.current, samples: samples.current }),
+        body: JSON.stringify({ name, startMs: r.startedAt, samples: r.samples }),
       });
       const body = await res.json();
       if (body.activityId) setSaved({ url: `https://www.strava.com/activities/${body.activityId}`, message: "Saved to Strava." });
       else if (res.ok) setSaved({ ok: true, message: "Uploaded. Strava is still processing it; it will appear shortly." });
       else setSaved({ message: body.error ?? "Upload failed.", reconnect: body.reconnect });
+      if (res.ok) clearRide(storageKey);
     } catch {
       setSaved({ message: "Couldn’t reach the app. Download the file instead and upload it on strava.com." });
     } finally {
@@ -201,11 +277,12 @@ export function RidePlayer({ name, autoUpload, steps, backHref }: Props) {
   }
 
   function download() {
-    if (!startMs.current) return;
-    const blob = new Blob([buildTcx(startMs.current, samples.current, "Ridden with Hour Power")], { type: "application/xml" });
+    const r = rideRef.current;
+    if (!r.startedAt) return;
+    const blob = new Blob([buildTcx(r.startedAt, r.samples, "Ridden with Hour Power")], { type: "application/xml" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `hour-power-${new Date(startMs.current).toISOString().slice(0, 10)}.tcx`;
+    a.download = `hour-power-${new Date(r.startedAt).toISOString().slice(0, 10)}.tcx`;
     a.click();
     URL.revokeObjectURL(a.href);
   }
@@ -213,16 +290,16 @@ export function RidePlayer({ name, autoUpload, steps, backHref }: Props) {
   // Auto-upload once, when the ride ends with something recorded.
   const autoSaved = useRef(false);
   useEffect(() => {
-    if (!done || !autoUpload || autoSaved.current || !samples.current.length) return;
+    if (!done || !autoUpload || autoSaved.current || !rideRef.current.samples.length) return;
     autoSaved.current = true;
     void save();
     // save() reads refs only; running it once on finish is the intent.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done, autoUpload]);
 
-  function skip() {
+  function skipStep() {
     if (!at) return;
-    setElapsed((t) => t + at.remaining);
+    setRide((r) => skip(r, at.remaining));
   }
 
   if (!supported) {
@@ -237,9 +314,9 @@ export function RidePlayer({ name, autoUpload, steps, backHref }: Props) {
     );
   }
 
-  const watts = samples.current.filter((x) => x.power !== undefined).map((x) => x.power!);
+  const watts = ride.samples.filter((x) => x.power !== undefined).map((x) => x.power!);
   const avg = watts.length ? Math.round(watts.reduce((a, b) => a + b, 0) / watts.length) : null;
-  const ridden = samples.current.length;
+  const ridden = done ? elapsed : ride.samples.length;
 
   return (
     <div className="flex flex-col gap-4">
@@ -315,6 +392,18 @@ export function RidePlayer({ name, autoUpload, steps, backHref }: Props) {
         </div>
       </section>
 
+      {resumed && !done && (
+        <div className="flex flex-col gap-1 rounded-2xl border border-line bg-card px-4 py-3 text-[14px]">
+          <span className="font-semibold">Your ride carried on: {clock(elapsed)} in{running ? "" : ", paused"}.</span>
+          <span className="text-muted">
+            {trainer ? "The trainer is following the workout again." : "Connect the trainer to pick up where you are."}{" "}
+            <button onClick={discard} className="font-semibold underline">
+              Start over instead
+            </button>
+          </span>
+        </div>
+      )}
+
       {error && <p className="text-[14px] font-semibold text-signal-ink">{error}</p>}
 
       {!trainer ? (
@@ -327,11 +416,11 @@ export function RidePlayer({ name, autoUpload, steps, backHref }: Props) {
             <button onClick={toggle} className="h-14 rounded-2xl bg-signal-ink text-[17px] font-semibold text-white">
               {running ? "Pause" : elapsed ? "Resume" : "Start"}
             </button>
-            <button onClick={skip} className="h-14 rounded-2xl border border-line bg-card px-5 text-[16px] font-semibold">
+            <button onClick={skipStep} className="h-14 rounded-2xl border border-line bg-card px-5 text-[16px] font-semibold">
               Skip step
             </button>
             {elapsed > 0 && !running && (
-              <button onClick={end} className="col-span-2 h-12 text-[15px] font-semibold text-muted">
+              <button onClick={finish} className="col-span-2 h-12 text-[15px] font-semibold text-muted">
                 End ride here
               </button>
             )}
@@ -383,11 +472,11 @@ export function RidePlayer({ name, autoUpload, steps, backHref }: Props) {
         <div className="flex items-center justify-between gap-3">
           <span className="text-[14px] text-muted">Feeling {offset > 0 ? "strong" : offset < 0 ? "off" : "normal"}? Adjust all targets</span>
           <div className="flex items-center gap-2">
-            <button onClick={() => setOffset((o) => Math.max(-20, o - 5))} className="h-10 w-12 rounded-xl border border-line bg-card font-semibold">
+            <button onClick={() => setRide((r) => ({ ...r, offset: Math.max(-20, r.offset - 5) }))} className="h-10 w-12 rounded-xl border border-line bg-card font-semibold">
               −5%
             </button>
             <span className="w-10 text-center text-[14px] font-semibold">{offset > 0 ? `+${offset}` : offset}%</span>
-            <button onClick={() => setOffset((o) => Math.min(10, o + 5))} className="h-10 w-12 rounded-xl border border-line bg-card font-semibold">
+            <button onClick={() => setRide((r) => ({ ...r, offset: Math.min(10, r.offset + 5) }))} className="h-10 w-12 rounded-xl border border-line bg-card font-semibold">
               +5%
             </button>
           </div>
@@ -396,7 +485,8 @@ export function RidePlayer({ name, autoUpload, steps, backHref }: Props) {
 
       <p className="text-[13px] text-muted">
         Hour Power records the ride{autoUpload ? " and saves it to Strava when you finish" : "; save it to Strava when you finish"}. If your watch records it too, save only one of them so it isn’t
-        counted twice. Keep this screen open.{" "}
+        counted twice. If you switch to another app, the trainer holds its last target and the workout clock keeps time; come back and it
+        carries on from where you are. Phones pause web apps in the background, so recording resumes when you return.{" "}
         <a href={backHref} className="font-semibold">
           Back to session
         </a>
