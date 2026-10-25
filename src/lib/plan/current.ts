@@ -4,6 +4,7 @@ import { buildHistory } from "@/lib/engine/history";
 import { buildModel } from "@/lib/engine/hourPower";
 import { activeGoal, loadRoute } from "@/lib/goals/model";
 import { goalSummary } from "@/lib/goals/summary";
+import { adapt, afterHardRide } from "@/lib/plan/adapt";
 import { applyAway, awayWeeks, loadAway } from "@/lib/plan/away";
 import { applyCheckIns, loadCheckIns } from "@/lib/plan/checkin";
 import { targetsState } from "@/lib/plan/targets";
@@ -38,19 +39,27 @@ export function loadState() {
     settings.trainingHourPower = targets.training;
   }
 
-  const week = (monday: string): WeekPlan => {
+  const baseContext = (monday: string) => {
     const phase = summary ? phaseOn(summary.phases, monday) : null;
     const daysToGoal = goal ? Math.round((Date.parse(`${goal.date}T00:00:00Z`) - Date.parse(`${monday}T00:00:00Z`)) / 86_400_000) : undefined;
-    const plan = planWeek(budget, {
+    return {
       monday,
       phase,
       daysToGoal: daysToGoal !== undefined && daysToGoal < 7 ? daysToGoal : undefined,
       extendedLongRide: extended.has(monday) ? EXTENDED_LONG_RIDE_MINUTES : undefined,
-    });
-    return applyCheckIns(applyAway(plan, away), checkIns);
+    };
+  };
+  // The week as planned, before adapting to what was actually ridden (used to measure what got done).
+  const planned = (monday: string): WeekPlan => applyCheckIns(applyAway(planWeek(budget, baseContext(monday)), away), checkIns);
+  const thisMonday = mondayOf(today);
+  const adaptation = adapt({ today, thisMonday, phases: summary?.phases ?? [], activities, history, planned });
+
+  const week = (monday: string): WeekPlan => {
+    const plan = applyCheckIns(applyAway(planWeek(budget, { ...baseContext(monday), ...adaptation.context(monday) }), away), checkIns);
+    return monday === thisMonday && targets ? afterHardRide(plan, rides, targets.training, today) : plan;
   };
 
-  return { away, model, activities, targets, checkIns, now, today, settings, rides, history, current, budget, goal, summary, thisMonday: mondayOf(today), week };
+  return { away, model, activities, targets, checkIns, now, today, settings, rides, history, current, budget, goal, summary, thisMonday, week, adaptation };
 }
 
 export function nextMonday(monday: string): string {

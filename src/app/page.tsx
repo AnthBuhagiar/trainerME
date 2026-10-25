@@ -25,7 +25,7 @@ function signed(n: number): string {
 export default async function Home({ searchParams }: { searchParams: Promise<{ strava?: string }> }) {
   const { strava: notice } = await searchParams;
   const tokens = loadTokens();
-  const { activities, targets, checkIns, today, settings, rides, history, current, goal, summary, thisMonday, week, budget } = loadState();
+  const { adaptation, activities, targets, checkIns, today, settings, rides, history, current, goal, summary, thisMonday, week, budget } = loadState();
   const missing = rides.filter((r) => !r.streams).length;
   const upcoming = budget.slots.length
     ? [...week(thisMonday).sessions, ...week(nextMonday(thisMonday)).sessions].filter((s) => s.date >= today)
@@ -97,6 +97,15 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
           next={weekday === 0 ? week(nextMonday(thisMonday)) : undefined}
           title={weekday === 0 ? "Your week" : "Last week"}
         />
+      )}
+
+      {adaptation.note && (
+        <section className="rounded-2xl border border-line bg-card px-4 py-3">
+          <div className="label" style={{ color: "var(--signal-ink)" }}>
+            Plan adjusted
+          </div>
+          <p className="text-[15px] leading-snug">{adaptation.note}</p>
+        </section>
       )}
 
       {targets?.proposal && <TargetsPrompt training={targets.training} proposal={targets.proposal} />}

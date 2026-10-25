@@ -45,6 +45,8 @@ export interface WeekPlan {
   label: string;
   recovery: boolean;
   sessions: PlannedSession[];
+  /** Set when the plan was adapted to what was actually ridden (P13–P17), in plain words. */
+  adaptation?: string;
 }
 
 export const STRENGTH: Record<"heavy" | "maintenance" | "mobility", StrengthSession> = {
@@ -121,6 +123,14 @@ export interface WeekContext {
   daysToGoal?: number;
   /** Set on the month's extended long-ride week: the long ride's length in minutes. */
   extendedLongRide?: number;
+  /** P14: progression earned from completed weeks, replacing the calendar count. */
+  step?: number;
+  /** P13/P16: how this week adapts to recent training (see adapt.ts). */
+  mode?: "comeback" | "reentry" | "deload";
+  /** P15: a scheduled recovery week that isn't needed because little load was done. */
+  skipRecovery?: boolean;
+  /** Why it adapted, shown to the rider. */
+  adaptation?: string;
 }
 
 /** Once a month a longer long ride; this many minutes. */
@@ -147,15 +157,30 @@ export function extendedLongRideWeeks(phases: Phase[]): Set<string> {
 
 export function planWeek(budget: TimeBudget, ctx: WeekContext): WeekPlan {
   const name: PhaseName = ctx.phase?.name ?? "base";
-  const recovery = !!ctx.phase?.recoveryWeeks.includes(ctx.monday);
+  // P16: an extra recovery week when hour power is sliding despite the training getting done.
+  const recovery = (!!ctx.phase?.recoveryWeeks.includes(ctx.monday) && !ctx.skipRecovery) || ctx.mode === "deload";
   const finalWeek = ctx.daysToGoal !== undefined && ctx.daysToGoal < 7;
-  const label = recovery ? "Recovery week" : ctx.phase ? ctx.phase.label : "Lead-in week";
+  const comeback = ctx.mode === "comeback";
+  const reentry = ctx.mode === "reentry";
+  const label = comeback
+    ? "Comeback week"
+    : ctx.mode === "deload"
+      ? "Extra recovery week"
+      : recovery
+        ? "Recovery week"
+        : reentry
+          ? "Easing back in"
+          : ctx.phase
+            ? ctx.phase.label
+            : "Lead-in week";
   const placed = placeSlots(budget.slots);
   // Loading weeks already done in this phase drive progression; recovery and taper weeks don't progress.
   let step = 0;
   if (ctx.phase && !recovery && name !== "taper" && name !== "flex") {
     for (let m = ctx.phase.start; m < ctx.monday; m = addDays(m, 7)) if (!ctx.phase.recoveryWeeks.includes(m)) step++;
   }
+  if (ctx.step !== undefined) step = ctx.step;
+  if (reentry) step = Math.max(0, step - 1);
 
   const rideDays = placed.filter((p) => p.slot.kind === "ride");
   const long = rideDays.length ? rideDays.reduce((a, b) => (b.slot.minutes > a.slot.minutes ? b : a)) : null;
@@ -170,7 +195,7 @@ export function planWeek(budget: TimeBudget, ctx: WeekContext): WeekPlan {
     const base = { date, weekday, start: slot.start, kind: slot.kind, indoor };
 
     if (slot.kind === "strength") {
-      const s = name === "taper" ? STRENGTH.mobility : name === "specific" || recovery ? STRENGTH.maintenance : STRENGTH.heavy;
+      const s = name === "taper" ? STRENGTH.mobility : name === "specific" || recovery || comeback ? STRENGTH.maintenance : STRENGTH.heavy;
       const minutes = s === STRENGTH.heavy ? slot.minutes : Math.min(slot.minutes, 35);
       sessions.push({ ...base, minutes, strength: s, why: s === STRENGTH.heavy ? "Two strength sessions a week for every rider (E5)." : s.summary });
       continue;
@@ -181,17 +206,26 @@ export function planWeek(budget: TimeBudget, ctx: WeekContext): WeekPlan {
     }
 
     // Volume: recovery weeks ~70%, taper ~60% then ~45% in the final week (E4, E8).
-    const volume = finalWeek ? 0.45 : name === "taper" ? 0.6 : recovery ? 0.7 : 1;
+    const volume = finalWeek ? 0.45 : name === "taper" ? 0.6 : recovery ? 0.7 : comeback ? 0.75 : 1;
     let minutes = Math.max(30, Math.round((slot.minutes * volume) / 5) * 5);
     let workoutId: string;
     let why: string;
     if (long && slot === long.slot && slot.minutes >= 120) {
-      workoutId = recovery ? "endurance" : MENU[name].long; // P10
+      workoutId = recovery || comeback ? "endurance" : MENU[name].long; // P10
       why = workoutId === "endurance" ? "Your long ride: steady aerobic time is the base of hour power (E1)." : "Efforts in the last hour build the durability a long event needs (E6).";
-      if (ctx.extendedLongRide && ctx.extendedLongRide > minutes) {
+      if (ctx.extendedLongRide && ctx.extendedLongRide > minutes && !comeback && !reentry) {
         minutes = ctx.extendedLongRide;
         why = `Once a month the long ride stretches to ${minutes / 60} h: durability and fuelling practice for a long event (E6, E7).`;
       }
+    } else if (comeback) {
+      // P13: back after two weeks or more off: easy riding with a few sprints, intervals return next week.
+      workoutId = qualityIndex++ === 0 ? "sprints-6x15s" : "endurance";
+      why = "Back after time off: easy riding this week, intervals return next week.";
+    } else if (reentry && qualityIndex === 1) {
+      // P13: after a missed week, one key session at a lower step; the second session stays easy.
+      workoutId = "sprints-6x15s";
+      why = "Easing back in after missed training: one key session this week.";
+      qualityIndex++;
     } else if (recovery || name === "flex") {
       workoutId = qualityIndex++ === 0 && recovery ? "sprints-6x15s" : "endurance";
       why = recovery ? "Lighter week so the last three can sink in (E8)." : "Ride if life allows. Nothing to catch up.";
@@ -213,5 +247,5 @@ export function planWeek(budget: TimeBudget, ctx: WeekContext): WeekPlan {
     const ride = scaleWorkout(progressWorkout(getWorkout(workoutId), k), minutes);
     sessions.push({ ...base, minutes: ride.minutes, ride, fuel: fuelFor(ride.minutes, name, ride.workout.intensity), why });
   }
-  return { monday: ctx.monday, phase: name, label, recovery, sessions };
+  return { monday: ctx.monday, phase: name, label, recovery, sessions, adaptation: ctx.adaptation };
 }

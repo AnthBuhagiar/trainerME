@@ -1,8 +1,8 @@
 # Hour Power training protocol
 
-*Version 1.0 · October 2026*
+*Version 1.1 · October 2026*
 
-This is the rulebook Hour Power uses to build every training plan. The app has no AI and doesn't
+This is the rulebook Hour Power uses to build every training plan, and to adapt it as the riding happens. The app has no AI and doesn't
 improvise: plans come from these fixed rules plus the rider's own data (their usual week from Strava,
 their goal date, their hour power, their away days and check-ins). The same inputs always produce the
 same plan.
@@ -32,6 +32,28 @@ Intensities are shares of the rider's **training hour power** (their accepted be
 | **P11 · Taper** | The last two weeks: volume down to about 60%, then about 45% in event week. Short efforts stay at target power. | E4 |
 | **P12 · Life first** | Plans fit inside the rider's usual week, read from their own history. Missed sessions are never carried over. Away days, busy days and check-ins adjust that day only, or re-plan the block for a week away. | E8, E9 (Cove: consistency over volume) |
 
+## Adapting to what was actually ridden (P13–P17)
+
+The plan isn't fixed on day one. Every time the app opens, it re-reads the rides and rebuilds the plan,
+and these rules decide how it adapts. They use fixed thresholds (in `src/lib/plan/adapt.ts`), not
+judgement, so the same training history always gives the same adjustment. Adjustments are shown on
+Today ("Plan adjusted") and on the Week tab.
+
+| Rule | Trigger | What changes | Evidence |
+|---|---|---|---|
+| **P13 · Missed training** | **14+ days** without a ride | **Comeback week:** easy riding with short sprints, strength at maintenance, long ride steady and about 75% length. Intervals return next week. | E8, E9 |
+| | **7–13 days** without a ride, or **under 50%** of last week's planned time ridden | **Easing back in:** one key session, a progression step lower. The second session stays easy, and there's no extended long ride. | E8, E9 |
+| **P14 · Progression is earned** | Each past loading week in the phase | It only counts as a step up if **at least 70%** of its sessions were done. Future weeks are projected from the steps earned, so skipped weeks are repeated, not jumped. | E3, E9 (Lindsay: progress follows completed work) |
+| **P15 · Recovery when needed** | A scheduled recovery week after **three loading weeks under 50%** done | It becomes a normal week, because there's little load to recover from. | E8 |
+| **P16 · Fatigue** | Hour power **down 3% or more over 3 weeks** while **at least 80%** of sessions were done | An **extra recovery week** (not in the taper). | E8 |
+| **P17 · Unplanned hard ride** | Yesterday's ride was hard: normalised power at least 85% of training hour power for 45 min or more, or a best 20 min at least 95% | Today's hard session becomes easy riding. Two hard days in a row add fatigue more than fitness. | E1, P8 |
+
+These come on top of the day-level rules that were already there:
+- **Check-ins:** tired or short on time.
+- **Away and busy days** (P12).
+- **Training targets:** asked before they change.
+- **The usual week:** re-read from the last 12 weeks of rides, so it follows changes in routine.
+
 ## What the tests guarantee
 
 For a full block (today to the goal, including the Christmas holiday weeks), `protocol.test.ts` checks:
@@ -41,6 +63,12 @@ For a full block (today to the goal, including the Christmas holiday weeks), `pr
 - **P3 order:** base key sessions are threshold, and build key sessions are VO2.
 - **P5 rotation:** no key session repeats more than three loading weeks running.
 - **Determinism:** building the plan twice gives identical results.
+- **Adaptation (`adapt.test.ts`):**
+  - a fully trained block progresses on schedule
+  - skipped weeks don't move the plan up
+  - 10 days off eases back in, and 15 days off gives a comeback week that still passes the audit
+  - sliding hour power despite full training adds a recovery week
+  - a hard ride yesterday makes today easy
 
 ## Limits
 
