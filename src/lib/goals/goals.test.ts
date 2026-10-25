@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { christmasWindow, mondayOf, periodise, phaseOn } from "@/lib/plan/periodise";
+import { christmasWindow, weekStartOf, periodise, phaseOn } from "@/lib/plan/periodise";
 import { DEFAULT_PHYSICS, eventMovingSeconds, powerForTarget, predictEvent } from "@/lib/goals/eventTime";
 import type { Goal } from "@/lib/goals/model";
 import { goalSummary } from "@/lib/goals/summary";
@@ -11,26 +11,27 @@ describe("periodisation", () => {
     const taper = phases.at(-1)!;
     expect(taper.name).toBe("taper");
     expect(taper.weeks).toBe(2);
-    expect(taper.start).toBe("2027-04-05");
-    expect(taper.end).toBe("2027-04-18");
+    // Weeks run Sunday to Saturday; the event is on Sunday 18 April, so the taper ends the Saturday before.
+    expect(taper.start).toBe("2027-04-04");
+    expect(taper.end).toBe("2027-04-17");
   });
 
   test("six event-specific weeks before the taper", () => {
     const specific = phases.at(-2)!;
-    expect(specific).toMatchObject({ name: "specific", weeks: 6, start: "2027-02-22" });
+    expect(specific).toMatchObject({ name: "specific", weeks: 6, start: "2027-02-21" });
   });
 
-  test("starts next Monday and turns Christmas into a flex block", () => {
-    expect(phases[0]).toMatchObject({ name: "base", start: "2026-10-26" });
+  test("starts next Sunday and turns Christmas into a flex block", () => {
+    expect(phases[0]).toMatchObject({ name: "base", start: "2026-10-25" });
     const flex = phases.find((p) => p.name === "flex")!;
-    expect(flex.start).toBe("2026-12-21");
+    expect(flex.start).toBe("2026-12-20");
     expect(flex.weeks).toBe(2);
   });
 
   test("has a recovery week roughly every fourth loading week", () => {
     const recoveries = phases.flatMap((p) => p.recoveryWeeks);
     expect(recoveries.length).toBeGreaterThanOrEqual(4);
-    expect(recoveries.every((m) => mondayOf(m) === m)).toBe(true);
+    expect(recoveries.every((m) => weekStartOf(m) === m)).toBe(true);
   });
 
   test("finds the phase for a date", () => {
@@ -76,8 +77,8 @@ describe("goal summary", () => {
     const s = goalSummary(bathurst, 177, settings, "2026-10-20");
     expect(s.daysToGo).toBe(180);
     expect(s.weeksToGo).toBe(26);
-    expect(s.phase).toBeNull(); // the block starts next Monday
-    expect(goalSummary(bathurst, 177, settings, "2027-03-01").phase?.name).toBe("specific");
+    expect(s.phase).toBeNull(); // the block starts next Sunday
+    expect(goalSummary(bathurst, 177, settings, "2027-02-28").phase?.name).toBe("specific");
   });
 
   test("a 6-hour target needs more hour power than today", () => {

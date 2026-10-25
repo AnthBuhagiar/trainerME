@@ -3,9 +3,9 @@ import { SessionCard } from "@/components/SessionCard";
 import { kindOn, type AwayPeriod } from "@/lib/plan/away";
 import { dayLabel } from "@/lib/ui/format";
 import { WeekReviewCard } from "@/components/WeekReviewCard";
-import { reviewMonday, weekReview } from "@/lib/plan/review";
+import { reviewWeekStart, weekReview } from "@/lib/plan/review";
 import { hasIntervalsKey } from "@/lib/intervals/client";
-import { nextMonday, loadState } from "@/lib/plan/current";
+import { nextWeekStart, loadState } from "@/lib/plan/current";
 import { describeSlot } from "@/lib/plan/timeBudget";
 import { length } from "@/lib/ui/format";
 import type { WeekPlan } from "@/lib/plan/week";
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 function Week({ plan, title, today, away }: { plan: WeekPlan; title: string; today: string; away: AwayPeriod[] }) {
   const sessions = plan.sessions.filter((s) => s.date >= today);
-  const awayDates = Array.from({ length: 7 }, (_, i) => new Date(Date.parse(`${plan.monday}T00:00:00Z`) + i * 86_400_000).toISOString().slice(0, 10)).filter(
+  const awayDates = Array.from({ length: 7 }, (_, i) => new Date(Date.parse(`${plan.weekStart}T00:00:00Z`) + i * 86_400_000).toISOString().slice(0, 10)).filter(
     (d) => d >= today && kindOn(away, d) === "away",
   );
   const total = sessions.reduce((n, s) => n + s.minutes, 0);
@@ -42,11 +42,11 @@ function Week({ plan, title, today, away }: { plan: WeekPlan; title: string; tod
 
 export default function WeekPage() {
   const state = loadState();
-  const thisWeek = state.week(state.thisMonday);
-  const next = state.week(nextMonday(state.thisMonday));
-  const recapMonday = reviewMonday(state.today, state.thisMonday);
-  const review = weekReview(state.week(recapMonday), state.activities, state.history);
-  const isSunday = recapMonday === state.thisMonday;
+  const thisWeek = state.week(state.thisWeekStart);
+  const next = state.week(nextWeekStart(state.thisWeekStart));
+  const recapWeekStart = reviewWeekStart(state.today, state.thisWeekStart);
+  const review = weekReview(state.week(recapWeekStart), state.activities, state.history);
+  const isSunday = recapWeekStart === state.thisWeekStart;
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 px-5 py-6">
       <header className="flex flex-col gap-1">

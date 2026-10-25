@@ -16,8 +16,8 @@ const budget: TimeBudget = {
 const phases = periodise("2026-10-05", "2027-04-18");
 const base = phases[0];
 const TODAY = "2026-11-04";
-const THIS_MONDAY = "2026-11-02";
-const planned = (monday: string): WeekPlan => planWeek(budget, { monday, phase: phases.find((p) => p.start <= monday && monday <= p.end) ?? null });
+const THIS_MONDAY = "2026-11-01"; // the week (Sunday to Saturday) holding TODAY
+const planned = (weekStart: string): WeekPlan => planWeek(budget, { weekStart, phase: phases.find((p) => p.start <= weekStart && weekStart <= p.end) ?? null });
 
 const ride = (date: string, minutes = 60, extra: Partial<Activity> = {}): Activity => ({
   id: date + minutes, name: "Ride", sportType: "Ride", startLocal: `${date}T19:30:00`, isTrainer: true, distance: 0,
@@ -31,13 +31,13 @@ function didEverything(until: string): Activity[] {
   }
   return out;
 }
-const run = (activities: Activity[], history = null) => adapt({ today: TODAY, thisMonday: THIS_MONDAY, phases, activities, history, planned });
+const run = (activities: Activity[], history = null) => adapt({ today: TODAY, thisWeekStart: THIS_MONDAY, phases, activities, history, planned });
 
 describe("adaptation (P13–P17)", () => {
   test("a fully trained block progresses on schedule, with no adjustment", () => {
     const a = run(didEverything(TODAY));
     expect(a.note).toBeUndefined();
-    expect(a.context(THIS_MONDAY).step).toBe(3); // 5, 12, 19 Oct done; 26 Oct is the recovery week
+    expect(a.context(THIS_MONDAY).step).toBe(3); // weeks of 11, 18, 25 Oct done; 1 Nov is the recovery week
     expect(a.context(THIS_MONDAY).mode).toBeUndefined();
   });
 
@@ -50,13 +50,13 @@ describe("adaptation (P13–P17)", () => {
     const tenDaysOff = didEverything("2026-10-25");
     const easing = run(tenDaysOff);
     expect(easing.context(THIS_MONDAY).mode).toBe("reentry");
-    const plan = planWeek(budget, { monday: THIS_MONDAY, phase: base, ...easing.context(THIS_MONDAY) });
+    const plan = planWeek(budget, { weekStart: THIS_MONDAY, phase: base, ...easing.context(THIS_MONDAY) });
     expect(plan.label).toBe("Easing back in");
     expect(plan.sessions.filter((s) => s.ride?.workout.intensity === "hard")).toHaveLength(1);
 
     const comeback = run(didEverything("2026-10-15"));
     expect(comeback.context(THIS_MONDAY).mode).toBe("comeback");
-    const easy = planWeek(budget, { monday: THIS_MONDAY, phase: base, ...comeback.context(THIS_MONDAY) });
+    const easy = planWeek(budget, { weekStart: THIS_MONDAY, phase: base, ...comeback.context(THIS_MONDAY) });
     expect(easy.sessions.every((s) => s.ride?.workout.intensity !== "hard")).toBe(true);
     expect(auditWeek(easy)).toEqual([]);
   });
@@ -70,14 +70,14 @@ describe("adaptation (P13–P17)", () => {
       ledger: [],
       current: null,
     };
-    const a = adapt({ today: TODAY, thisMonday: THIS_MONDAY, phases, activities: didEverything(TODAY), history: history as never, planned });
+    const a = adapt({ today: TODAY, thisWeekStart: THIS_MONDAY, phases, activities: didEverything(TODAY), history: history as never, planned });
     expect(a.context(THIS_MONDAY).mode).toBe("deload");
-    const plan = planWeek(budget, { monday: THIS_MONDAY, phase: base, ...a.context(THIS_MONDAY) });
+    const plan = planWeek(budget, { weekStart: THIS_MONDAY, phase: base, ...a.context(THIS_MONDAY) });
     expect(plan).toMatchObject({ recovery: true, label: "Extra recovery week" });
   });
 
   test("P17: a hard ride yesterday makes today's hard session easy", () => {
-    const week = planned("2026-11-09");
+    const week = planned("2026-11-08");
     const hardYesterday: Ride = { ...ride("2026-11-10", 90), indoor: true, streams: { np: 175, powerCurve: { "1200": 180 } } };
     const out = afterHardRide(week, [hardYesterday], 181, "2026-11-11");
     const wed = out.sessions.find((s) => s.date === "2026-11-11")!;

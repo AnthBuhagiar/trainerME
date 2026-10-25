@@ -24,10 +24,10 @@ function act(id: string, start: string, sportType: string, minutes: number, extr
 function history(): Activity[] {
   const out: Activity[] = [];
   for (let w = 0; w < 12; w++) {
-    const monday = addDays("2026-10-19T00:00:00", -7 * w);
-    out.push(act(`thu${w}`, addDays(monday, 3).slice(0, 11) + "19:30:00", "Ride", 60, { isTrainer: true, elevationGain: 0 }));
-    out.push(act(`sat${w}`, addDays(monday, 5).slice(0, 11) + "05:00:00", "Ride", 180));
-    out.push(act(`gym${w}`, addDays(monday, w % 3).slice(0, 11) + "19:45:00", "WeightTraining", 50));
+    const weekStart = addDays("2026-10-19T00:00:00", -7 * w);
+    out.push(act(`thu${w}`, addDays(weekStart, 3).slice(0, 11) + "19:30:00", "Ride", 60, { isTrainer: true, elevationGain: 0 }));
+    out.push(act(`sat${w}`, addDays(weekStart, 5).slice(0, 11) + "05:00:00", "Ride", 180));
+    out.push(act(`gym${w}`, addDays(weekStart, w % 3).slice(0, 11) + "19:45:00", "WeightTraining", 50));
   }
   // Only past activities count.
   return out.filter((a) => a.startLocal <= AS_OF);

@@ -1,10 +1,10 @@
 import { describe, expect, test } from "vitest";
-import { reviewMonday, weekReview } from "@/lib/plan/review";
+import { reviewWeekStart, weekReview } from "@/lib/plan/review";
 import type { WeekPlan } from "@/lib/plan/week";
 import type { Activity } from "@/lib/types";
 
 const plan: WeekPlan = {
-  monday: "2026-10-12",
+  weekStart: "2026-10-12",
   phase: "base",
   label: "Base and threshold",
   recovery: false,
@@ -33,8 +33,9 @@ describe("weekly review", () => {
     expect(r.headline).toBe("2 of 4 done. Missed sessions are gone, not owed.");
   });
 
-  test("recaps this week on Sunday, last week otherwise", () => {
-    expect(reviewMonday("2026-10-25", "2026-10-19")).toBe("2026-10-19");
-    expect(reviewMonday("2026-10-22", "2026-10-19")).toBe("2026-10-12");
+  test("recaps this week on Saturday (the week's last day), last week otherwise", () => {
+    expect(reviewWeekStart("2026-10-24", "2026-10-18")).toBe("2026-10-18");
+    expect(reviewWeekStart("2026-10-25", "2026-10-25")).toBe("2026-10-18");
+    expect(reviewWeekStart("2026-10-22", "2026-10-18")).toBe("2026-10-11");
   });
 });

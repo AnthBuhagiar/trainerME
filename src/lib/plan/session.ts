@@ -1,13 +1,13 @@
 import { getWorkout, scaleWorkout } from "@/lib/plan/library";
 import { loadState } from "@/lib/plan/current";
-import { mondayOf } from "@/lib/plan/periodise";
+import { weekStartOf } from "@/lib/plan/periodise";
 import { fuelFor } from "@/lib/plan/week";
 
 /** Find a planned session by date (and start time), optionally shortened to `minutes`. */
 export function resolveSession(date: string, start?: string, minutes?: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
   const state = loadState();
-  const week = state.week(mondayOf(date));
+  const week = state.week(weekStartOf(date));
   const planned = week.sessions.find((s) => s.date === date && (!start || s.start === start)) ?? week.sessions.find((s) => s.date === date);
   if (!planned) return null;
   let session = planned;

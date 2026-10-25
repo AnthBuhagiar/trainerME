@@ -12,6 +12,8 @@ Each rule cites its evidence in `docs/training-science.md` (E1–E9). The consta
 `src/lib/plan/periodise.ts`, and `src/lib/plan/protocol.test.ts` checks every week from today to the goal
 against them. A change to the rules means changing this document, the code and the tests together.
 
+Weeks run **Sunday to Saturday** (ending 11:59 pm Saturday): recovery weeks, rotation, recaps and away weeks all use that week (`src/lib/plan/calendar.ts`).
+
 Intensities are shares of the rider's **training hour power** (their accepted best 60-minute power):
 **easy** below 76%, **moderate** (tempo and sweet spot) 76–95%, **hard** (threshold and above) 95% and up.
 

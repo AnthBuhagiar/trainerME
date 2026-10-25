@@ -1,4 +1,5 @@
 import { getWorkout, progressWorkout, scaleWorkout, type ScaledWorkout } from "@/lib/plan/library";
+import { addDays, dateOf, dayIndex } from "@/lib/plan/calendar";
 import { MAX_QUALITY_PER_WEEK, MENU, progressionStep, rotate } from "@/lib/plan/protocol";
 import type { Phase, PhaseName } from "@/lib/plan/periodise";
 import type { TimeBudget, TimeSlot } from "@/lib/plan/timeBudget";
@@ -40,7 +41,7 @@ export interface PlannedSession {
 }
 
 export interface WeekPlan {
-  monday: string;
+  weekStart: string;
   phase: PhaseName;
   label: string;
   recovery: boolean;
@@ -67,9 +68,6 @@ export const STRENGTH: Record<"heavy" | "maintenance" | "mobility", StrengthSess
   },
 };
 
-const DAY = 86_400_000;
-const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
-const addDays = (date: string, n: number) => iso(Date.parse(`${date}T00:00:00Z`) + n * DAY);
 
 /** Carbohydrate target by ride length and phase (E7). */
 export function fuelFor(minutes: number, phase: PhaseName, intensity: "easy" | "moderate" | "hard"): Fuel | undefined {
@@ -113,13 +111,14 @@ function placeSlots(slots: TimeSlot[]): { slot: TimeSlot; weekday: number }[] {
     const day = free.reduce((best, d) => (score(d) > score(best) ? d : best));
     placed.push({ slot, weekday: day });
   }
-  return placed.sort((a, b) => a.weekday - b.weekday || a.slot.start.localeCompare(b.slot.start));
+  // In calendar order: Sunday first, Saturday last.
+  return placed.sort((a, b) => dayIndex(a.weekday) - dayIndex(b.weekday) || a.slot.start.localeCompare(b.slot.start));
 }
 
 export interface WeekContext {
-  monday: string;
+  weekStart: string;
   phase: Phase | null;
-  /** Days from this Monday to the goal, if any (for the last taper week). */
+  /** Days from this week's start to the goal, if any (for the last taper week). */
   daysToGoal?: number;
   /** Set on the month's extended long-ride week: the long ride's length in minutes. */
   extendedLongRide?: number;
@@ -137,7 +136,7 @@ export interface WeekContext {
 export const EXTENDED_LONG_RIDE_MINUTES = 210;
 
 /**
- * Mondays of the extended long-ride weeks: about once a month, at least four
+ * Week starts of the extended long-ride weeks: about once a month, at least four
  * weeks apart, in base, build or event-specific loading weeks. Recovery,
  * holiday and taper weeks are skipped, so the ride moves to the next week.
  */
@@ -158,8 +157,10 @@ export function extendedLongRideWeeks(phases: Phase[]): Set<string> {
 export function planWeek(budget: TimeBudget, ctx: WeekContext): WeekPlan {
   const name: PhaseName = ctx.phase?.name ?? "base";
   // P16: an extra recovery week when hour power is sliding despite the training getting done.
-  const recovery = (!!ctx.phase?.recoveryWeeks.includes(ctx.monday) && !ctx.skipRecovery) || ctx.mode === "deload";
-  const finalWeek = ctx.daysToGoal !== undefined && ctx.daysToGoal < 7;
+  // Time off already rested you: easing back in or a comeback replaces a scheduled recovery week.
+  const scheduledRecovery = !!ctx.phase?.recoveryWeeks.includes(ctx.weekStart) && !ctx.skipRecovery && ctx.mode !== "reentry" && ctx.mode !== "comeback";
+  const recovery = scheduledRecovery || ctx.mode === "deload";
+  const finalWeek = ctx.daysToGoal !== undefined && ctx.daysToGoal <= 7;
   const comeback = ctx.mode === "comeback";
   const reentry = ctx.mode === "reentry";
   const label = comeback
@@ -177,7 +178,7 @@ export function planWeek(budget: TimeBudget, ctx: WeekContext): WeekPlan {
   // Loading weeks already done in this phase drive progression; recovery and taper weeks don't progress.
   let step = 0;
   if (ctx.phase && !recovery && name !== "taper" && name !== "flex") {
-    for (let m = ctx.phase.start; m < ctx.monday; m = addDays(m, 7)) if (!ctx.phase.recoveryWeeks.includes(m)) step++;
+    for (let m = ctx.phase.start; m < ctx.weekStart; m = addDays(m, 7)) if (!ctx.phase.recoveryWeeks.includes(m)) step++;
   }
   if (ctx.step !== undefined) step = ctx.step;
   if (reentry) step = Math.max(0, step - 1);
@@ -189,8 +190,9 @@ export function planWeek(budget: TimeBudget, ctx: WeekContext): WeekPlan {
 
   const sessions: PlannedSession[] = [];
   for (const { slot, weekday } of placed) {
-    const date = addDays(ctx.monday, weekday);
-    if (ctx.daysToGoal !== undefined && weekday >= ctx.daysToGoal) continue; // event day and beyond belong to the event
+    const date = dateOf(ctx.weekStart, weekday);
+    const index = dayIndex(weekday); // days since the week started (Sunday = 0)
+    if (ctx.daysToGoal !== undefined && index >= ctx.daysToGoal) continue; // event day and beyond belong to the event
     const indoor = slot.indoorShare >= 0.5;
     const base = { date, weekday, start: slot.start, kind: slot.kind, indoor };
 
@@ -233,11 +235,11 @@ export function planWeek(budget: TimeBudget, ctx: WeekContext): WeekPlan {
       // P3–P5, P8: the phase's rotating menu; the day after the key session is never hard.
       const menu = MENU[name];
       const pick = qualityIndex === 0 ? rotate(menu.key, step) : rotate(menu.second, step);
-      const dayAfter = qualityIndex === 1 && weekday - lastQualityDay === 1 && getWorkout(pick).intensity === "hard";
+      const dayAfter = qualityIndex === 1 && index - lastQualityDay === 1 && getWorkout(pick).intensity === "hard";
       workoutId = dayAfter ? menu.dayAfter : pick;
       why = qualityIndex === 0 ? "Key session of the week." : dayAfter ? "Day after the key session, so slightly easier." : "Second quality session.";
       qualityIndex++;
-      lastQualityDay = weekday;
+      lastQualityDay = index;
     } else {
       workoutId = "endurance";
       why = "Keep most riding easy (E1).";
@@ -247,5 +249,5 @@ export function planWeek(budget: TimeBudget, ctx: WeekContext): WeekPlan {
     const ride = scaleWorkout(progressWorkout(getWorkout(workoutId), k), minutes);
     sessions.push({ ...base, minutes: ride.minutes, ride, fuel: fuelFor(ride.minutes, name, ride.workout.intensity), why });
   }
-  return { monday: ctx.monday, phase: name, label, recovery, sessions, adaptation: ctx.adaptation };
+  return { weekStart: ctx.weekStart, phase: name, label, recovery, sessions, adaptation: ctx.adaptation };
 }
