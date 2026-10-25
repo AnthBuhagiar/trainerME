@@ -16,7 +16,8 @@ export async function middleware(req: NextRequest) {
   if (PUBLIC.some((re) => re.test(path))) return NextResponse.next();
   if (await verifySession(req.cookies.get(SESSION_COOKIE)?.value)) return NextResponse.next();
   if (path.startsWith("/api/")) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
-  return NextResponse.redirect(new URL("/login", req.url));
+  // Behind a proxy, req.url carries the internal address (localhost), so build the link from the public one.
+  return NextResponse.redirect(new URL("/login", process.env.APP_URL || req.url));
 }
 
 export const config = { matcher: ["/((?!_next/).*)"] };
