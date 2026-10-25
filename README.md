@@ -73,6 +73,10 @@ The codespace stops when idle. For an app that's always there, run Hour Power on
 
 A server with nothing else on it can instead use `deploy/docker-compose.yml` (app plus its own Caddy): `./deploy/deploy.sh`.
 
+## Rides from Intervals.icu too
+
+With `INTERVALS_API_KEY` set, every sync also reads your rides from Intervals.icu (power and heart rate included), so Hour Power has a second source besides Strava. The same ride arriving from both is kept once. Rides that Intervals.icu itself got from Strava aren't shared over its API, so this mainly adds rides it receives from Garmin, Wahoo, Zwift and the like: connect those to Intervals.icu directly for the full benefit.
+
 ## Send workouts to Garmin (via Intervals.icu)
 
 Planned rides can go to your Garmin Connect calendar, then to your watch or head unit, which can run them on a smart trainer.

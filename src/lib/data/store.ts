@@ -31,8 +31,10 @@ export function writeJson(rel: string, value: unknown): void {
 
 /* Raw on-disk shapes (as returned by Strava / written by the stream processor). */
 
-interface RawActivity {
+export interface RawActivity {
   id: string;
+  /** Where it came from; Strava when missing (older files). */
+  source?: "strava" | "intervals";
   name: string;
   sport_type: string;
   start_local: string;
@@ -100,8 +102,31 @@ export function isIndoor(a: Activity): boolean {
   return a.isTrainer || a.sportType === "VirtualRide" || (a.elevationGain === 0 && a.sportType === "Ride");
 }
 
+/**
+ * The same ride can arrive from Strava and from Intervals.icu (e.g. a Garmin upload synced to both).
+ * Treat activities of the same kind starting within 2 minutes with similar length as one, keeping
+ * the copy whose streams are downloaded, then the Strava one.
+ */
+export function dedupeActivities(raw: RawActivity[], hasStreams: (id: string) => boolean = hasRideSummary): RawActivity[] {
+  const sorted = [...raw].sort((a, b) => a.start_local.localeCompare(b.start_local));
+  const kept: RawActivity[] = [];
+  const rank = (a: RawActivity) => (hasStreams(a.id) ? 2 : 0) + (a.source !== "intervals" ? 1 : 0);
+  for (const a of sorted) {
+    const i = kept.findIndex((k) => {
+      const sameKind = k.sport_type.includes("Ride") === a.sport_type.includes("Ride");
+      const gap = Math.abs(Date.parse(`${k.start_local}Z`) - Date.parse(`${a.start_local}Z`));
+      const lengths = [k.summary.moving_time, a.summary.moving_time];
+      const similar = Math.min(...lengths) >= 0.8 * Math.max(...lengths);
+      return k.source !== a.source && sameKind && gap <= 120_000 && similar;
+    });
+    if (i < 0) kept.push(a);
+    else if (rank(a) > rank(kept[i])) kept[i] = a;
+  }
+  return kept;
+}
+
 export function loadActivities(): Activity[] {
-  return readJson<RawActivity[]>("activities.json", []).map(toActivity);
+  return dedupeActivities(readJson<RawActivity[]>("activities.json", [])).map(toActivity);
 }
 
 export function saveRawActivities(raw: unknown[]): void {
