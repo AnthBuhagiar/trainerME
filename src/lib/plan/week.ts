@@ -1,6 +1,6 @@
 import { getWorkout, progressWorkout, scaleWorkout, type ScaledWorkout } from "@/lib/plan/library";
 import { addDays, dateOf, dayIndex } from "@/lib/plan/calendar";
-import { MAX_QUALITY_PER_WEEK, MENU, progressionStep, rotate } from "@/lib/plan/protocol";
+import { MAX_HARD_SHARE, MAX_QUALITY_PER_WEEK, MENU, MIN_EASY_SHARE, intensitySplit, progressionStep, rotate } from "@/lib/plan/protocol";
 import type { Phase, PhaseName } from "@/lib/plan/periodise";
 import type { TimeBudget, TimeSlot } from "@/lib/plan/timeBudget";
 
@@ -89,7 +89,7 @@ function circularGap(a: number, b: number): number {
 }
 
 /** Place every slot on a day of the week. */
-function placeSlots(slots: TimeSlot[]): { slot: TimeSlot; weekday: number }[] {
+export function placeSlots(slots: TimeSlot[]): { slot: TimeSlot; weekday: number }[] {
   const placed = slots.filter((s) => s.weekday >= 0).map((slot) => ({ slot, weekday: slot.weekday }));
   const rides = placed.filter((p) => p.slot.kind === "ride");
   const longDay = rides.length ? rides.reduce((a, b) => (b.slot.minutes > a.slot.minutes ? b : a)).weekday : -1;
@@ -249,5 +249,44 @@ export function planWeek(budget: TimeBudget, ctx: WeekContext): WeekPlan {
     const ride = scaleWorkout(progressWorkout(getWorkout(workoutId), k), minutes);
     sessions.push({ ...base, minutes: ride.minutes, ride, fuel: fuelFor(ride.minutes, name, ride.workout.intensity), why });
   }
-  return { weekStart: ctx.weekStart, phase: name, label, recovery, sessions, adaptation: ctx.adaptation };
+  return keepMostlyEasy({ weekStart: ctx.weekStart, phase: name, label, recovery, sessions, adaptation: ctx.adaptation });
+}
+
+/**
+ * P2 by construction: whatever days the rider trains on, if the week comes out
+ * with too little easy riding or too much at threshold, ease it in a fixed order
+ * until it complies: the second interval session first (to the phase's easier
+ * option, then to steady riding), then the long ride's efforts.
+ */
+function keepMostlyEasy(plan: WeekPlan): WeekPlan {
+  const ok = (p: WeekPlan) => {
+    const s = intensitySplit(p);
+    return !s.total || (s.easy / s.total >= MIN_EASY_SHARE[p.phase] && s.hard / s.total <= MAX_HARD_SHARE);
+  };
+  if (ok(plan)) return plan;
+  const key = (x: PlannedSession) => `${x.date} ${x.start}`;
+  const quality = plan.sessions.filter((x) => x.ride?.workout.main && x.ride.workout.purpose !== "durability" && x.ride.workout.intensity !== "easy");
+  const second = quality[1] ? key(quality[1]) : null;
+  const long = plan.sessions.find((x) => x.ride?.workout.purpose === "durability");
+  const longKey = long ? key(long) : null;
+  const swap = (p: WeekPlan, target: string, id: string, why: string): WeekPlan => ({
+    ...p,
+    sessions: p.sessions.map((x) => {
+      if (key(x) !== target || x.ride?.workout.id === id) return x;
+      const ride = scaleWorkout(getWorkout(id), x.minutes);
+      return { ...x, ride, minutes: ride.minutes, fuel: fuelFor(ride.minutes, p.phase, ride.workout.intensity), why };
+    }),
+  });
+  const steps: [string | null, string, string][] = [
+    [second, MENU[plan.phase].dayAfter, "Kept lighter so most of the week stays easy (P2)."],
+    [second, "endurance", "Kept easy so most of the week stays easy (P2)."],
+    [longKey, "endurance", "Steady long ride this week so most of the week stays easy (P2)."],
+  ];
+  let current = plan;
+  for (const [target, id, why] of steps) {
+    if (!target) continue;
+    current = swap(current, target, id, why);
+    if (ok(current)) return current;
+  }
+  return current;
 }

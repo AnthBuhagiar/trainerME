@@ -22,7 +22,7 @@ Intensities are shares of the rider's **training hour power** (their accepted be
 | Rule | What the app does | Evidence |
 |---|---|---|
 | **P1 · Two quality sessions** | At most two interval sessions a week. Everything else is easy riding, the long ride and strength. | E1, E9 (Neal; Stöggl) |
-| **P2 · Mostly easy** | At least **70%** of weekly riding time easy in base, **75%** in build, event-specific and taper, and no more than **15%** at threshold or above. | E1, E9 |
+| **P2 · Mostly easy** | At least **70%** of weekly riding time easy in base, **75%** in build, event-specific and taper, and no more than **15%** at threshold or above. Enforced whatever days the rider trains on: a week that comes out too hard is eased in a fixed order until it complies. First the second interval session becomes the phase's easier option, then steady riding; then the long ride loses its efforts. | E1, E9 |
 | **P3 · Pyramidal, then polarised** | **Base:** threshold key session, plus sweet spot or tempo. **Build:** short VO2 intervals key, threshold second. **Event-specific:** climbing pace, with a VO2 top-up. **Taper:** short, sharp work only. | E3, E9 (Filipas) |
 | **P4 · Short intervals first** | The main VO2 format is 30/15s, alternating with longer 4-minute efforts. | E2, E9 (Rønnestad) |
 | **P5 · Rotate to keep improving** | Interval types rotate every **3 loading weeks**, so gains don't plateau. | E9 (Lindsay; Stepto) |
@@ -32,7 +32,7 @@ Intensities are shares of the rider's **training hour power** (their accepted be
 | **P9 · Strength twice a week** | Heavy in base and build, maintenance in event-specific, mobility only in the taper. Kept off the day before a quality ride where the week allows. | E5 |
 | **P10 · The long ride** | Weekly, in the rider's own long slot: steady in base, efforts in the final hour from build on, and about once a month stretched to 3.5 h. | E6, E7 |
 | **P11 · Taper** | The last two weeks: volume down to about 60%, then about 45% in event week. Short efforts stay at target power. | E4 |
-| **P12 · Life first** | Plans fit inside the rider's usual week, read from their own history. Missed sessions are never carried over. Away days, busy days and check-ins adjust that day only, or re-plan the block for a week away. | E8, E9 (Cove: consistency over volume) |
+| **P12 · Life first** | Plans fit inside the rider's week: the days they choose in Settings, or, until they do, the usual week read from their own ride history. Missed sessions are never carried over. Away days, busy days and check-ins adjust that day only, or re-plan the block for a week away. | E8, E9 (Cove: consistency over volume) |
 
 ## Adapting to what was actually ridden (P13–P17)
 
