@@ -77,14 +77,23 @@ A server with nothing else on it can instead use `deploy/docker-compose.yml` (ap
 
 With `INTERVALS_API_KEY` set, every sync also reads your rides from Intervals.icu (power and heart rate included), so Hour Power has a second source besides Strava. The same ride arriving from both is kept once. Rides that Intervals.icu itself got from Strava aren't shared over its API, so this mainly adds rides it receives from Garmin, Wahoo, Zwift and the like: connect those to Intervals.icu directly for the full benefit.
 
-## Send workouts to Garmin (via Intervals.icu)
+## Use another app instead (optional)
+
+Hour Power plans, runs (Bluetooth trainer control) and records workouts by itself. If you'd rather ride them elsewhere, **Use another app instead** on the Week tab (this week and next) or on any workout sends them to:
+
+- **Intervals.icu**, and from there to Garmin Connect and Zwift (needs `INTERVALS_API_KEY`, below)
+- **Zwift**: `.zwo` files for `Documents/Zwift/Workouts/<your id>`; set Zwift's FTP to your training hour power
+- **Other trainer apps**: `.erg` files with watt targets
+- **Phone calendar**: an `.ics` file for Google or Apple Calendar, each event linking back to the workout
+
+## Send workouts to Intervals.icu
 
 Planned rides can go to your Garmin Connect calendar, then to your watch or head unit, which can run them on a smart trainer.
 
 1. Create a free account at [intervals.icu](https://intervals.icu) and connect Garmin Connect in its settings, allowing it to upload planned workouts.
 2. In Intervals.icu, open Settings → Developer Settings and generate an API key.
 3. Add it as a Codespaces secret named `INTERVALS_API_KEY` (or put it in `.env.local`), then restart the codespace.
-4. In Hour Power, open **Week** → **Send rides to Garmin**. It sends the rest of this week and next week, with watt targets from your current hour power. Sending again replaces what Hour Power sent before; anything you added yourself in Intervals.icu is left alone.
+4. In Hour Power, open **Week** → **Use another app instead** → **Intervals.icu: Send**. It sends the rest of this week and next week, with watt targets from your current hour power. Sending again replaces what Hour Power sent before; anything you added yourself in Intervals.icu is left alone.
 
 ## Run it on your computer
 

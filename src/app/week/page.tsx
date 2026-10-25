@@ -1,4 +1,4 @@
-import { SendToGarmin } from "@/components/SendToGarmin";
+import { SendExternal } from "@/components/SendExternal";
 import { SessionCard } from "@/components/SessionCard";
 import { kindOn, type AwayPeriod } from "@/lib/plan/away";
 import { dayLabel } from "@/lib/ui/format";
@@ -55,9 +55,9 @@ export default function WeekPage() {
         </p>
       </header>
       <WeekReviewCard review={review} next={isSunday ? next : undefined} title={isSunday ? "Your week" : "Last week"} />
-      <SendToGarmin configured={hasIntervalsKey()} />
       <Week plan={thisWeek} title="This week" today={state.today} away={state.away} />
       <Week plan={next} title="Next week" today={state.today} away={state.away} />
+      <SendExternal intervals={hasIntervalsKey()} />
       {state.budget.slots.length > 0 && (
         <section className="flex flex-col gap-2 rounded-3xl border border-line bg-card p-5">
           <h2 className="label">Your usual week</h2>

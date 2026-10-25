@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { sessionTitle } from "@/components/SessionCard";
+import { SendExternal } from "@/components/SendExternal";
 import { WorkoutSteps } from "@/components/WorkoutSteps";
+import { hasIntervalsKey } from "@/lib/intervals/client";
 import { workMinutes } from "@/lib/plan/library";
 import { resolveSession } from "@/lib/plan/session";
 import { clock12, dayLabel, length } from "@/lib/ui/format";
@@ -117,6 +119,8 @@ export default async function SessionPage({
           )}
         </section>
       )}
+
+      {session.ride && hourPower > 0 && <SendExternal intervals={hasIntervalsKey()} session={{ date, start: planned.start, minutes }} />}
 
       {planned.adjusted && <p className="text-[14px] font-semibold text-signal-ink">{planned.adjusted}</p>}
       <p className="text-[13px] text-muted">Why: {planned.why}</p>
