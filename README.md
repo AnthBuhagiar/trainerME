@@ -71,7 +71,28 @@ The codespace stops when idle. For an app that's always there, run Hour Power on
 - Logs: `journalctl -u hour-power -n 50`. Status: `systemctl status hour-power`.
 - Your data is in `/opt/hour-power/data`; download a backup from Settings now and then.
 
+### Keep the server patched (whole server)
+Security fixes for Ubuntu, PHP, Node.js and everything else installed with `apt` are applied every 6 hours, and services using an updated library are restarted. If a kernel update needs a reboot, the server reboots at 3:30 am Sydney time, only then. This covers **every app on the Droplet**, so make sure the other apps start on boot (`systemctl is-enabled <service>`).
+```bash
+curl -fsSL https://raw.githubusercontent.com/AnthBuhagiar/trainerME/main/deploy/server-updates.sh -o server-updates.sh && bash server-updates.sh
+```
+Check it with `systemctl list-timers 'apt-daily*'` and `tail /var/log/unattended-upgrades/unattended-upgrades.log`.
+
+### Weekly security check, logged to GitHub
+Every Monday the server checks for waiting updates, pending reboots, open ports, firewall and SSH settings, failed SSH logins, disk space and a Lynis audit, and commits the report to a GitHub repository: `reports/<server>/<date>.md`, with an index in `reports/<server>/README.md`.
+1. Create a **private** repository (e.g. `server-security-log`) with a README, so the reports aren't public.
+2. Create a [fine-grained token](https://github.com/settings/personal-access-tokens/new): only that repository, **Contents: Read and write**.
+3. On the server (the token is asked for and kept in `/etc/security-scan.env`, readable by root only):
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/AnthBuhagiar/trainerME/main/deploy/install-security-scan.sh -o install-security-scan.sh && bash install-security-scan.sh AnthBuhagiar/server-security-log
+   ```
+   It runs the first check straight away. Run one any time with `systemctl start security-scan`.
+
 A server with nothing else on it can instead use `deploy/docker-compose.yml` (app plus its own Caddy): `./deploy/deploy.sh`.
+
+## Trainer and heart rate
+
+Pair your smart trainer and heart-rate strap once in **Settings and data → Trainer and heart rate**. They're remembered on that phone: in Chrome the workout connects to them by itself once they're switched on; in browsers that can't do that (Bluefy), the chooser lists only your paired device, so it's one tap. It's Bluetooth only, since browsers can't use ANT+; trainers and straps with ANT+ almost always have Bluetooth too. A strap that allows two Bluetooth connections (most recent Garmin, Wahoo and Polar straps) can talk to the phone and a watch at the same time.
 
 ## Rides from Intervals.icu too
 
