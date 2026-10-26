@@ -5,8 +5,9 @@ import { placeSlots } from "@/lib/plan/week";
 /**
  * The rider's own choice of training days (P12: life first). When set, it
  * replaces the week Hour Power reads from their Strava history. One session a
- * day: off, a ride (indoor or outdoor) or strength, with a start time and how
- * long they have. Weekdays are numbered Monday = 0 ... Sunday = 6.
+ * day: off, a ride (indoor or outdoor) or strength, and how long they have.
+ * Any time that day is fine, so riders don't pick one; `start` is kept only to
+ * order sessions and for calendar exports. Weekdays are numbered Monday = 0 ... Sunday = 6.
  */
 
 export type DayKind = "off" | "ride" | "strength";
@@ -14,7 +15,7 @@ export type DayKind = "off" | "ride" | "strength";
 export interface DayChoice {
   weekday: number;
   kind: DayKind;
-  /** "HH:MM" */
+  /** "HH:MM": not asked for; carried over from the learned week or a default. */
   start: string;
   minutes: number;
   indoor: boolean;

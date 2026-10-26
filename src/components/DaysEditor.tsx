@@ -53,13 +53,6 @@ export function DaysEditor({ initial, custom }: { initial: DayChoice[]; custom: 
               </div>
               {d.kind !== "off" && (
                 <div className="flex items-center gap-2 text-[14px]">
-                  <input
-                    type="time"
-                    value={d.start}
-                    onChange={(e) => set(weekday, { start: e.target.value })}
-                    className="h-9 w-[7.25rem] shrink-0 rounded-lg border border-line bg-card px-2"
-                    aria-label={`${NAMES[weekday]} start time`}
-                  />
                   <select
                     value={d.minutes}
                     onChange={(e) => set(weekday, { minutes: Number(e.target.value) })}
