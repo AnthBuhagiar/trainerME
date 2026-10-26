@@ -15,6 +15,7 @@ import {
   stopOrPause,
 } from "@/lib/player/ftms";
 import { clearRide, elapsedAt, emptyRide, end, isRunning, loadRide, pause, record, saveRide, skip, start, type RideState } from "@/lib/player/session";
+import { chooseDevice, connectRemembered, loadSensors } from "@/lib/player/devices";
 import { stepAt, type PlayerStep } from "@/lib/player/steps";
 import { buildTcx } from "@/lib/strava/tcx";
 import { WorkoutDashboard } from "@/components/WorkoutDashboard";
@@ -122,18 +123,25 @@ export function RidePlayer({ name, autoUpload, steps, backHref, storageKey }: Pr
     [write],
   );
 
-  async function connectTrainer() {
-    setError(null);
-    try {
-      const d = await navigator.bluetooth!.requestDevice({ filters: [{ services: [FTMS_SERVICE] }] });
+  const watchTrainer = useCallback(
+    (d: BluetoothDevice) => {
       d.addEventListener("gattserverdisconnected", () => {
         // The workout clock keeps going (you're still pedalling); try to get the trainer back.
         setTrainer(null);
         control.current = null;
         setError("Trainer connection dropped. Reconnecting…");
-        void reconnect();
+        void reconnectRef.current();
       });
-      await setupTrainer(d);
+      return setupTrainer(d);
+    },
+    [setupTrainer],
+  );
+
+  /** The chooser, filtered to the paired trainer if there is one; `fresh` lists every trainer. */
+  async function connectTrainer(fresh = false) {
+    setError(null);
+    try {
+      await watchTrainer(await chooseDevice("trainer", fresh));
     } catch (e) {
       if ((e as Error).name !== "NotFoundError") setError(`Couldn't connect: ${(e as Error).message}`);
     }
@@ -153,22 +161,46 @@ export function RidePlayer({ name, autoUpload, steps, backHref, storageKey }: Pr
     }
     setError("Trainer not reachable. Tap Connect trainer to carry on: your workout and recording are kept.");
   }, [setupTrainer]);
+  const reconnectRef = useRef(reconnect);
+  reconnectRef.current = reconnect;
+
+  const setupHr = useCallback(async (d: BluetoothDevice) => {
+    const server = d.gatt!.connected ? d.gatt! : await d.gatt!.connect();
+    const c = await (await server.getPrimaryService(HEART_RATE_SERVICE)).getCharacteristic(HEART_RATE_MEASUREMENT);
+    c.addEventListener("characteristicvaluechanged", (e) => {
+      const hr = parseHeartRate((e.target as BluetoothRemoteGATTCharacteristic).value!);
+      setLive((l) => ({ ...l, hr }));
+    });
+    await c.startNotifications();
+    d.addEventListener("gattserverdisconnected", () => setHrName(null));
+    setHrName(d.name ?? "Heart rate");
+  }, []);
 
   async function connectHr() {
     try {
-      const d = await navigator.bluetooth!.requestDevice({ filters: [{ services: [HEART_RATE_SERVICE] }] });
-      const server = await d.gatt!.connect();
-      const c = await (await server.getPrimaryService(HEART_RATE_SERVICE)).getCharacteristic(HEART_RATE_MEASUREMENT);
-      c.addEventListener("characteristicvaluechanged", (e) => {
-        const hr = parseHeartRate((e.target as BluetoothRemoteGATTCharacteristic).value!);
-        setLive((l) => ({ ...l, hr }));
-      });
-      await c.startNotifications();
-      setHrName(d.name ?? "Heart rate");
+      await setupHr(await chooseDevice("hr"));
     } catch (e) {
       if ((e as Error).name !== "NotFoundError") setError(`Couldn't connect heart rate: ${(e as Error).message}`);
     }
   }
+
+  // Paired in Settings: connect by ourselves as soon as the sensors are on, where the browser allows it.
+  const [paired, setPaired] = useState<{ trainer?: string; hr?: string }>({});
+  useEffect(() => {
+    if (!navigator.bluetooth) return;
+    const s = loadSensors();
+    setPaired({ trainer: s.trainer?.name, hr: s.hr?.name });
+    let cancelled = false;
+    void (async () => {
+      const [t, h] = await Promise.all([s.trainer ? connectRemembered("trainer") : null, s.hr ? connectRemembered("hr") : null]);
+      if (cancelled) return;
+      if (t) await watchTrainer(t).catch(() => {});
+      if (h) await setupHr(h).catch(() => {});
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [watchTrainer, setupHr]);
 
   // Clock: refresh every second from the wall clock, and straight away when the app comes back.
   useEffect(() => {
@@ -344,7 +376,7 @@ export function RidePlayer({ name, autoUpload, steps, backHref, storageKey }: Pr
           onSkip={skipStep}
           onOffset={(d) => setRide((r) => ({ ...r, offset: Math.max(-20, Math.min(10, r.offset + d)) }))}
           onMinimise={() => setMinimised(true)}
-          onConnect={connectTrainer}
+          onConnect={() => connectTrainer()}
         />
       )}
       {ride.startedAt && !done && minimised && (
@@ -439,9 +471,16 @@ export function RidePlayer({ name, autoUpload, steps, backHref, storageKey }: Pr
       {error && <p className="text-[14px] font-semibold text-signal-ink">{error}</p>}
 
       {!trainer ? (
-        <button onClick={connectTrainer} className="h-14 rounded-2xl bg-signal-ink text-[17px] font-semibold text-white">
-          Connect trainer
-        </button>
+        <div className="flex flex-col gap-1">
+          <button onClick={() => connectTrainer()} className="h-14 rounded-2xl bg-signal-ink text-[17px] font-semibold text-white">
+            {paired.trainer ? `Connect ${paired.trainer}` : "Connect trainer"}
+          </button>
+          {paired.trainer && (
+            <button onClick={() => connectTrainer(true)} className="h-10 text-[14px] font-semibold text-muted">
+              Use a different trainer
+            </button>
+          )}
+        </div>
       ) : (
         !done && (
           <div className="grid grid-cols-[1fr_auto] gap-2">
@@ -495,7 +534,7 @@ export function RidePlayer({ name, autoUpload, steps, backHref, storageKey }: Pr
           <span className="text-muted">HR: {hrName}</span>
         ) : (
           <button onClick={connectHr} className="font-semibold text-signal-ink">
-            Add heart rate
+            {paired.hr ? `Connect ${paired.hr}` : "Add heart rate"}
           </button>
         )}
       </div>
