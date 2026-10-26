@@ -7,7 +7,7 @@ import { WorkoutSteps } from "@/components/WorkoutSteps";
 import { hasIntervalsKey } from "@/lib/intervals/client";
 import { workMinutes } from "@/lib/plan/library";
 import { resolveSession } from "@/lib/plan/session";
-import { clock12, dayLabel, length } from "@/lib/ui/format";
+import { dayLabel, length } from "@/lib/ui/format";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +44,7 @@ async function SessionPageView({
       </Link>
       <header className="flex flex-col gap-1">
         <div className="label">
-          {dayLabel(date, state.today)} · {clock12(planned.start)} · {week.label}
+          {dayLabel(date, state.today)} · {week.label}
         </div>
         <h1 className="display text-[26px] leading-tight">{sessionTitle(session)}</h1>
         <div className="display text-[18px]">{length(session.minutes)}</div>
