@@ -1,3 +1,4 @@
+import { asAthlete } from "@/lib/auth/athlete";
 import Link from "next/link";
 import { ChangeList } from "@/components/ChangeList";
 import { loadState } from "@/lib/plan/current";
@@ -5,7 +6,7 @@ import { loadState } from "@/lib/plan/current";
 export const dynamic = "force-dynamic";
 
 /** The full "why it changed" history, one line per ride that moved the estimate. */
-export default function ChangesPage() {
+function ChangesPageView() {
   const { history } = loadState();
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-4 px-5 py-6">
@@ -17,4 +18,8 @@ export default function ChangesPage() {
       {history?.ledger.length ? <ChangeList entries={history.ledger} /> : <p className="text-[15px] text-muted">No changes yet.</p>}
     </main>
   );
+}
+
+export default async function ChangesPage() {
+  return asAthlete(() => ChangesPageView());
 }

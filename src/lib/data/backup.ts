@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { DATA_DIR } from "@/lib/data/store";
+import { dataDir } from "@/lib/data/store";
 
 /**
  * Everything in data/ except credentials, as one JSON file, so the app can
@@ -8,7 +8,7 @@ import { DATA_DIR } from "@/lib/data/store";
  * record stay behind: the new copy signs in to Strava itself.
  */
 
-const EXCLUDE = new Set(["strava-tokens.json", "owner.json"]);
+const EXCLUDE = new Set(["strava-tokens.json", "owner.json", "intervals.json"]);
 
 export interface Backup {
   app: "hour-power";
@@ -21,16 +21,18 @@ function walk(dir: string, base = ""): string[] {
   if (!fs.existsSync(dir)) return [];
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
     const rel = path.posix.join(base, e.name);
-    if (e.isDirectory()) return walk(path.join(dir, e.name), rel);
+    // athletes/ only exists at the top of a shared server; never part of one rider's backup.
+    if (e.isDirectory()) return rel === "athletes" ? [] : walk(path.join(dir, e.name), rel);
     return e.name.endsWith(".json") && !EXCLUDE.has(rel) ? [rel] : [];
   });
 }
 
 export function createBackup(): Backup {
   const files: Record<string, unknown> = {};
-  for (const rel of walk(DATA_DIR)) {
+  const dir = dataDir();
+  for (const rel of walk(dir)) {
     try {
-      files[rel] = JSON.parse(fs.readFileSync(path.join(DATA_DIR, rel), "utf8"));
+      files[rel] = JSON.parse(fs.readFileSync(path.join(dir, rel), "utf8"));
     } catch {
       // skip unreadable files
     }
@@ -40,7 +42,7 @@ export function createBackup(): Backup {
 
 /** Safe relative paths only: no "..", no absolute paths, JSON files, never credentials. */
 export function isSafePath(rel: string): boolean {
-  return /^[a-zA-Z0-9_-]+(\/[a-zA-Z0-9_.-]+)*\.json$/.test(rel) && !rel.split("/").includes("..") && !EXCLUDE.has(rel);
+  return /^[a-zA-Z0-9_-]+(\/[a-zA-Z0-9_.-]+)*\.json$/.test(rel) && !rel.split("/").includes("..") && !EXCLUDE.has(rel) && !rel.startsWith("athletes/");
 }
 
 export function restoreBackup(backup: Backup): number {
@@ -48,7 +50,7 @@ export function restoreBackup(backup: Backup): number {
   let n = 0;
   for (const [rel, value] of Object.entries(backup.files)) {
     if (!isSafePath(rel)) continue;
-    const target = path.join(DATA_DIR, rel);
+    const target = path.join(dataDir(), rel);
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.writeFileSync(target, JSON.stringify(value, null, 2));
     n++;

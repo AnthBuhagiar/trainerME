@@ -244,9 +244,10 @@ Onboarding target for the average rider: **Sign in with Strava → Connect Garmi
 - [ ] **Connect Intervals.icu** (its OAuth sign-in, not API keys) as the fallback route for Wahoo, Zwift and riders Garmin doesn't cover. Today's personal build uses an API key.
   - Done for the personal build: rides are read from Intervals.icu with the API key as a second source (deduplicated with Strava). Next: register an Intervals.icu OAuth app for a "Sign in with Intervals.icu" button.
 - [ ] **TrainingPeaks** sign-in and data: needs TrainingPeaks partner API approval (closed API).
-- [ ] **Strava capacity:** a new Strava API app allows 1 athlete, self-serve up to 10; beyond that Strava reviews the app (no guaranteed timeline, webhooks expected). Apply once the hosted app works.
+- [ ] **Strava capacity:** a new Strava API app allows 1 athlete, self-serve up to 10; beyond that Strava reviews the app (no guaranteed timeline, webhooks expected). Multi-user is built: raise to 10 in Strava's API settings now; the review request is drafted in `docs/strava-capacity-request.md`.
 - [ ] Direct Garmin / Wahoo / FIT-file import (don't rely on Strava alone; see risks).
-- [ ] Multi-user accounts, onboarding from a time budget instead of an FTP test.
+- [x] **Multi-user accounts** on the hosted app: Sign in with Strava for anyone, a folder per athlete, delete-my-account, privacy page, Strava deauthorisation webhook, optional `MAX_ATHLETES` cap. *Still JSON files on one server; a database comes when riders outgrow it.*
+- [ ] Onboarding from a time budget instead of an FTP test.
 - [ ] Pricing at or below JOIN/TrainerRoad; free tier showing hour power only.
 - [ ] Coach dashboard; monthly W/kg hour-power leaderboard (estimated, with range).
 - [ ] **Calendar-to-trainer player** (once hosted). *The Bluetooth workout player itself is built (Ride it on my trainer, FTMS ERG control); what remains is the .ics feed linking to it.* Each planned session becomes a calendar event (.ics feed) linking to a built-in workout player, which controls the smart trainer over Bluetooth (ERG mode): "Tap the calendar event, ride the workout, nothing to install." Not offered by JOIN or Strava. Limits: a live feed needs a hosted app; Bluetooth needs Chrome (Android/desktop) or Bluefy on iPhone; usually only one device controls the trainer at a time.

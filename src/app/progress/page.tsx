@@ -1,3 +1,4 @@
+import { asAthlete } from "@/lib/auth/athlete";
 import { ChangeList } from "@/components/ChangeList";
 import { HourPowerChart } from "@/components/HourPowerChart";
 import { backtest } from "@/lib/engine/backtest";
@@ -10,7 +11,7 @@ function signed(n: number): string {
   return `${r > 0 ? "+" : r < 0 ? "−" : "±"}${Math.abs(r)} W`;
 }
 
-export default function ProgressPage() {
+function ProgressPageView() {
   const { model, history, current, summary, goal, settings, now } = loadState();
   if (!history || !current) {
     return (
@@ -76,4 +77,8 @@ export default function ProgressPage() {
       <ChangeList entries={history.ledger} limit={3} />
     </main>
   );
+}
+
+export default async function ProgressPage() {
+  return asAthlete(() => ProgressPageView());
 }

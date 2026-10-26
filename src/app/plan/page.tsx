@@ -1,3 +1,4 @@
+import { asAthlete } from "@/lib/auth/athlete";
 import Link from "next/link";
 import { AwayManager } from "@/components/AwayManager";
 import { kindOn } from "@/lib/plan/away";
@@ -31,7 +32,7 @@ function weekLine(plan: WeekPlan) {
   };
 }
 
-export default function PlanPage() {
+function PlanPageView() {
   const state = loadState();
   const { summary } = state;
   if (!summary) {
@@ -147,4 +148,8 @@ export default function PlanPage() {
       <AwayManager periods={state.away} today={state.today} />
     </main>
   );
+}
+
+export default async function PlanPage() {
+  return asAthlete(() => PlanPageView());
 }

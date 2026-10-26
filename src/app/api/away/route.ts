@@ -1,13 +1,14 @@
+import { athleteRoute } from "@/lib/auth/athlete";
 import { NextResponse } from "next/server";
 import { loadAway, saveAway, type AwayKind } from "@/lib/plan/away";
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-export async function GET() {
+async function get() {
   return NextResponse.json(loadAway());
 }
 
-export async function POST(request: Request) {
+async function post(request: Request) {
   const body = (await request.json()) as { start?: string; end?: string; kind?: AwayKind; note?: string };
   const start = body.start ?? "";
   const end = body.end || start;
@@ -19,8 +20,12 @@ export async function POST(request: Request) {
   return NextResponse.json(loadAway());
 }
 
-export async function DELETE(request: Request) {
+async function remove(request: Request) {
   const id = new URL(request.url).searchParams.get("id");
   saveAway(loadAway().filter((p) => p.id !== id));
   return NextResponse.json(loadAway());
 }
+
+export const GET = athleteRoute(get);
+export const POST = athleteRoute(post);
+export const DELETE = athleteRoute(remove);

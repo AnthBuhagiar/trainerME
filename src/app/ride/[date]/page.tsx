@@ -1,3 +1,4 @@
+import { asAthlete } from "@/lib/auth/athlete";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { RidePlayer } from "@/components/RidePlayer";
@@ -7,7 +8,7 @@ import { resolveSession } from "@/lib/plan/session";
 
 export const dynamic = "force-dynamic";
 
-export default async function RidePage({
+async function RidePageView({
   params,
   searchParams,
 }: {
@@ -29,4 +30,8 @@ export default async function RidePage({
       <RidePlayer storageKey={`${date}-${planned.start}`} name={sessionTitle(session)} autoUpload={!!found.state.settings.autoUpload} steps={playerSteps(session.ride!.workout, hourPower)} backHref={back} />
     </main>
   );
+}
+
+export default async function RidePage(props: Parameters<typeof RidePageView>[0]) {
+  return asAthlete(() => RidePageView(props));
 }

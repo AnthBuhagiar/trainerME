@@ -1,12 +1,13 @@
+import { athleteRoute } from "@/lib/auth/athlete";
 import { NextResponse } from "next/server";
 import { loadGoals, saveGoals, saveRoute, upsertGoal } from "@/lib/goals/model";
 import { parseGoal } from "@/lib/goals/parse";
 
-export async function GET() {
+async function get() {
   return NextResponse.json(loadGoals());
 }
 
-export async function POST(request: Request) {
+async function post(request: Request) {
   const body = await request.json();
   const parsed = parseGoal(body, loadGoals());
   if (typeof parsed === "string") return NextResponse.json({ error: parsed }, { status: 400 });
@@ -21,8 +22,12 @@ export async function POST(request: Request) {
   return NextResponse.json(upsertGoal(parsed));
 }
 
-export async function DELETE(request: Request) {
+async function remove(request: Request) {
   const id = new URL(request.url).searchParams.get("id");
   saveGoals(loadGoals().filter((g) => g.id !== id));
   return NextResponse.json(loadGoals());
 }
+
+export const GET = athleteRoute(get);
+export const POST = athleteRoute(post);
+export const DELETE = athleteRoute(remove);

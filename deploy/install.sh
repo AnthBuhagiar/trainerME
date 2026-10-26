@@ -45,6 +45,9 @@ SESSION_SECRET=$(openssl rand -hex 32)
 STRAVA_CLIENT_ID=
 STRAVA_CLIENT_SECRET=
 INTERVALS_API_KEY=
+MAX_ATHLETES=
+CONTACT_EMAIL=
+STRAVA_WEBHOOK_TOKEN=$(openssl rand -hex 16)
 ENV
   echo "Created /etc/hour-power.env"
 fi

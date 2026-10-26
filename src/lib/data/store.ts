@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import fs from "node:fs";
 import path from "node:path";
 import type { Activity, AthleteSettings, Ride, RideStreams } from "@/lib/types";
@@ -9,20 +10,69 @@ import type { Activity, AthleteSettings, Ride, RideStreams } from "@/lib/types";
 
 export const DATA_DIR = process.env.TRAINERME_DATA_DIR ?? path.join(process.cwd(), "data");
 
+/**
+ * Hosted with sign-in, every athlete has their own folder, data/athletes/<id>,
+ * and each request reads and writes only the signed-in athlete's. Without
+ * sign-in (codespace, own computer) there's one rider and data/ is theirs.
+ */
+const scope = new AsyncLocalStorage<{ athleteId: number; dir: string }>();
+
+export const multiUser = () => !!process.env.SESSION_SECRET;
+
+export function athleteDir(athleteId: number): string {
+  if (!Number.isSafeInteger(athleteId) || athleteId <= 0) throw new Error("Not an athlete id.");
+  return path.join(DATA_DIR, "athletes", String(athleteId));
+}
+
+/** Run `fn` with this athlete's data. Everything it reads or writes stays in their folder. */
+export function runAsAthlete<T>(athleteId: number, fn: () => T): T {
+  return scope.run({ athleteId, dir: athleteDir(athleteId) }, fn);
+}
+
+/** The signed-in athlete for this request, if any. */
+export function currentAthlete(): number | null {
+  return scope.getStore()?.athleteId ?? null;
+}
+
+/** The folder for this request's data. Hosted, refuse rather than fall back to a shared folder. */
+export function dataDir(): string {
+  const s = scope.getStore();
+  if (s) return s.dir;
+  if (multiUser()) throw new Error("No signed-in athlete for this request.");
+  return DATA_DIR;
+}
+
 function file(...parts: string[]): string {
-  return path.join(DATA_DIR, ...parts);
+  return path.join(dataDir(), ...parts);
 }
 
 export function readJson<T>(rel: string, fallback: T): T {
+  const target = file(rel); // outside the try: a missing athlete must fail, not read as empty
   try {
-    return JSON.parse(fs.readFileSync(file(rel), "utf8")) as T;
+    return JSON.parse(fs.readFileSync(target, "utf8")) as T;
   } catch {
     return fallback;
   }
 }
 
+/** Server-wide records (who owns the server), outside any athlete's folder. */
+export function readServerJson<T>(rel: string, fallback: T): T {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(DATA_DIR, rel), "utf8")) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+export function writeServerJson(rel: string, value: unknown): void {
+  writeFileAtomic(path.join(DATA_DIR, rel), value);
+}
+
 export function writeJson(rel: string, value: unknown): void {
-  const target = file(rel);
+  writeFileAtomic(file(rel), value);
+}
+
+function writeFileAtomic(target: string, value: unknown): void {
   fs.mkdirSync(path.dirname(target), { recursive: true });
   const tmp = `${target}.tmp`;
   fs.writeFileSync(tmp, JSON.stringify(value, null, 2));
@@ -145,19 +195,29 @@ export function rideDataVersion(): string {
       return 0;
     }
   };
-  return `${DATA_DIR}:${at(file("activities.json"))}:${at(file("rides"))}`;
+  return `${dataDir()}:${at(file("activities.json"))}:${at(file("rides"))}`;
 }
 
-let activitiesCache: { version: string; value: Activity[] } | null = null;
-let ridesCache: { version: string; value: Ride[] } | null = null;
+/** A few recent entries per kind, so riders signed in at the same time don't push each other out. */
+export function smallCache<T>(size = 20) {
+  const m = new Map<string, { version: string; value: T }>();
+  return (key: string, version: string, make: () => T): T => {
+    const hit = m.get(key);
+    if (hit?.version === version) return hit.value;
+    const value = make();
+    m.delete(key);
+    m.set(key, { version, value });
+    if (m.size > size) m.delete(m.keys().next().value!);
+    return value;
+  };
+}
+
+const activitiesCache = smallCache<Activity[]>();
+const ridesCache = smallCache<Ride[]>();
 
 /** Read once and kept until the next sync: every screen needs them, and parsing them is the slow part. */
 export function loadActivities(): Activity[] {
-  const version = rideDataVersion();
-  if (activitiesCache?.version !== version) {
-    activitiesCache = { version, value: dedupeActivities(readJson<RawActivity[]>("activities.json", [])).map(toActivity) };
-  }
-  return activitiesCache.value;
+  return activitiesCache(dataDir(), rideDataVersion(), () => dedupeActivities(readJson<RawActivity[]>("activities.json", [])).map(toActivity));
 }
 
 export function saveRawActivities(raw: unknown[]): void {
@@ -177,9 +237,7 @@ export function hasRideSummary(id: string): boolean {
 }
 
 export function loadRides(): Ride[] {
-  const version = rideDataVersion();
-  if (ridesCache?.version !== version) ridesCache = { version, value: readRides() };
-  return ridesCache.value;
+  return ridesCache(dataDir(), rideDataVersion(), readRides);
 }
 
 function readRides(): Ride[] {

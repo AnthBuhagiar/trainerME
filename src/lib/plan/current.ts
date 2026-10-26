@@ -1,4 +1,4 @@
-import { loadActivities, loadRides, loadSettings, rideDataVersion, saveSettings } from "@/lib/data/store";
+import { dataDir, loadActivities, loadRides, loadSettings, rideDataVersion, saveSettings, smallCache } from "@/lib/data/store";
 import { dateOnly, todayLocal } from "@/lib/engine/dates";
 import { buildHistory } from "@/lib/engine/history";
 import { buildModel } from "@/lib/engine/hourPower";
@@ -13,7 +13,7 @@ import { weekStartOf, phaseOn } from "@/lib/plan/periodise";
 import { applyStrengthTarget, inferTimeBudget } from "@/lib/plan/timeBudget";
 import { EXTENDED_LONG_RIDE_MINUTES, extendedLongRideWeeks, planWeek, type WeekPlan } from "@/lib/plan/week";
 
-let modelCache: { key: string; model: ReturnType<typeof buildModel> | null; history: ReturnType<typeof buildHistory> | null } | null = null;
+const modelCache = smallCache<{ model: ReturnType<typeof buildModel> | null; history: ReturnType<typeof buildHistory> | null }>();
 
 /** Everything the screens need, read from the local store once per request. */
 export function loadState() {
@@ -22,12 +22,10 @@ export function loadState() {
   const settings = loadSettings();
   const rides = loadRides();
   // The estimate only changes with new rides or a new day, so work it out once for both.
-  const key = `${rideDataVersion()}:${today}`;
-  if (modelCache?.key !== key) {
+  const { model, history } = modelCache(dataDir(), `${rideDataVersion()}:${today}`, () => {
     const m = rides.length ? buildModel(rides) : null;
-    modelCache = { key, model: m, history: m ? buildHistory(m, now) : null };
-  }
-  const { model, history } = modelCache;
+    return { model: m, history: m ? buildHistory(m, now) : null };
+  });
   const current = history?.current ?? null;
   const activities = loadActivities();
   // The rider's chosen days win; otherwise the usual week is read from their ride history.

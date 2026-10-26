@@ -1,3 +1,4 @@
+import { asAthlete } from "@/lib/auth/athlete";
 import { SendExternal } from "@/components/SendExternal";
 import { SessionCard } from "@/components/SessionCard";
 import { kindOn, type AwayPeriod } from "@/lib/plan/away";
@@ -39,7 +40,7 @@ function Week({ plan, title, today, away }: { plan: WeekPlan; title: string; tod
   );
 }
 
-export default function WeekPage() {
+function WeekPageView() {
   const state = loadState();
   const thisWeek = state.week(state.thisWeekStart);
   const next = state.week(nextWeekStart(state.thisWeekStart));
@@ -63,4 +64,8 @@ export default function WeekPage() {
       <SendExternal intervals={hasIntervalsKey()} />
     </main>
   );
+}
+
+export default async function WeekPage() {
+  return asAthlete(() => WeekPageView());
 }

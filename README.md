@@ -62,7 +62,7 @@ The codespace stops when idle. For an app that's always there, run Hour Power on
    It installs Node.js 20 if needed, adds a swap file if there's none, creates the service, adds the site to Caddy (backing up the Caddyfile and only reloading if the new config validates), and starts the app.
 4. **Keys:** `nano /etc/hour-power.env`, fill in `STRAVA_CLIENT_ID` and `STRAVA_CLIENT_SECRET` (and `INTERVALS_API_KEY` if you use it), save with Ctrl+O, Enter, Ctrl+X, then `systemctl restart hour-power`. The sign-in secret is already generated.
 5. **Strava:** in [Strava API settings](https://www.strava.com/settings/api) set **Authorization Callback Domain** to your domain. (Strava allows one domain, so the codespace can't reconnect after this; it keeps working with the connection it has.)
-6. **Sign in:** open `https://hourpower.yourdomain.com` and **Sign in with Strava**. The first Strava account to sign in owns the app; nobody else can.
+6. **Sign in:** open `https://hourpower.yourdomain.com` and **Sign in with Strava**. The first Strava account to sign in runs the server (the server's Intervals.icu key is theirs). Other riders can sign in too, each with their own data: see **Several riders** below.
 7. **Restore:** **Settings and data → Restore from a backup** with the file from step 1.
 8. **Phone:** open the address and **Add to Home Screen** (Safari: Share → Add to Home Screen; Chrome: ⋮ → Install app).
 
@@ -70,6 +70,23 @@ The codespace stops when idle. For an app that's always there, run Hour Power on
 - New versions arrive on their own within about 15 minutes of a merge to `main` (or run `/opt/hour-power/update.sh`).
 - Logs: `journalctl -u hour-power -n 50`. Status: `systemctl status hour-power`.
 - Your data is in `/opt/hour-power/data`; download a backup from Settings now and then.
+
+### Several riders
+Anyone with Strava can sign in to a hosted Hour Power. Each athlete gets their own folder, `data/athletes/<Strava athlete id>/`, and every page and request reads and writes only the signed-in athlete's folder (with sign-in on, the app refuses to touch data without one). Nobody sees anyone else's rides.
+
+- **Strava's limit:** a new Strava API app allows only its owner. Raise it to 10 athletes yourself at [Strava API settings](https://www.strava.com/settings/api); beyond 10, Strava reviews the app (see `docs/strava-capacity-request.md`).
+- **Cap it on the server:** `MAX_ATHLETES=10` in `/etc/hour-power.env` (riders already signed up always get back in).
+- **Privacy page** at `/privacy`; add `CONTACT_EMAIL=` to show a contact address.
+- **Delete my account** in Settings removes the rider's folder and revokes Hour Power's Strava access.
+- **Webhook (recommended, expected by Strava's review):** removes a rider's data when they remove Hour Power in Strava. Once, on the server:
+  ```bash
+  source /etc/hour-power.env && curl -X POST https://www.strava.com/api/v3/push_subscriptions \
+    -F client_id=$STRAVA_CLIENT_ID -F client_secret=$STRAVA_CLIENT_SECRET \
+    -F callback_url=$APP_URL/api/strava/webhook -F verify_token=$STRAVA_WEBHOOK_TOKEN
+  ```
+  (If `STRAVA_WEBHOOK_TOKEN` is empty, add one first: `openssl rand -hex 16`, then `systemctl restart hour-power`.)
+- Data from before this change moves into the first rider's folder on their next visit.
+- The server's `INTERVALS_API_KEY` is only used for the rider who runs the server.
 
 ### Keep the server patched (whole server)
 Security fixes for Ubuntu, PHP, Node.js and everything else installed with `apt` are applied every 6 hours, and services using an updated library are restarted. If a kernel update needs a reboot, the server reboots at 3:30 am Sydney time, only then. This covers **every app on the Droplet**, so make sure the other apps start on boot (`systemctl is-enabled <service>`).

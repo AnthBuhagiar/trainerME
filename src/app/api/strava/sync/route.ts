@@ -1,3 +1,4 @@
+import { athleteRoute } from "@/lib/auth/athlete";
 import { NextResponse } from "next/server";
 import { syncIntervals } from "@/lib/intervals/sync";
 import { loadTokens } from "@/lib/strava/client";
@@ -6,7 +7,7 @@ import { syncStrava } from "@/lib/strava/sync";
 export const runtime = "nodejs";
 
 /** Pulls new activities and a batch of ride streams from Strava, then from Intervals.icu if its key is set. */
-export async function POST() {
+async function post() {
   try {
     const strava = loadTokens() ? await syncStrava() : null;
     let intervals = null;
@@ -30,3 +31,5 @@ export async function POST() {
     return NextResponse.json({ error: (err as Error).message }, { status: 500 });
   }
 }
+
+export const POST = athleteRoute(post);
