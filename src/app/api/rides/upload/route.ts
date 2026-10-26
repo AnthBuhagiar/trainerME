@@ -1,3 +1,4 @@
+import { athleteRoute } from "@/lib/auth/athlete";
 import { NextResponse } from "next/server";
 import { canUpload, stravaUpload } from "@/lib/strava/client";
 import { buildTcx, type RideSample } from "@/lib/strava/tcx";
@@ -11,7 +12,7 @@ interface Body {
 }
 
 /** Upload a ride recorded in the player to Strava. */
-export async function POST(request: Request) {
+async function post(request: Request) {
   const body = (await request.json()) as Body;
   if (!body.samples?.length || !Number.isFinite(body.startMs)) return NextResponse.json({ error: "Nothing recorded yet." }, { status: 400 });
   if (!canUpload()) {
@@ -28,3 +29,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: (e as Error).message }, { status: 502 });
   }
 }
+
+export const POST = athleteRoute(post);

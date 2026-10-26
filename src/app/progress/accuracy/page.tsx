@@ -1,3 +1,4 @@
+import { asAthlete } from "@/lib/auth/athlete";
 import Link from "next/link";
 import { signed } from "@/components/ChangeList";
 import { backtest } from "@/lib/engine/backtest";
@@ -8,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 const fmt = new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric" });
 
-export default function AccuracyPage() {
+function AccuracyPageView() {
   const { model } = loadState();
   const test = model ? backtest(model) : null;
   return (
@@ -61,4 +62,8 @@ export default function AccuracyPage() {
       )}
     </main>
   );
+}
+
+export default async function AccuracyPage() {
+  return asAthlete(() => AccuracyPageView());
 }

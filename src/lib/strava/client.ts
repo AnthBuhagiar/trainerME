@@ -1,8 +1,8 @@
 import { readJson, writeJson } from "@/lib/data/store";
 
 /**
- * Minimal Strava API client for a single athlete (the app's owner).
- * Tokens live in data/strava-tokens.json, git-ignored like all personal data.
+ * Minimal Strava API client for the athlete of the current request.
+ * Tokens live in their data folder (strava-tokens.json), git-ignored like all personal data.
  */
 
 const API = "https://www.strava.com/api/v3";
@@ -96,6 +96,30 @@ export async function exchangeCode(code: string, scope?: string): Promise<Strava
 
 export function saveTokens(tokens: StravaTokens): void {
   writeJson(TOKENS_FILE, tokens);
+}
+
+/**
+ * Does Strava still accept this athlete's tokens? Used before acting on a
+ * webhook saying they removed access (webhook events aren't signed).
+ */
+export async function stillAuthorized(): Promise<boolean> {
+  try {
+    await stravaGet("/athlete");
+    return true;
+  } catch (e) {
+    return !/\((400|401|403)\)|not connected/.test((e as Error).message);
+  }
+}
+
+/** Tell Strava to revoke Hour Power's access (when an athlete deletes their account). */
+export async function deauthorize(): Promise<void> {
+  const tokens = loadTokens();
+  if (!tokens) return;
+  await fetch(`${OAUTH}/deauthorize`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ access_token: await accessToken() }),
+  }).catch(() => {});
 }
 
 export function canUpload(tokens = loadTokens()): boolean {

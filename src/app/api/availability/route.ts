@@ -1,8 +1,9 @@
+import { athleteRoute } from "@/lib/auth/athlete";
 import { NextResponse } from "next/server";
 import { parseChoices, saveAvailability } from "@/lib/plan/availability";
 
 /** Save the rider's chosen days, or (with {reset: true}) go back to the week learned from their rides. */
-export async function POST(request: Request) {
+async function post(request: Request) {
   const body = (await request.json()) as { days?: unknown; reset?: boolean };
   if (body.reset) {
     saveAvailability(null);
@@ -13,3 +14,5 @@ export async function POST(request: Request) {
   saveAvailability(days);
   return NextResponse.json({ ok: true });
 }
+
+export const POST = athleteRoute(post);

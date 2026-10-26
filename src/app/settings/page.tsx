@@ -1,3 +1,4 @@
+import { asAthlete } from "@/lib/auth/athlete";
 import { AutoUploadToggle } from "@/components/AutoUploadToggle";
 import { DaysEditor } from "@/components/DaysEditor";
 import { choicesFromBudget } from "@/lib/plan/availability";
@@ -9,7 +10,7 @@ import { canUpload } from "@/lib/strava/client";
 
 export const dynamic = "force-dynamic";
 
-export default function SettingsPage() {
+function SettingsPageView() {
   const { settings, chosenDays, learnedBudget } = loadState();
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 px-5 py-6">
@@ -61,10 +62,29 @@ export default function SettingsPage() {
       </section>
 
       {authEnabled() && (
-        <form action="/api/logout" method="post">
-          <button className="h-12 w-full rounded-2xl border border-line text-[15px] font-semibold text-muted">Sign out</button>
-        </form>
+        <>
+          <form action="/api/logout" method="post">
+            <button className="h-12 w-full rounded-2xl border border-line text-[15px] font-semibold text-muted">Sign out</button>
+          </form>
+          <details className="group rounded-2xl border border-line">
+            <summary className="cursor-pointer list-none px-4 py-3 text-[15px] font-semibold text-muted">Delete my account</summary>
+            <form action="/api/account" method="post" className="flex flex-col gap-3 border-t border-line p-4">
+              <p className="text-[14px] leading-snug">
+                Removes all your rides, goals, plan and settings from Hour Power and revokes its Strava access. Your activities on Strava aren’t touched.
+                Download a backup first if you might come back.
+              </p>
+              <button className="h-12 rounded-2xl bg-signal-ink text-[15px] font-semibold text-white">Delete everything</button>
+            </form>
+          </details>
+          <a href="/privacy" className="text-center text-[14px] font-semibold text-muted">
+            Privacy
+          </a>
+        </>
       )}
     </main>
   );
+}
+
+export default async function SettingsPage() {
+  return asAthlete(() => SettingsPageView());
 }

@@ -1,3 +1,4 @@
+import { asAthlete } from "@/lib/auth/athlete";
 import { GoalForm } from "@/components/GoalForm";
 import { formatDuration } from "@/lib/goals/eventTime";
 import { eventFuelPlan } from "@/lib/goals/fuelPlan";
@@ -6,7 +7,7 @@ import { loadState } from "@/lib/plan/current";
 
 export const dynamic = "force-dynamic";
 
-export default function GoalPage() {
+function GoalPageView() {
   const { current, goal: active, summary, settings } = loadState();
   const goal = active ?? loadGoals().at(-1) ?? null;
   const plan = summary?.route?.target ?? summary?.route?.today;
@@ -126,4 +127,8 @@ export default function GoalPage() {
       )}
     </main>
   );
+}
+
+export default async function GoalPage() {
+  return asAthlete(() => GoalPageView());
 }

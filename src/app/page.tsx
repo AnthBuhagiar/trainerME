@@ -1,3 +1,4 @@
+import { asAthlete } from "@/lib/auth/athlete";
 import { ChangeList } from "@/components/ChangeList";
 import { CheckIn } from "@/components/CheckIn";
 import { HourRing } from "@/components/HourRing";
@@ -18,7 +19,7 @@ export const dynamic = "force-dynamic";
 
 const fmtDate = new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short" });
 
-export default async function Home({ searchParams }: { searchParams: Promise<{ strava?: string }> }) {
+async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: string }> }) {
   const { strava: notice } = await searchParams;
   const tokens = loadTokens();
   const { adaptation, activities, targets, checkIns, today, settings, rides, history, current, goal, summary, thisWeekStart, week, budget } = loadState();
@@ -156,4 +157,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
       <UpdateButton />
     </main>
   );
+}
+
+export default async function Home(props: Parameters<typeof HomeView>[0]) {
+  return asAthlete(() => HomeView(props));
 }

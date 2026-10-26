@@ -1,3 +1,4 @@
+import { athleteRoute } from "@/lib/auth/athlete";
 import { NextResponse } from "next/server";
 import { erg, ics, zwo } from "@/lib/export/formats";
 import { zip } from "@/lib/export/zip";
@@ -19,7 +20,7 @@ function file(name: string, body: string | Uint8Array, type: string) {
  * GET /api/export?format=zwo|erg|ics            the rest of this week and next week
  * GET /api/export?format=…&date=YYYY-MM-DD&start=HH:MM  one session
  */
-export function GET(request: Request) {
+function get(request: Request) {
   const q = new URL(request.url).searchParams;
   const format = q.get("format");
   if (format !== "zwo" && format !== "erg" && format !== "ics") return NextResponse.json({ error: "Pick zwo, erg or ics." }, { status: 400 });
@@ -47,3 +48,5 @@ export function GET(request: Request) {
   if (files.length === 1) return file(files[0].name, files[0].content, TYPES[format]);
   return file(`hour-power-${format}.zip`, zip(files), TYPES.zip);
 }
+
+export const GET = athleteRoute(get);

@@ -1,10 +1,11 @@
+import { athleteRoute } from "@/lib/auth/athlete";
 import { NextResponse } from "next/server";
 import { loadSettings, saveSettings } from "@/lib/data/store";
 
 const watts = (v: unknown) => typeof v === "number" && Number.isFinite(v) && v >= 50 && v <= 600;
 
 /** Update rider preferences. Only known fields can be changed here. */
-export async function POST(request: Request) {
+async function post(request: Request) {
   const body = (await request.json()) as { autoUpload?: unknown; trainingHourPower?: unknown; declinedHourPower?: unknown };
   const settings = loadSettings();
   if (typeof body.autoUpload === "boolean") settings.autoUpload = body.autoUpload;
@@ -16,3 +17,5 @@ export async function POST(request: Request) {
   saveSettings(settings);
   return NextResponse.json(settings);
 }
+
+export const POST = athleteRoute(post);

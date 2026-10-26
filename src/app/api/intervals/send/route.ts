@@ -1,9 +1,10 @@
+import { athleteRoute } from "@/lib/auth/athlete";
 import { NextResponse } from "next/server";
 import { sendSessions } from "@/lib/intervals/client";
 import { loadState, nextWeekStart } from "@/lib/plan/current";
 
 /** Send the rest of this week and next week to Intervals.icu (and on to Garmin). */
-export async function POST() {
+async function post() {
   const state = loadState();
   if (!state.current) return NextResponse.json({ error: "Sync Strava first so targets can be set from your hour power." }, { status: 400 });
   const next = nextWeekStart(state.thisWeekStart);
@@ -15,3 +16,5 @@ export async function POST() {
     return NextResponse.json({ error: (e as Error).message }, { status: 502 });
   }
 }
+
+export const POST = athleteRoute(post);

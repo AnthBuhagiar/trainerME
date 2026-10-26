@@ -1,3 +1,5 @@
+import { ownerId } from "@/lib/auth/owner";
+import { currentAthlete, multiUser } from "@/lib/data/store";
 import { workoutText } from "@/lib/intervals/workoutText";
 import type { PlannedSession } from "@/lib/plan/week";
 
@@ -12,12 +14,21 @@ const ME = "/athlete/0"; // 0 = the athlete who owns the key
 const MARKER = "Planned by Hour Power";
 export const EXTERNAL_PREFIX = "hourpower-";
 
+/**
+ * The server's INTERVALS_API_KEY belongs to one person: on a shared server only
+ * its owner uses it, so nobody else's plan or rides get mixed with theirs.
+ */
+function apiKey(): string | undefined {
+  if (multiUser() && currentAthlete() !== ownerId()) return undefined;
+  return process.env.INTERVALS_API_KEY;
+}
+
 export function hasIntervalsKey(): boolean {
-  return !!process.env.INTERVALS_API_KEY;
+  return !!apiKey();
 }
 
 function headers(): HeadersInit {
-  const key = process.env.INTERVALS_API_KEY;
+  const key = apiKey();
   if (!key) throw new Error("Add INTERVALS_API_KEY as a Codespaces secret or in .env.local (see README).");
   return {
     Authorization: `Basic ${Buffer.from(`API_KEY:${key}`).toString("base64")}`,

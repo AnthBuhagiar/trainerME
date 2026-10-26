@@ -1,3 +1,4 @@
+import { asAthlete } from "@/lib/auth/athlete";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { sessionTitle } from "@/components/SessionCard";
@@ -10,7 +11,7 @@ import { clock12, dayLabel, length } from "@/lib/ui/format";
 
 export const dynamic = "force-dynamic";
 
-export default async function SessionPage({
+async function SessionPageView({
   params,
   searchParams,
 }: {
@@ -126,4 +127,8 @@ export default async function SessionPage({
       <p className="text-[13px] text-muted">Why: {planned.why}</p>
     </main>
   );
+}
+
+export default async function SessionPage(props: Parameters<typeof SessionPageView>[0]) {
+  return asAthlete(() => SessionPageView(props));
 }

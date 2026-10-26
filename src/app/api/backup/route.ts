@@ -1,9 +1,10 @@
+import { athleteRoute } from "@/lib/auth/athlete";
 import { NextResponse } from "next/server";
 import { createBackup, restoreBackup, type Backup } from "@/lib/data/backup";
 
 export const runtime = "nodejs";
 
-export function GET() {
+function get() {
   const backup = createBackup();
   return new NextResponse(JSON.stringify(backup), {
     headers: {
@@ -13,7 +14,7 @@ export function GET() {
   });
 }
 
-export async function POST(request: Request) {
+async function post(request: Request) {
   try {
     const restored = restoreBackup((await request.json()) as Backup);
     return NextResponse.json({ restored });
@@ -21,3 +22,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: (e as Error).message }, { status: 400 });
   }
 }
+
+export const GET = athleteRoute(get);
+export const POST = athleteRoute(post);
