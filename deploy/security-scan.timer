@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the server security check every Monday morning
+
+[Timer]
+# Monday 06:00 UTC = Monday 5 pm (AEDT) or 4 pm (AEST) in Sydney.
+OnCalendar=Mon *-*-* 06:00:00
+RandomizedDelaySec=20m
+Persistent=true
+
+[Install]
+WantedBy=timers.target
