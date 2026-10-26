@@ -33,7 +33,7 @@ function didEverything(until: string): Activity[] {
 }
 const run = (activities: Activity[], history = null) => adapt({ today: TODAY, thisWeekStart: THIS_MONDAY, phases, activities, history, planned });
 
-describe("adaptation (P13–P17)", () => {
+describe("adaptation (P13–P19)", () => {
   test("a fully trained block progresses on schedule, with no adjustment", () => {
     const a = run(didEverything(TODAY));
     expect(a.note).toBeUndefined();
@@ -87,5 +87,25 @@ describe("adaptation (P13–P17)", () => {
     expect(wed.ride!.workout.intensity).not.toBe("hard");
     expect(wed.adjusted).toMatch(/rode hard yesterday/);
     expect(afterHardRide(week, [], 181, "2026-11-11")).toBe(week);
+  });
+
+  test("P18: no rides for 14+ days but still running eases back in instead of a comeback", () => {
+    const acts = [...didEverything("2026-10-15"), ride("2026-10-28", 50, { sportType: "Run", isTrainer: false }), ride("2026-11-02", 40, { sportType: "Run", isTrainer: false })];
+    const a = run(acts);
+    expect(a.context(THIS_MONDAY).mode).toBe("reentry");
+    expect(a.note).toMatch(/kept training/);
+    // A walk isn't training: still a comeback.
+    expect(run([...didEverything("2026-10-15"), ride("2026-11-02", 60, { sportType: "Walk" })]).context(THIS_MONDAY).mode).toBe("comeback");
+  });
+
+  test("P19: a hard run yesterday makes today's hard session easy; an easy one doesn't", () => {
+    const week = planned("2026-11-08");
+    const longRun = ride("2026-11-10", 80, { sportType: "Run" });
+    const out = afterHardRide(week, [], 181, "2026-11-11", [longRun]);
+    const wed = out.sessions.find((s) => s.date === "2026-11-11")!;
+    expect(wed.ride!.workout.intensity).not.toBe("hard");
+    expect(wed.adjusted).toMatch(/run was hard/);
+    expect(afterHardRide(week, [], 181, "2026-11-11", [ride("2026-11-10", 80, { sportType: "Run", relativeEffort: 60 })])).toBe(week);
+    expect(afterHardRide(week, [], 181, "2026-11-11", [ride("2026-11-10", 40, { sportType: "Run" })])).toBe(week);
   });
 });

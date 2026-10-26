@@ -65,7 +65,7 @@ export function loadState() {
 
   const week = (weekStart: string): WeekPlan => {
     const plan = applyCheckIns(applyAway(planWeek(budget, { ...baseContext(weekStart), ...adaptation.context(weekStart) }), away, today), checkIns);
-    return weekStart === thisWeekStart && targets ? afterHardRide(plan, rides, targets.training, today) : plan;
+    return weekStart === thisWeekStart && targets ? afterHardRide(plan, rides, targets.training, today, activities) : plan;
   };
 
   return { learnedBudget, chosenDays, away, model, activities, targets, checkIns, now, today, settings, rides, history, current, budget, goal, summary, thisWeekStart, week, adaptation };

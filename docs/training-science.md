@@ -136,6 +136,19 @@ roughly 30–40% less volume with one short quality session kept.
 quality sessions a week at most, at least 70–75% of riding time easy, a pyramidal base then a polarised
 build, interval types rotated every three loading weeks, and the day after a hard session kept easy.
 
+## E10 · Runs and other training alongside cycling
+**Confidence: Low–moderate** (reviews of few, small studies; the thresholds below are the protocol's choices)
+
+- **Some aerobic fitness transfers, never all.** Tanaka's review (1994, *Sports Med*) found part of the
+  VO2max gain from one sport carries over to another: running transfers the most, swimming the least.
+  Cross-training never matched sport-specific training, and specificity matters more the fitter the rider.
+- **Running costs the legs more.** Prolonged running brings larger falls in leg strength than cycling of
+  similar duration. Millet & Lepers (2004, *Sports Med*) compare neuromuscular fatigue after prolonged
+  running, cycling and skiing.
+
+**How Hour Power uses it:** P18–P19. A run, row or swim of 30+ min can stand in for an easy ride that day,
+but never for a key session or the long ride. A hard or long run the day before turns a hard session easy.
+
 ## Sources
 
 - [Effects of tapering on performance: a meta-analysis (Bosquet et al., 2007) — PubMed](https://pubmed.ncbi.nlm.nih.gov/17762369/)
@@ -160,8 +173,11 @@ build, interval types rotated every three loading weeks, and the day after a har
 - [Effects of different protocols of HIIT for VO2max improvements in adults (Wen et al., 2019, JSAMS)](https://www.jsams.org/article/S1440-2440(18)30919-8/abstract)
 - [Which training intensity distribution intervention will produce the greatest improvements (Rosenblat et al., 2025, Sports Med)](https://www.fisiologiadelejercicio.com/wp-content/uploads/2025/02/Which-Training-Intensity-Distribution-Intervention-will.pdf)
 - [Effects of polarized, pyramidal and combined periodisations, with Luca Filipas (Filipas et al., 2022)](https://scientifictriathlon.com/tts328/)
+- [Effects of cross-training: transfer of training effects on VO2max between cycling, running and swimming (Tanaka, 1994, Sports Med)](https://pubmed.ncbi.nlm.nih.gov/7871294/)
+- [Alterations of neuromuscular function after prolonged running, cycling and skiing exercises (Millet & Lepers, 2004, Sports Med)](https://pubmed.ncbi.nlm.nih.gov/14965189/)
 
 ## Changelog
 
+- **1.2 (Oct 2026)** — Added E10 (runs and other training alongside cycling).
 - **1.1 (Oct 2026)** — Added E9 (training on 5–6 hours a week) and the training protocol built on it.
 - **1.0 (Oct 2026)** — Initial library: E1–E8.
