@@ -112,21 +112,52 @@ export function dedupeActivities(raw: RawActivity[], hasStreams: (id: string) =>
   const kept: RawActivity[] = [];
   const rank = (a: RawActivity) => (hasStreams(a.id) ? 2 : 0) + (a.source !== "intervals" ? 1 : 0);
   for (const a of sorted) {
-    const i = kept.findIndex((k) => {
+    // Sorted by start, so only the last few kept activities can be within 2 minutes.
+    const start = Date.parse(`${a.start_local}Z`);
+    let i = -1;
+    for (let j = kept.length - 1; j >= 0; j--) {
+      const k = kept[j];
+      const gap = start - Date.parse(`${k.start_local}Z`);
+      if (gap > 120_000) break;
       const sameKind = k.sport_type.includes("Ride") === a.sport_type.includes("Ride");
-      const gap = Math.abs(Date.parse(`${k.start_local}Z`) - Date.parse(`${a.start_local}Z`));
       const lengths = [k.summary.moving_time, a.summary.moving_time];
       const similar = Math.min(...lengths) >= 0.8 * Math.max(...lengths);
-      return k.source !== a.source && sameKind && gap <= 120_000 && similar;
-    });
+      if (k.source !== a.source && sameKind && similar) {
+        i = j;
+        break;
+      }
+    }
     if (i < 0) kept.push(a);
     else if (rank(a) > rank(kept[i])) kept[i] = a;
   }
   return kept;
 }
 
+/**
+ * Changes whenever a sync writes activities or ride files (writeJson renames
+ * into the folder, which updates its modified time).
+ */
+export function rideDataVersion(): string {
+  const at = (p: string) => {
+    try {
+      return fs.statSync(p).mtimeMs;
+    } catch {
+      return 0;
+    }
+  };
+  return `${DATA_DIR}:${at(file("activities.json"))}:${at(file("rides"))}`;
+}
+
+let activitiesCache: { version: string; value: Activity[] } | null = null;
+let ridesCache: { version: string; value: Ride[] } | null = null;
+
+/** Read once and kept until the next sync: every screen needs them, and parsing them is the slow part. */
 export function loadActivities(): Activity[] {
-  return dedupeActivities(readJson<RawActivity[]>("activities.json", [])).map(toActivity);
+  const version = rideDataVersion();
+  if (activitiesCache?.version !== version) {
+    activitiesCache = { version, value: dedupeActivities(readJson<RawActivity[]>("activities.json", [])).map(toActivity) };
+  }
+  return activitiesCache.value;
 }
 
 export function saveRawActivities(raw: unknown[]): void {
@@ -146,6 +177,12 @@ export function hasRideSummary(id: string): boolean {
 }
 
 export function loadRides(): Ride[] {
+  const version = rideDataVersion();
+  if (ridesCache?.version !== version) ridesCache = { version, value: readRides() };
+  return ridesCache.value;
+}
+
+function readRides(): Ride[] {
   const rides: Ride[] = [];
   for (const activity of loadActivities()) {
     if (!isRide(activity)) continue;
