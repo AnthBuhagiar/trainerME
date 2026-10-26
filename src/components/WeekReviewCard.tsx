@@ -37,6 +37,12 @@ export function WeekReviewCard({ review, next, title }: { review: WeekReview; ne
           <dd className="display text-[20px]">{review.change === null ? "–" : signed(review.change)}</dd>
         </div>
       </dl>
+      {review.other.length > 0 && (
+        <p className="text-[14px] leading-snug">
+          Also: {review.other.map((o) => `${o.name.toLowerCase()} ${length(o.minutes)}`).join(", ")}
+          {review.other.some((o) => o.counted) ? ". A run or row on an easy-ride day counts as that ride." : "."}
+        </p>
+      )}
       {review.best && (
         <p className="text-[14px]">
           Biggest boost: <strong>{review.best.name}</strong> ({signed(review.best.delta)}).

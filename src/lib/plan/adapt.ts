@@ -1,4 +1,5 @@
 import { applyCheckIn } from "@/lib/plan/checkin";
+import { isCardio, isHardOther, label } from "@/lib/plan/crossTraining";
 import type { Phase } from "@/lib/plan/periodise";
 import { weekReview } from "@/lib/plan/review";
 import type { WeekContext, WeekPlan } from "@/lib/plan/week";
@@ -6,7 +7,7 @@ import type { History } from "@/lib/engine/history";
 import type { Activity, Ride } from "@/lib/types";
 
 /**
- * Adaptation rules P13–P17 (docs/training-protocol.md): the plan responds to
+ * Adaptation rules P13–P17, with P18–P19 for other training (docs/training-protocol.md): the plan responds to
  * what was actually ridden, by fixed thresholds, not judgement.
  *
  *  P13 Missed training: 14+ days without a ride → comeback week (easy, intervals
@@ -19,6 +20,8 @@ import type { Activity, Ride } from "@/lib/types";
  *  P16 Fatigue: hour power down 3% or more over three weeks while at least 80%
  *      of sessions were done → an extra recovery week.
  *  P17 Unplanned hard ride: a hard ride yesterday turns today's hard session easy.
+ *
+ * Other training (runs, rows, swims) feeds P13 and P17 too: see crossTraining.ts (P18–P19).
  */
 
 export const COMEBACK_DAYS = 14;
@@ -70,7 +73,12 @@ export function adapt(input: AdaptInput): Adaptation {
   const lastWeek = reviewOf(addDays(thisWeekStart, -7));
   let mode: WeekContext["mode"];
   let note: string | undefined;
-  if (lastRide && daysOff >= COMEBACK_DAYS) {
+  // P18: still training off the bike (a run or row of 30+ min in the last 14 days) means easing back in, not starting over.
+  const keptTraining = activities.some((a) => isCardio(a) && day(a.startLocal) <= today && day(a.startLocal) > addDays(today, -COMEBACK_DAYS));
+  if (lastRide && daysOff >= COMEBACK_DAYS && keptTraining) {
+    mode = "reentry";
+    note = `${daysOff} days since your last ride, but you've kept training, so this week eases back in on the bike: one key session, a step lower.`;
+  } else if (lastRide && daysOff >= COMEBACK_DAYS) {
     mode = "comeback";
     note = `${daysOff} days since your last ride, so this week is easy riding. Intervals come back next week.`;
   } else if (lastRide && (daysOff >= REENTRY_DAYS || (lastWeek.plannedMinutes > 0 && share(lastWeek.doneMinutes, lastWeek.plannedMinutes) < REENTRY_MIN_TIME_SHARE))) {
@@ -125,21 +133,28 @@ export function adapt(input: AdaptInput): Adaptation {
   };
 }
 
-/** P17: a hard ride the day before (planned or not) makes today's hard session easy. */
-export function afterHardRide(week: WeekPlan, rides: Ride[], trainingHourPower: number, today: string): WeekPlan {
+/**
+ * P17: a hard ride the day before (planned or not) makes today's hard session easy.
+ * P19: so does hard other training, such as a long or hard run.
+ */
+export function afterHardRide(week: WeekPlan, rides: Ride[], trainingHourPower: number, today: string, activities: Activity[] = []): WeekPlan {
   const yesterday = addDays(today, -1);
-  const hard = rides.some((r) => {
+  const hardOther = activities.find((a) => day(a.startLocal) === yesterday && isHardOther(a));
+  const hardRide = rides.some((r) => {
     if (day(r.startLocal) !== yesterday || !r.streams) return false;
     const np = r.streams.np ?? 0;
     const best20 = r.streams.powerCurve?.["1200"] ?? 0;
     return (np >= 0.85 * trainingHourPower && r.movingTime >= 45 * 60) || best20 >= 0.95 * trainingHourPower;
   });
-  if (!hard) return week;
+  if (!hardRide && !hardOther) return week;
+  const why = hardRide
+    ? "You rode hard yesterday, so today is easy. Two hard days in a row add fatigue more than fitness."
+    : `Yesterday's ${label(hardOther!.sportType).toLowerCase()} was hard, so today is easy: fresh legs get more from the intervals.`;
   return {
     ...week,
     sessions: week.sessions.map((s) =>
       s.date === today && s.ride?.workout.intensity === "hard"
-        ? { ...applyCheckIn(s, "tired", week.phase), adjusted: "You rode hard yesterday, so today is easy. Two hard days in a row add fatigue more than fitness." }
+        ? { ...applyCheckIn(s, "tired", week.phase), adjusted: why }
         : s,
     ),
   };

@@ -1,5 +1,6 @@
 import type { History } from "@/lib/engine/history";
 import { addDays, isLastDayOfWeek } from "@/lib/plan/calendar";
+import { isCardio, isOtherTraining, label, replaceable } from "@/lib/plan/crossTraining";
 import { kindOf } from "@/lib/plan/timeBudget";
 import type { WeekPlan } from "@/lib/plan/week";
 import type { Activity } from "@/lib/types";
@@ -18,6 +19,8 @@ export interface WeekReview {
   doneMinutes: number;
   rides: number;
   strength: number;
+  /** Runs, rows, swims, walks: everything else that week, by day. */
+  other: { date: string; name: string; minutes: number; counted: boolean }[];
   /** Change in estimated hour power across the week (W). */
   change: number | null;
   /** The ride that moved the estimate most, if it went up. */
@@ -35,19 +38,35 @@ function estimateOn(history: History, date: string): number | null {
 export function weekReview(plan: WeekPlan, activities: Activity[], history: History | null): WeekReview {
   const lastDay = addDays(plan.weekStart, 6); // Saturday
   const inWeek = activities.filter((a) => day(a.startLocal) >= plan.weekStart && day(a.startLocal) <= lastDay);
-  const kinds = inWeek.map((a) => ({ date: day(a.startLocal), kind: kindOf(a.sportType), minutes: Math.round((kindOf(a.sportType) === "ride" ? a.movingTime : a.elapsedTime) / 60) }));
+  const kinds = inWeek.map((a) => ({
+    date: day(a.startLocal),
+    kind: kindOf(a.sportType),
+    minutes: Math.round((kindOf(a.sportType) === "ride" ? a.movingTime : a.elapsedTime) / 60),
+    cardio: isCardio(a),
+  }));
   // A planned session counts as done if something of the same kind happened that day (or, failing that, any unused one that week).
   const used = new Set<number>();
+  const credited = new Set<number>();
   let done = 0;
   for (const s of plan.sessions) {
     let i = kinds.findIndex((k, j) => !used.has(j) && k.kind === s.kind && k.date === s.date);
     if (i < 0) i = kinds.findIndex((k, j) => !used.has(j) && k.kind === s.kind);
+    // P18: a run or other cardio that day covers an easy ride.
+    if (i < 0 && replaceable(s, plan.sessions)) {
+      i = kinds.findIndex((k, j) => !used.has(j) && k.cardio && k.date === s.date);
+      if (i >= 0) credited.add(i);
+    }
     if (i >= 0) {
       used.add(i);
       done++;
     }
   }
-  const relevant = kinds.filter((k) => k.kind === "ride" || k.kind === "strength");
+  const relevant = kinds.filter((k, i) => k.kind === "ride" || k.kind === "strength" || credited.has(i));
+  const other = inWeek
+    .map((a, i) => ({ a, i }))
+    .filter(({ a }) => isOtherTraining(a))
+    .map(({ a, i }) => ({ date: day(a.startLocal), name: label(a.sportType), minutes: kinds[i].minutes, counted: credited.has(i) }))
+    .sort((a, b) => a.date.localeCompare(b.date));
   const start = history ? estimateOn(history, addDays(plan.weekStart, -1)) : null;
   const end = history ? estimateOn(history, lastDay) : null;
   const change = start !== null && end !== null ? Math.round((end - start) * 10) / 10 : null;
@@ -71,6 +90,7 @@ export function weekReview(plan: WeekPlan, activities: Activity[], history: Hist
     doneMinutes: relevant.reduce((n, k) => n + k.minutes, 0),
     rides: relevant.filter((k) => k.kind === "ride").length,
     strength: relevant.filter((k) => k.kind === "strength").length,
+    other,
     change,
     best: best ? { name: best.rideName, delta: Math.round(best.delta * 10) / 10 } : undefined,
     headline,

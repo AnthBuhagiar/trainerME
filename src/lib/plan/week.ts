@@ -46,7 +46,7 @@ export interface WeekPlan {
   label: string;
   recovery: boolean;
   sessions: PlannedSession[];
-  /** Set when the plan was adapted to what was actually ridden (P13–P17), in plain words. */
+  /** Set when the plan was adapted to what was actually ridden (P13–P19), in plain words. */
   adaptation?: string;
 }
 

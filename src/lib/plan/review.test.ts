@@ -38,4 +38,32 @@ describe("weekly review", () => {
     expect(reviewWeekStart("2026-10-25", "2026-10-25")).toBe("2026-10-18");
     expect(reviewWeekStart("2026-10-22", "2026-10-18")).toBe("2026-10-11");
   });
+
+  test("P18: a run on an easy-ride day counts as that ride; never for the key session or the long ride", () => {
+    const easy = { name: "Endurance", intensity: "easy" } as never;
+    const hard = { name: "Threshold", intensity: "hard" } as never;
+    const week: WeekPlan = {
+      ...plan,
+      sessions: [
+        { ...plan.sessions[1], ride: { workout: hard } as never },
+        { ...plan.sessions[2], ride: { workout: easy } as never },
+        { ...plan.sessions[3], ride: { workout: easy } as never },
+      ],
+    };
+    const r = weekReview(week, [
+      act("tue", "2026-10-14T18:00:00", "Run", 45), // key-session day: shown, not counted
+      act("wed", "2026-10-15T18:00:00", "Run", 45), // easy-ride day: counted
+      act("sat", "2026-10-17T07:00:00", "Run", 90), // long-ride day: not counted
+      act("walk", "2026-10-16T12:00:00", "Walk", 60),
+    ], null);
+    expect(r.done).toBe(1);
+    expect(r.doneMinutes).toBe(45);
+    expect(r.other.map((o) => [o.name, o.counted])).toEqual([
+      ["Run", false],
+      ["Run", true],
+      ["Walk", false],
+      ["Run", false],
+    ]);
+    expect(r.other.map((o) => o.date)).toEqual(["2026-10-14", "2026-10-15", "2026-10-16", "2026-10-17"]);
+  });
 });

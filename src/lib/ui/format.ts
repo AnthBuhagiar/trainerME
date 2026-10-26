@@ -15,6 +15,7 @@ export function dayLabel(date: string, today: string): string {
   const diff = Math.round((Date.parse(`${date}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000);
   if (diff === 0) return "Today";
   if (diff === 1) return "Tomorrow";
+  if (diff === -1) return "Yesterday";
   const wd = WEEKDAYS[(new Date(`${date}T00:00:00Z`).getUTCDay() + 6) % 7];
   return `${wd} ${Number(date.slice(8, 10))} ${new Intl.DateTimeFormat("en-AU", { month: "short", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`))}`;
 }
