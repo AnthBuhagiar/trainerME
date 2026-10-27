@@ -10,6 +10,8 @@
   --signal: #ff6a1a; /* accent on dark */
   --signal-ink: #c2410c; /* accent on light: passes contrast for text and buttons */
   --done: #0f6b3a;
+  --goal: #38bdf8; /* the goal, everywhere it appears: sky blue on dark */
+  --goal-ink: #0369a1; /* the goal on light: passes contrast for text */
   --background: var(--chalk);
   --foreground: var(--asphalt);
 }
@@ -22,6 +24,7 @@
     --line: #2a323d;
     --muted: #9aa6b2;
     --done: #5cc28a;
+    --goal-ink: #7dd3fc;
   }
 }
 
@@ -36,6 +39,8 @@
   --color-signal: var(--signal);
   --color-signal-ink: var(--signal-ink);
   --color-done: var(--done);
+  --color-goal: var(--goal);
+  --color-goal-ink: var(--goal-ink);
   --font-sans: var(--font-inter);
   --font-display: var(--font-archivo);
 }
