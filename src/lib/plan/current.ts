@@ -10,6 +10,7 @@ import { applyAway, awayWeeks, loadAway } from "@/lib/plan/away";
 import { applyCheckIns, loadCheckIns } from "@/lib/plan/checkin";
 import { targetsState } from "@/lib/plan/targets";
 import { weekStartOf, phaseOn } from "@/lib/plan/periodise";
+import { spaceStrength } from "@/lib/plan/strengthSpacing";
 import { applyStrengthTarget, inferTimeBudget } from "@/lib/plan/timeBudget";
 import { EXTENDED_LONG_RIDE_MINUTES, extendedLongRideWeeks, planWeek, type WeekPlan } from "@/lib/plan/week";
 
@@ -65,7 +66,9 @@ export function loadState() {
 
   const week = (weekStart: string): WeekPlan => {
     const plan = applyCheckIns(applyAway(planWeek(budget, { ...baseContext(weekStart), ...adaptation.context(weekStart) }), away, today), checkIns);
-    return weekStart === thisWeekStart && targets ? afterHardRide(plan, rides, targets.training, today, activities) : plan;
+    if (weekStart !== thisWeekStart) return plan;
+    const spaced = spaceStrength(plan, activities, today);
+    return targets ? afterHardRide(spaced, rides, targets.training, today, activities) : spaced;
   };
 
   return { learnedBudget, chosenDays, away, model, activities, targets, checkIns, now, today, settings, rides, history, current, budget, goal, summary, thisWeekStart, week, adaptation };

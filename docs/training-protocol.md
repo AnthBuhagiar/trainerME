@@ -1,6 +1,6 @@
 # Hour Power training protocol
 
-*Version 1.2 · October 2026*
+*Version 1.3 · October 2026*
 
 This is the rulebook Hour Power uses to build every training plan, and to adapt it as the riding happens. The app has no AI and doesn't
 improvise: plans come from these fixed rules plus the rider's own data (their usual week from Strava,
@@ -34,7 +34,7 @@ Intensities are shares of the rider's **training hour power** (their accepted be
 | **P11 · Taper** | The last two weeks: volume down to about 60%, then about 45% in event week. Short efforts stay at target power. | E4 |
 | **P12 · Life first** | Plans fit inside the rider's week: the days they choose in Settings, or, until they do, the usual week read from their own ride history. Missed sessions are never carried over. Away days, busy days and check-ins adjust that day only, or re-plan the block for a week away. | E8, E9 (Cove: consistency over volume) |
 
-## Adapting to what was actually ridden (P13–P19)
+## Adapting to what was actually done (P13–P20)
 
 The plan isn't fixed on day one. Every time the app opens, it re-reads the rides and rebuilds the plan,
 and these rules decide how it adapts. They use fixed thresholds (in `src/lib/plan/adapt.ts`), not
@@ -51,6 +51,7 @@ Today ("Plan adjusted") and on the Week tab.
 | **P17 · Unplanned hard ride** | Yesterday's ride was hard: normalised power at least 85% of training hour power for 45 min or more, or a best 20 min at least 95% | Today's hard session becomes easy riding. Two hard days in a row add fatigue more than fitness. | E1, P8 |
 | **P18 · Other training** | A run, row, swim or similar of **30+ min** (walks, hikes and yoga don't count) | Shown on the Week tab and in the weekly recap. On a day with an **easy ride** planned, it counts as that session done (for P13 and P14). It never replaces a **key session or the long ride**. And **14+ days without a ride but still training** gives easing back in, not a comeback week. | E10 |
 | **P19 · Hard other training** | Yesterday's run, row or similar had Strava **Relative Effort 100+**, or, without heart rate, was a **run of 75+ min** | Today's hard session becomes easy riding, as in P17. | E10, P8 |
+| **P20 · Strength days apart** | Strength logged yesterday, strength logged earlier than planned, or two strength sessions planned on neighbouring days | No strength is proposed the day after a strength day. Strength done early covers the next planned session. A session next to another strength day moves to a later free day that isn't, preferring one that isn't the day before a key or long ride; if there's none left that week, it's dropped. When building the week, two strength days are never placed back to back while another day is free. Riders can still lift two days running if their week needs it; the plan just never suggests it. | E5 |
 
 These come on top of the day-level rules that were already there:
 - **Check-ins:** tired or short on time.
@@ -75,6 +76,7 @@ For a full block (today to the goal, including the Christmas holiday weeks), `pr
   - a hard ride yesterday makes today easy
   - still running through 14+ days off the bike eases back in instead of a comeback (a walk doesn't)
   - a hard or long run yesterday makes today easy; an easy or short one doesn't
+- **Strength days apart (`strengthSpacing.test.ts`):** no strength the day after strength was logged (it moves, or is dropped with no free day); strength done early covers the next one; the planner never puts strength on neighbouring days while another is free.
 - **Other training (`review.test.ts`):** a run counts for an easy-ride day, never the key session or the long ride.
 
 ## Limits

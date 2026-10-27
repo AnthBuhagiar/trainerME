@@ -15,7 +15,7 @@ A personal training app for Anthony: hour power (best 60-min power) as the headl
 ## Where things are
 - `docs/product-strategy.md`: positioning, feature IDs (A1, B2, …) and the roadmap. Update it when scope changes.
 - `docs/training-science.md`: evidence (E1–E10) that workouts and plans cite.
-- `docs/training-protocol.md`: the fixed rules every plan follows: P1–P12 build it, and P13–P19 adapt it to what was done, runs and other training included (`src/lib/plan/adapt.ts`, `src/lib/plan/crossTraining.ts`). The app is rule-based with no AI at runtime; change the rules there, in `src/lib/plan/protocol.ts` and in `protocol.test.ts` together.
+- `docs/training-protocol.md`: the fixed rules every plan follows: P1–P12 build it, and P13–P20 adapt it to what was done, runs, other training and strength spacing included (`src/lib/plan/adapt.ts`, `crossTraining.ts`, `strengthSpacing.ts`). The app is rule-based with no AI at runtime; change the rules there, in `src/lib/plan/protocol.ts` and in `protocol.test.ts` together.
 - `src/lib/engine`: hour-power estimate. `src/lib/plan`: weeks, phases, check-ins and targets. `src/lib/goals`: goals, finish time and fuel. `src/lib/route`: GPX and pacing. `src/lib/player`: Bluetooth trainer control. `src/lib/strava` and `src/lib/intervals`: integrations.
 - Hosted with `SESSION_SECRET`, each athlete's data is in `data/athletes/<id>/`. Pages wrap their body in `asAthlete()` and API routes in `athleteRoute()` (`src/lib/auth/athlete.ts`); without one, reading or writing data throws. Wrap every new page and route that touches data. Codespace and local runs stay single-rider in `data/`.
 - `npm run inspect` runs the real-data inspection scripts in `scripts/` (needs a synced `data/`).
