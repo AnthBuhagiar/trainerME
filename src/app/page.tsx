@@ -2,7 +2,9 @@ import { asAthlete } from "@/lib/auth/athlete";
 import { ChangeList } from "@/components/ChangeList";
 import { CheckIn } from "@/components/CheckIn";
 import { HourRing } from "@/components/HourRing";
-import { SessionCard } from "@/components/SessionCard";
+import { SessionCard, sessionTitle } from "@/components/SessionCard";
+import { WeekStrip } from "@/components/WeekStrip";
+import { weekStrip } from "@/lib/plan/weekStrip";
 import { SetupCard } from "@/components/SetupCard";
 import { dayLabel } from "@/lib/ui/format";
 import { SyncPanel } from "@/components/SyncPanel";
@@ -35,7 +37,7 @@ async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: str
   const endOfWeek = isLastDayOfWeek(today);
   const recapWeekStart = reviewWeekStart(today, thisWeekStart);
   const recap = budget.slots.length && (endOfWeek || today === thisWeekStart) ? weekReview(week(recapWeekStart), activities, history) : null;
-  const nextUp = upcoming.find((s) => s.date > today);
+  const strip = budget.slots.length ? weekStrip(week(thisWeekStart), activities, today, sessionTitle) : null;
   const movedAway = upcoming.find((s) => s.movedFrom === today);
 
   // Without a goal, show progress from the 6-month low towards +20%.
@@ -87,11 +89,13 @@ async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: str
       {upcoming.length > 0 && (
         <section className="flex flex-col gap-2">
           <div className="flex items-baseline justify-between px-1">
-            <h2 className="label">{todays.length ? "Today" : "Today · rest"}</h2>
+            <h2 className="label">This week</h2>
             <a href="/week" className="label text-signal-ink">
-              Week →
+              Details →
             </a>
           </div>
+          {strip && <WeekStrip days={strip} />}
+          <h2 className="label mt-2 px-1">{todays.length ? "Today" : "Today · rest"}</h2>
           {todays.length > 0 && <CheckIn date={today} mood={checkIns[today]} />}
           {todays.map((s) => (
             <SessionCard key={s.start} session={s} today={today} />
@@ -103,7 +107,6 @@ async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: str
                 : "Nothing planned today. Recovery is training too."}
             </p>
           )}
-          {nextUp && !todays.length && <SessionCard session={nextUp} today={today} />}
         </section>
       )}
 
