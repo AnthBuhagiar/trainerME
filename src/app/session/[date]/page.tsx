@@ -7,7 +7,7 @@ import { WorkoutSteps } from "@/components/WorkoutSteps";
 import { hasIntervalsKey } from "@/lib/intervals/client";
 import { workMinutes } from "@/lib/plan/library";
 import { resolveSession } from "@/lib/plan/session";
-import { dayLabel, length } from "@/lib/ui/format";
+import { dayLabel, length, plain } from "@/lib/ui/format";
 
 export const dynamic = "force-dynamic";
 
@@ -52,7 +52,7 @@ async function SessionPageView({
 
       {session.ride && (
         <>
-          <p className="text-[15px] leading-snug">{session.ride.workout.summary}</p>
+          <p className="text-[15px] leading-snug">{plain(session.ride.workout.summary)}</p>
           {hourPower > 0 && <WorkoutSteps workout={session.ride.workout} hourPower={hourPower} />}
           {hourPower > 0 && <p className="text-[13px] text-muted">Targets from your training hour power of {hourPower} W. When your estimate moves, Today asks before changing it.</p>}
           {hourPower > 0 && session.indoor && (
@@ -68,7 +68,7 @@ async function SessionPageView({
 
       {session.strength && (
         <>
-          <p className="text-[15px] leading-snug">{session.strength.summary}</p>
+          <p className="text-[15px] leading-snug">{plain(session.strength.summary)}</p>
           <ul className="flex flex-col divide-y divide-line rounded-2xl border border-line bg-card">
             {session.strength.items.map((item) => (
               <li key={item} className="px-4 py-3 text-[15px]">
@@ -124,7 +124,7 @@ async function SessionPageView({
       {session.ride && hourPower > 0 && <SendExternal intervals={hasIntervalsKey()} session={{ date, start: planned.start, minutes }} />}
 
       {planned.adjusted && <p className="text-[14px] font-semibold text-signal-ink">{planned.adjusted}</p>}
-      <p className="text-[13px] text-muted">Why: {planned.why}</p>
+      <p className="text-[13px] text-muted">{plain(planned.why)}</p>
     </main>
   );
 }

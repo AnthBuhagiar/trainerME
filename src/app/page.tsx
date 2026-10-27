@@ -99,7 +99,7 @@ async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: str
           {!todays.length && (
             <p className="px-1 text-[15px] text-muted">
               {movedAway
-                ? `Today's strength moved to ${dayLabel(movedAway.date, today)} to keep strength days apart. Rest today.`
+                ? `Strength moved to ${dayLabel(movedAway.date, today)}: you did it yesterday. Rest today.`
                 : "Nothing planned today. Recovery is training too."}
             </p>
           )}

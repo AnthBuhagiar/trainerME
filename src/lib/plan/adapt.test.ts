@@ -85,7 +85,7 @@ describe("adaptation (P13–P19)", () => {
     const out = afterHardRide(week, [hardYesterday], 181, "2026-11-11");
     const wed = out.sessions.find((s) => s.date === "2026-11-11")!;
     expect(wed.ride!.workout.intensity).not.toBe("hard");
-    expect(wed.adjusted).toMatch(/rode hard yesterday/);
+    expect(wed.adjusted).toBe("Easier today: you rode hard yesterday.");
     expect(afterHardRide(week, [], 181, "2026-11-11")).toBe(week);
   });
 
@@ -93,7 +93,7 @@ describe("adaptation (P13–P19)", () => {
     const acts = [...didEverything("2026-10-15"), ride("2026-10-28", 50, { sportType: "Run", isTrainer: false }), ride("2026-11-02", 40, { sportType: "Run", isTrainer: false })];
     const a = run(acts);
     expect(a.context(THIS_MONDAY).mode).toBe("reentry");
-    expect(a.note).toMatch(/kept training/);
+    expect(a.note).toMatch(/First rides in \d+ days/);
     // A walk isn't training: still a comeback.
     expect(run([...didEverything("2026-10-15"), ride("2026-11-02", 60, { sportType: "Walk" })]).context(THIS_MONDAY).mode).toBe("comeback");
   });
@@ -104,7 +104,7 @@ describe("adaptation (P13–P19)", () => {
     const out = afterHardRide(week, [], 181, "2026-11-11", [longRun]);
     const wed = out.sessions.find((s) => s.date === "2026-11-11")!;
     expect(wed.ride!.workout.intensity).not.toBe("hard");
-    expect(wed.adjusted).toMatch(/run was hard/);
+    expect(wed.adjusted).toBe("Easier today: hard run yesterday.");
     expect(afterHardRide(week, [], 181, "2026-11-11", [ride("2026-11-10", 80, { sportType: "Run", relativeEffort: 60 })])).toBe(week);
     expect(afterHardRide(week, [], 181, "2026-11-11", [ride("2026-11-10", 40, { sportType: "Run" })])).toBe(week);
   });

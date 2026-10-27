@@ -77,13 +77,13 @@ export function adapt(input: AdaptInput): Adaptation {
   const keptTraining = activities.some((a) => isCardio(a) && day(a.startLocal) <= today && day(a.startLocal) > addDays(today, -COMEBACK_DAYS));
   if (lastRide && daysOff >= COMEBACK_DAYS && keptTraining) {
     mode = "reentry";
-    note = `${daysOff} days since your last ride, but you've kept training, so this week eases back in on the bike: one key session, a step lower.`;
+    note = `First rides in ${daysOff} days, so this week is a little easier.`;
   } else if (lastRide && daysOff >= COMEBACK_DAYS) {
     mode = "comeback";
-    note = `${daysOff} days since your last ride, so this week is easy riding. Intervals come back next week.`;
+    note = `${daysOff} days off the bike, so this week is all easy riding.`;
   } else if (lastRide && (daysOff >= REENTRY_DAYS || (lastWeek.plannedMinutes > 0 && share(lastWeek.doneMinutes, lastWeek.plannedMinutes) < REENTRY_MIN_TIME_SHARE))) {
     mode = "reentry";
-    note = "Last week was light, so this week eases back in: one key session, a step lower.";
+    note = "Last week was quiet, so this week is a little easier.";
   }
 
   // P14: earned steps in the current phase, from completed past loading weeks.
@@ -110,12 +110,12 @@ export function adapt(input: AdaptInput): Adaptation {
     !mode && now !== null && before !== null && now <= before * (1 - FATIGUE_DROP) && recentShares.every((x) => x >= FATIGUE_MIN_SHARE) && phase?.name !== "taper";
   if (fatigued) {
     mode = "deload";
-    note = `Hour power has slipped ${Math.round(before! - now!)} W in three weeks while you've done the work: an extra recovery week to absorb it.`;
+    note = `An easier week: your hour power dipped ${Math.round(before! - now!)} W despite the training, a sign you need the rest.`;
   }
 
   const isRecovery = (m: string) => !!phase?.recoveryWeeks.includes(m);
   return {
-    note: note ?? (lightBlock && isRecovery(thisWeekStart) ? "Recovery week skipped: the last three weeks were light, so there's little to recover from." : undefined),
+    note: note ?? (lightBlock && isRecovery(thisWeekStart) ? "No easy week needed: the last three were light." : undefined),
     context: (weekStart) => {
       if (weekStart < thisWeekStart) return {};
       const samePhase = !!phase && weekStart <= phase.end;
@@ -126,7 +126,7 @@ export function adapt(input: AdaptInput): Adaptation {
       const ctx: Pick<WeekContext, "step" | "mode" | "adaptation" | "skipRecovery"> = samePhase ? { step: earned + ahead } : {};
       if (weekStart === thisWeekStart) {
         if (mode) Object.assign(ctx, { mode, adaptation: note });
-        if (lightBlock && isRecovery(weekStart)) Object.assign(ctx, { skipRecovery: true, adaptation: "Recovery week skipped: the last three weeks were light." });
+        if (lightBlock && isRecovery(weekStart)) Object.assign(ctx, { skipRecovery: true, adaptation: "No easy week needed: the last three were light." });
       }
       return ctx;
     },
@@ -148,8 +148,8 @@ export function afterHardRide(week: WeekPlan, rides: Ride[], trainingHourPower: 
   });
   if (!hardRide && !hardOther) return week;
   const why = hardRide
-    ? "You rode hard yesterday, so today is easy. Two hard days in a row add fatigue more than fitness."
-    : `Yesterday's ${label(hardOther!.sportType).toLowerCase()} was hard, so today is easy: fresh legs get more from the intervals.`;
+    ? "Easier today: you rode hard yesterday."
+    : `Easier today: hard ${label(hardOther!.sportType).toLowerCase()} yesterday.`;
   return {
     ...week,
     sessions: week.sessions.map((s) =>

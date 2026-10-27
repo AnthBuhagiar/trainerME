@@ -203,7 +203,7 @@ export function planWeek(budget: TimeBudget, ctx: WeekContext): WeekPlan {
     if (slot.kind === "strength") {
       const s = name === "taper" ? STRENGTH.mobility : name === "specific" || recovery || comeback ? STRENGTH.maintenance : STRENGTH.heavy;
       const minutes = s === STRENGTH.heavy ? slot.minutes : Math.min(slot.minutes, 35);
-      sessions.push({ ...base, minutes, strength: s, why: s === STRENGTH.heavy ? "Two strength sessions a week for every rider (E5)." : s.summary });
+      sessions.push({ ...base, minutes, strength: s, why: s === STRENGTH.heavy ? "Two strength sessions a week make you a stronger rider (E5)." : s.summary });
       continue;
     }
     if (slot.kind !== "ride") {
@@ -218,35 +218,35 @@ export function planWeek(budget: TimeBudget, ctx: WeekContext): WeekPlan {
     let why: string;
     if (long && slot === long.slot && slot.minutes >= 120) {
       workoutId = recovery || comeback ? "endurance" : MENU[name].long; // P10
-      why = workoutId === "endurance" ? "Your long ride: steady aerobic time is the base of hour power (E1)." : "Efforts in the last hour build the durability a long event needs (E6).";
+      why = workoutId === "endurance" ? "Your long ride: steady hours build the base of your hour power (E1)." : "Efforts late in the ride build staying power for a long event (E6).";
       if (ctx.extendedLongRide && ctx.extendedLongRide > minutes && !comeback && !reentry) {
         minutes = ctx.extendedLongRide;
-        why = `Once a month the long ride stretches to ${minutes / 60} h: durability and fuelling practice for a long event (E6, E7).`;
+        why = `Once a month the long ride goes to ${minutes / 60} h: practice for event day, fuelling included (E6, E7).`;
       }
     } else if (comeback) {
       // P13: back after two weeks or more off: easy riding with a few sprints, intervals return next week.
       workoutId = qualityIndex++ === 0 ? "sprints-6x15s" : "endurance";
-      why = "Back after time off: easy riding this week, intervals return next week.";
+      why = "Back after time off: easy riding this week.";
     } else if (reentry && qualityIndex === 1) {
       // P13: after a missed week, one key session at a lower step; the second session stays easy.
       workoutId = "sprints-6x15s";
-      why = "Easing back in after missed training: one key session this week.";
+      why = "Easing back in: one key session this week.";
       qualityIndex++;
     } else if (recovery || name === "flex") {
       workoutId = qualityIndex++ === 0 && recovery ? "sprints-6x15s" : "endurance";
-      why = recovery ? "Lighter week so the last three can sink in (E8)." : "Ride if life allows. Nothing to catch up.";
+      why = recovery ? "A lighter week to absorb the last three (E8)." : "Ride if life allows. Nothing to catch up.";
     } else if (qualityIndex < MAX_QUALITY_PER_WEEK) {
       // P3–P5, P8: the phase's rotating menu; the day after the key session is never hard.
       const menu = MENU[name];
       const pick = qualityIndex === 0 ? rotate(menu.key, step) : rotate(menu.second, step);
       const dayAfter = qualityIndex === 1 && index - lastQualityDay === 1 && getWorkout(pick).intensity === "hard";
       workoutId = dayAfter ? menu.dayAfter : pick;
-      why = qualityIndex === 0 ? "Key session of the week." : dayAfter ? "Day after the key session, so slightly easier." : "Second quality session.";
+      why = qualityIndex === 0 ? "Key session of the week." : dayAfter ? "Day after the key session, so a little easier." : "Second quality session of the week.";
       qualityIndex++;
       lastQualityDay = index;
     } else {
       workoutId = "endurance";
-      why = "Keep most riding easy (E1).";
+      why = "Most riding stays easy (E1).";
     }
     // P6: progression within the rotation block.
     const k = progressionStep(step, Math.max(MENU[name].key.length, MENU[name].second.length));
@@ -282,9 +282,9 @@ function keepMostlyEasy(plan: WeekPlan): WeekPlan {
     }),
   });
   const steps: [string | null, string, string][] = [
-    [second, MENU[plan.phase].dayAfter, "Kept lighter so most of the week stays easy (P2)."],
-    [second, "endurance", "Kept easy so most of the week stays easy (P2)."],
-    [longKey, "endurance", "Steady long ride this week so most of the week stays easy (P2)."],
+    [second, MENU[plan.phase].dayAfter, "Lighter, so most of the week stays easy (P2)."],
+    [second, "endurance", "Easy, so most of the week stays easy (P2)."],
+    [longKey, "endurance", "Steady long ride, so most of the week stays easy (P2)."],
   ];
   let current = plan;
   for (const [target, id, why] of steps) {

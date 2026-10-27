@@ -36,7 +36,7 @@ export function spaceStrength(week: WeekPlan, activities: Activity[], today: str
   sessions = sessions.filter((s) => {
     if (surplus <= 0 || !isStrength(s) || s.date < today) return true;
     surplus--;
-    notes.push(`${dayLabel(s.date, today)}'s strength is already done this week.`);
+    notes.push(`${dayLabel(s.date, today)}'s strength is off: already done this week.`);
     return false;
   });
 
@@ -51,13 +51,14 @@ export function spaceStrength(week: WeekPlan, activities: Activity[], today: str
       if (d !== s.date && !nextTo(d) && !sessions.some((x) => x.date === d)) free.push(d);
     }
     const to = free.find((d) => !beforeQuality(d)) ?? free[0];
-    const after = logged.includes(addDays(s.date, -1)) ? "You did strength the day before" : "Strength the day before";
+    // Logged strength is always before today, so a clash with it means the session was today's.
+    const afterLogged = logged.includes(addDays(s.date, -1));
     if (to) {
-      const moved = { ...s, date: to, weekday: weekdayOf(to), movedFrom: s.date, adjusted: `${after}, so this moved from ${when(s.date, today)}: strength days apart recover better and leave fresher legs for riding.` };
+      const moved = { ...s, date: to, weekday: weekdayOf(to), movedFrom: s.date, adjusted: afterLogged ? "Moved from today: you did strength yesterday." : `Moved from ${when(s.date, today)}: too close to your other strength day.` };
       sessions = sessions.map((x) => (x === s ? moved : x));
     } else {
       sessions = sessions.filter((x) => x !== s);
-      notes.push(`${after}, so ${when(s.date, today)}'s strength is off the plan this week: no day left that isn't next to another strength day.`);
+      notes.push(afterLogged ? "No strength today: you did it yesterday, and no other day this week is free." : `${dayLabel(s.date, today)}'s strength is off: too close to your other strength day.`);
     }
   }
   if (sessions.length === week.sessions.length && sessions.every((s, i) => s === week.sessions[i])) return week;
