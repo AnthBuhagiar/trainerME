@@ -19,3 +19,8 @@ export function dayLabel(date: string, today: string): string {
   const wd = WEEKDAYS[(new Date(`${date}T00:00:00Z`).getUTCDay() + 6) % 7];
   return `${wd} ${Number(date.slice(8, 10))} ${new Intl.DateTimeFormat("en-AU", { month: "short", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`))}`;
 }
+
+/** Evidence and rule codes such as "(E1)" or "(E6, E7)" are for the docs, not the rider. */
+export function plain(text: string): string {
+  return text.replace(/\s*\((?:[EP]\d+(?:,\s*)?)+\)/g, "");
+}

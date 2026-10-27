@@ -30,7 +30,7 @@ describe("P20: strength days apart", () => {
     const moved = out.sessions.find((s) => s.kind === "strength" && s.date > "2026-10-27")!;
     expect(moved.date).toBe("2026-10-28"); // Wed: the first free day not next to Monday (Thu has a ride)
     expect(moved.movedFrom).toBe("2026-10-27");
-    expect(moved.adjusted).toMatch(/You did strength the day before, so this moved from today/);
+    expect(moved.adjusted).toBe("Moved from today: you did strength yesterday.");
   });
 
   test("strength done early covers the next planned one", () => {
@@ -45,7 +45,7 @@ describe("P20: strength days apart", () => {
     const w = week([0, 1, 2, 3, 4, 5, 6].map((d) => slot({ weekday: d, kind: d === 0 || d === 1 ? "strength" : "ride", minutes: d === 5 ? 180 : 60 })));
     const out = spaceStrength(w, [lift("2026-10-26")], "2026-10-27");
     expect(strengthDates(out)).toEqual(["2026-10-26"]);
-    expect(out.adaptation).toMatch(/today's strength is off the plan this week/);
+    expect(out.adaptation).toMatch(/No strength today: you did it yesterday/);
   });
 
   test("leaves a well-spaced week alone", () => {
