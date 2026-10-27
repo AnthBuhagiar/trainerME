@@ -98,7 +98,7 @@ async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: str
           <h2 className="label mt-2 px-1">{todays.length ? "Today" : "Today · rest"}</h2>
           {todays.length > 0 && <CheckIn date={today} mood={checkIns[today]} />}
           {todays.map((s) => (
-            <SessionCard key={s.start} session={s} today={today} />
+            <SessionCard key={s.start} session={s} today={today} showDay={false} />
           ))}
           {!todays.length && (
             <p className="px-1 text-[15px] text-muted">
