@@ -2,6 +2,7 @@ import { asAthlete } from "@/lib/auth/athlete";
 import { ChangeList } from "@/components/ChangeList";
 import { CheckIn } from "@/components/CheckIn";
 import { HourRing } from "@/components/HourRing";
+import { ringScale } from "@/lib/goals/ringScale";
 import { SessionCard, sessionTitle } from "@/components/SessionCard";
 import { WeekStrip } from "@/components/WeekStrip";
 import { weekStrip } from "@/lib/plan/weekStrip";
@@ -40,11 +41,7 @@ async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: str
   const strip = budget.slots.length ? weekStrip(week(thisWeekStart), activities, today, sessionTitle) : null;
   const movedAway = upcoming.find((s) => s.movedFrom === today);
 
-  // Without a goal, show progress from the 6-month low towards +20%.
-  const recent = history?.points.filter((p) => Date.parse(p.date) > Date.now() - 182 * 86_400_000) ?? [];
-  const sixMonthLow = recent.length ? Math.floor(Math.min(...recent.map((p) => p.hourPower)) / 5) * 5 : 0;
-  const start = goal?.startHourPower ? Math.floor(goal.startHourPower / 5) * 5 - 10 : sixMonthLow;
-  const target = summary?.targetHourPower ?? (current ? Math.ceil((current.hourPower * 1.2) / 5) * 5 : 0);
+  const { start, goal: target } = ringScale(summary ? goal : null, summary?.targetHourPower, history, current?.hourPower ?? 0);
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-4 px-5 py-6">
@@ -68,9 +65,12 @@ async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: str
         <section className="flex flex-col items-center gap-3 rounded-3xl bg-asphalt p-5 text-chalk">
           <HourRing hourPower={current.hourPower} low={current.low} high={current.high} start={start} goal={target} />
           <div className="flex w-full justify-between text-[13px]" style={{ color: "#B9C4D0" }}>
-            <span className="whitespace-nowrap">{(current.hourPower / settings.weightKg).toFixed(2)} W/kg</span>
             <span className="flex items-center gap-1.5 whitespace-nowrap">
               <span className="inline-block h-2 w-2 rounded-full bg-signal" />
+              Now · {(current.hourPower / settings.weightKg).toFixed(2)} W/kg
+            </span>
+            <span className="flex items-center gap-1.5 whitespace-nowrap">
+              <span className="inline-block h-2 w-2 rounded-full bg-goal" />
               {summary ? `Goal ${target} W` : `Example goal ${target} W`}
             </span>
           </div>

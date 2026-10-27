@@ -128,7 +128,10 @@ export function GoalForm({ goal, hourPower }: { goal: Goal | null; hourPower: nu
       )}
 
       <label className="flex flex-col gap-1.5">
-        <span className="label">Target hour power (W, optional)</span>
+        <span className="label flex items-center gap-1.5">
+          <span className="inline-block h-2 w-2 rounded-full bg-goal" aria-hidden="true" />
+          Target hour power (W, optional)
+        </span>
         <input name="targetWatts" inputMode="numeric" defaultValue={goal?.targetWatts} placeholder={hourPower ? `Now ${hourPower} W` : ""} className={input} />
       </label>
 

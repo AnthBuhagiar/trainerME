@@ -1,7 +1,9 @@
 /**
- * The Hour Ring: 60 ticks, one per minute of the hour. White ticks fill from
- * the starting hour power towards the goal, grey shows the likely range, and
- * one orange tick at 12 o'clock is the goal.
+ * The Hour Ring: 60 ticks, one per minute of the hour, filling clockwise from
+ * 12 o'clock. Orange ticks are where your hour power is now; the sky-blue tick
+ * is your goal (the same blue marks the goal everywhere in the app), with a
+ * faint blue track for the distance still to go. Grey shows the likely range.
+ * The goal sits at 50 minutes, leaving room to show going past it.
  */
 
 interface Props {
@@ -14,27 +16,39 @@ interface Props {
 }
 
 const TICKS = 60;
+const GOAL_TICK = 50;
+const ORANGE = "#FF6A1A";
+const SKY = "#38BDF8";
 
-function tickIndex(value: number, start: number, goal: number): number {
-  const t = (value - start) / (goal - start);
-  return Math.max(0, Math.min(TICKS, Math.round(t * TICKS)));
+export function tickIndex(value: number, start: number, goal: number): number {
+  const t = goal > start ? (value - start) / (goal - start) : 1;
+  return Math.max(0, Math.min(TICKS - 1, Math.round(t * GOAL_TICK)));
 }
 
 export function HourRing({ hourPower, low, high, start, goal, size = 220 }: Props) {
-  const filled = tickIndex(hourPower, start, goal);
+  const now = tickIndex(hourPower, start, goal);
   const rangeFrom = tickIndex(low, start, goal);
   const rangeTo = tickIndex(high, start, goal);
   const c = 100;
   const outer = 94;
   const ticks = Array.from({ length: TICKS }, (_, i) => {
     const a = (i / TICKS) * 2 * Math.PI - Math.PI / 2;
-    const isGoal = i === 0;
-    const len = isGoal ? 16 : 11;
-    const r1 = outer - len;
+    const isGoal = i === GOAL_TICK;
+    const isNow = i === now && now > 0;
     let stroke = "#2A323D";
-    if (i >= rangeFrom && i < rangeTo) stroke = "#5B6672";
-    if (i > 0 && i <= filled) stroke = "#F3F5F7";
-    if (isGoal) stroke = "#FF6A1A";
+    let opacity = 1;
+    if (i >= rangeFrom && i <= rangeTo) stroke = "#5B6672";
+    if (i > now && i < GOAL_TICK) {
+      stroke = SKY; // still to go
+      opacity = 0.38;
+    }
+    if (i > 0 && i <= now) stroke = ORANGE;
+    if (isGoal) {
+      stroke = SKY;
+      opacity = 1;
+    }
+    const len = isGoal || isNow ? 17 : 11;
+    const r1 = outer - len;
     return (
       <line
         key={i}
@@ -43,7 +57,8 @@ export function HourRing({ hourPower, low, high, start, goal, size = 220 }: Prop
         x2={c + outer * Math.cos(a)}
         y2={c + outer * Math.sin(a)}
         stroke={stroke}
-        strokeWidth={isGoal ? 4.5 : 2.6}
+        strokeOpacity={opacity}
+        strokeWidth={isGoal || isNow ? 4.5 : 2.6}
         strokeLinecap="round"
       />
     );
@@ -61,9 +76,11 @@ export function HourRing({ hourPower, low, high, start, goal, size = 220 }: Prop
         {ticks}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 text-chalk">
-        <div className="label" style={{ color: "#9AA6B2" }}>
-          Hour power
-        </div>
+        {size >= 180 && (
+          <div className="label" style={{ color: "#9AA6B2" }}>
+            Hour power
+          </div>
+        )}
         <div className="flex items-baseline gap-1">
           <span className="display" style={{ fontSize: size * 0.3, lineHeight: 1 }}>
             {Math.round(hourPower)}
@@ -72,9 +89,11 @@ export function HourRing({ hourPower, low, high, start, goal, size = 220 }: Prop
             W
           </span>
         </div>
-        <div className="text-[13px]" style={{ color: "#9AA6B2" }}>
-          likely {Math.round(low)}–{Math.round(high)}
-        </div>
+        {size >= 180 && (
+          <div className="text-[13px]" style={{ color: "#9AA6B2" }}>
+            likely {Math.round(low)}–{Math.round(high)}
+          </div>
+        )}
       </div>
     </div>
   );

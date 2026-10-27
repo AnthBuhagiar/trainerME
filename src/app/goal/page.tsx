@@ -1,5 +1,7 @@
 import { asAthlete } from "@/lib/auth/athlete";
 import { GoalForm } from "@/components/GoalForm";
+import { HourRing } from "@/components/HourRing";
+import { ringScale } from "@/lib/goals/ringScale";
 import { formatDuration } from "@/lib/goals/eventTime";
 import { eventFuelPlan } from "@/lib/goals/fuelPlan";
 import { loadGoals } from "@/lib/goals/model";
@@ -8,7 +10,7 @@ import { loadState } from "@/lib/plan/current";
 export const dynamic = "force-dynamic";
 
 function GoalPageView() {
-  const { current, goal: active, summary, settings } = loadState();
+  const { current, goal: active, summary, settings, history } = loadState();
   const goal = active ?? loadGoals().at(-1) ?? null;
   const plan = summary?.route?.target ?? summary?.route?.today;
   const fuel = summary?.predicted ? eventFuelPlan(settings.weightKg, summary.route?.target?.seconds ?? summary.predicted.seconds) : null;
@@ -19,6 +21,32 @@ function GoalPageView() {
         <h1 className="display text-[24px]">{goal ? goal.name : "Set a goal"}</h1>
         <p className="text-[15px] text-muted">The plan is built backwards from this date: base, build, event-specific, then a two-week taper.</p>
       </header>
+
+      {summary && current && (
+        <section className="flex items-center gap-4 rounded-3xl bg-asphalt p-4 text-chalk">
+          {(() => {
+            const scale = ringScale(active, summary.targetHourPower, history, current.hourPower);
+            return <HourRing hourPower={current.hourPower} low={current.low} high={current.high} start={scale.start} goal={scale.goal} size={128} />;
+          })()}
+          <div className="flex min-w-0 flex-col gap-1">
+            <span className="label" style={{ color: "var(--goal)" }}>
+              Goal hour power
+            </span>
+            <span className="display text-[34px] leading-none text-goal">
+              {summary.targetHourPower}
+              <span className="text-[16px]"> W</span>
+            </span>
+            <span className="text-[13px] leading-snug" style={{ color: "#B9C4D0" }}>
+              {summary.targetHourPower > current.hourPower
+                ? `${Math.round(summary.targetHourPower - current.hourPower)} W to go · ${summary.weeksToGo} weeks`
+                : "Reached. Hold it to event day."}
+            </span>
+            <span className="text-[12px] leading-snug" style={{ color: "#9AA6B2" }}>
+              The blue mark on your Hour Ring.
+            </span>
+          </div>
+        </section>
+      )}
 
       {summary?.route && plan && (
         <section className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-5">
