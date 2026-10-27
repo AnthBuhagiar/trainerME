@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, verifySession } from "@/lib/auth/session";
 
 /** Pages and files reachable without signing in. */
-const PUBLIC = [/^\/login$/, /^\/privacy$/, /^\/api\/strava\/(connect|callback|webhook)$/, /^\/(manifest\.webmanifest|icon.*\.png|apple-icon\.png|favicon\.ico)$/, /^\/brand\//];
+const PUBLIC = [/^\/login$/, /^\/privacy$/, /^\/terms$/, /^\/api\/strava\/(connect|callback|webhook)$/, /^\/(manifest\.webmanifest|icon.*\.png|apple-icon\.png|favicon\.ico)$/, /^\/brand\//];
 
 export async function middleware(req: NextRequest) {
   if (!process.env.SESSION_SECRET) {

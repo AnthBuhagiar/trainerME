@@ -1,3 +1,7 @@
+import Link from "next/link";
+import { AgreeToTerms } from "@/components/AgreeToTerms";
+import { TERMS_VERSION } from "@/lib/legal/terms";
+
 export const dynamic = "force-dynamic";
 
 const NOTICES: Record<string, string> = {
@@ -17,12 +21,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       </p>
       {deleted && <p className="text-[14px] font-semibold">Your account and data are deleted.</p>}
       {error && NOTICES[error] && <p className="text-[14px] font-semibold text-signal-ink">{NOTICES[error]}</p>}
-      <a href="/api/strava/connect" className="flex h-14 items-center justify-center rounded-2xl bg-signal-ink text-[17px] font-semibold text-white">
-        Sign in with Strava
-      </a>
-      <a href="/privacy" className="text-center text-[14px] font-semibold text-muted">
-        Privacy
-      </a>
+      <AgreeToTerms version={TERMS_VERSION} action="/api/strava/connect" method="get" label="Sign in with Strava" />
+      <div className="flex justify-center gap-6 text-[14px] font-semibold text-muted">
+        <Link href="/terms">Terms</Link>
+        <Link href="/privacy">Privacy</Link>
+      </div>
     </main>
   );
 }

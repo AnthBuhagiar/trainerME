@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { athleteIds, claimOwner, moveSingleRiderData } from "@/lib/auth/owner";
 import { authEnabled, createSession, SESSION_COOKIE, SESSION_DAYS } from "@/lib/auth/session";
 import { runAsAthlete } from "@/lib/data/store";
+import { acceptTerms } from "@/lib/legal/acceptance";
+import { TERMS_COOKIE, TERMS_VERSION } from "@/lib/legal/terms";
 import { appUrl, exchangeCode, REQUIRED_SCOPES, saveTokens } from "@/lib/strava/client";
 
 export const runtime = "nodejs";
@@ -32,8 +34,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${appUrl()}/login?error=full`);
   }
   if (claimOwner(athleteId) === athleteId) moveSingleRiderData(athleteId);
-  runAsAthlete(athleteId, () => saveTokens(tokens));
+  const agreed = req.cookies.get(TERMS_COOKIE)?.value === TERMS_VERSION;
+  runAsAthlete(athleteId, () => {
+    saveTokens(tokens);
+    if (agreed) acceptTerms(); // ticked on the sign-in page; otherwise they're asked before anything else
+  });
   const res = NextResponse.redirect(`${appUrl()}/?strava=connected`);
+  res.cookies.delete(TERMS_COOKIE);
   res.cookies.set(SESSION_COOKIE, await createSession(athleteId), {
     httpOnly: true,
     secure: appUrl().startsWith("https://"),

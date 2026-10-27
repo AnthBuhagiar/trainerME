@@ -76,9 +76,10 @@ function SettingsPageView() {
               <button className="h-12 rounded-2xl bg-signal-ink text-[15px] font-semibold text-white">Delete everything</button>
             </form>
           </details>
-          <a href="/privacy" className="text-center text-[14px] font-semibold text-muted">
-            Privacy
-          </a>
+          <div className="flex justify-center gap-6 text-[14px] font-semibold text-muted">
+            <a href="/terms">Terms</a>
+            <a href="/privacy">Privacy</a>
+          </div>
         </>
       )}
     </main>

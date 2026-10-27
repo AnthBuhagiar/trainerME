@@ -61,4 +61,12 @@ describe("several athletes on one server", () => {
     expect(files.some((f) => f.includes("athletes"))).toBe(false);
     expect(backup.isSafePath("athletes/1/settings.json")).toBe(false);
   });
+
+  test("each athlete accepts the current terms for themselves", async () => {
+    const { acceptTerms, hasAcceptedTerms } = await import("@/lib/legal/acceptance");
+    expect(store.runAsAthlete(1, hasAcceptedTerms)).toBe(false);
+    store.runAsAthlete(1, () => acceptTerms());
+    expect(store.runAsAthlete(1, hasAcceptedTerms)).toBe(true);
+    expect(store.runAsAthlete(2, hasAcceptedTerms)).toBe(false);
+  });
 });
