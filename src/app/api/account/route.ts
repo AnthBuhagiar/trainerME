@@ -17,4 +17,4 @@ async function post() {
   return res;
 }
 
-export const POST = athleteRoute(post);
+export const POST = athleteRoute(post, { beforeTerms: true });

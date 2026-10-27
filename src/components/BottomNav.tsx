@@ -44,7 +44,7 @@ const ITEMS = [
 
 export function BottomNav() {
   const path = usePathname();
-  if (path === "/login" || path === "/privacy") return null; // nothing to navigate to before signing in
+  if (path === "/login" || path === "/privacy" || path === "/terms") return null; // nothing to navigate to before signing in
   return (
     <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-card pb-[env(safe-area-inset-bottom)]">
       <ul className="mx-auto flex max-w-md">

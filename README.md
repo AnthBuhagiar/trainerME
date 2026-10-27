@@ -77,6 +77,7 @@ Anyone with Strava can sign in to a hosted Hour Power. Each athlete gets their o
 - **Strava's limit:** a new Strava API app allows only its owner. Raise it to 10 athletes yourself at [Strava API settings](https://www.strava.com/settings/api); beyond 10, Strava reviews the app (see `docs/strava-capacity-request.md`).
 - **Cap it on the server:** `MAX_ATHLETES=10` in `/etc/hour-power.env` (riders already signed up always get back in).
 - **Privacy page** at `/privacy`; add `CONTACT_EMAIL=` to show a contact address.
+- **Terms and Conditions** at `/terms` (text in `src/lib/legal/terms.ts`). Riders tick "I agree" on the sign-in page before going to Strava; anyone signed in who hasn't accepted the current version is asked before using the app. Change `TERMS_VERSION` when the terms change and everyone is asked again. `CONTACT_EMAIL` fills the contact line.
 - **Delete my account** in Settings removes the rider's folder and revokes Hour Power's Strava access.
 - **Webhook (recommended, expected by Strava's review):** removes a rider's data when they remove Hour Power in Strava. Once, on the server:
   ```bash
