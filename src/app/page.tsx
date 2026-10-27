@@ -4,6 +4,7 @@ import { CheckIn } from "@/components/CheckIn";
 import { HourRing } from "@/components/HourRing";
 import { SessionCard } from "@/components/SessionCard";
 import { SetupCard } from "@/components/SetupCard";
+import { dayLabel } from "@/lib/ui/format";
 import { SyncPanel } from "@/components/SyncPanel";
 import { TargetsPrompt } from "@/components/TargetsPrompt";
 import { UpdateButton } from "@/components/UpdateButton";
@@ -28,12 +29,14 @@ async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: str
     ? [...week(thisWeekStart).sessions, ...week(nextWeekStart(thisWeekStart)).sessions].filter((s) => s.date >= today)
     : [];
   const todays = upcoming.filter((s) => s.date === today);
+  const thisWeekNote = budget.slots.length ? week(thisWeekStart).adaptation : undefined;
   // Weeks run Sunday to Saturday. Saturday: recap the week ending tonight, with a look at next week.
   // Sunday: last week's recap.
   const endOfWeek = isLastDayOfWeek(today);
   const recapWeekStart = reviewWeekStart(today, thisWeekStart);
   const recap = budget.slots.length && (endOfWeek || today === thisWeekStart) ? weekReview(week(recapWeekStart), activities, history) : null;
   const nextUp = upcoming.find((s) => s.date > today);
+  const movedAway = upcoming.find((s) => s.movedFrom === today);
 
   // Without a goal, show progress from the 6-month low towards +20%.
   const recent = history?.points.filter((p) => Date.parse(p.date) > Date.now() - 182 * 86_400_000) ?? [];
@@ -93,17 +96,23 @@ async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: str
           {todays.map((s) => (
             <SessionCard key={s.start} session={s} today={today} />
           ))}
-          {!todays.length && <p className="px-1 text-[15px] text-muted">Nothing planned today. Recovery is training too.</p>}
+          {!todays.length && (
+            <p className="px-1 text-[15px] text-muted">
+              {movedAway
+                ? `Today's strength moved to ${dayLabel(movedAway.date, today)} to keep strength days apart. Rest today.`
+                : "Nothing planned today. Recovery is training too."}
+            </p>
+          )}
           {nextUp && !todays.length && <SessionCard session={nextUp} today={today} />}
         </section>
       )}
 
-      {adaptation.note && (
+      {(thisWeekNote ?? adaptation.note) && (
         <section className="rounded-2xl border border-line bg-card px-4 py-3">
           <div className="label" style={{ color: "var(--signal-ink)" }}>
             Plan adjusted
           </div>
-          <p className="text-[15px] leading-snug">{adaptation.note}</p>
+          <p className="text-[15px] leading-snug">{thisWeekNote ?? adaptation.note}</p>
         </section>
       )}
 

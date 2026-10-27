@@ -38,6 +38,8 @@ export interface PlannedSession {
   why: string;
   /** Set when a check-in changed this session. */
   adjusted?: string;
+  /** P20: the date it was planned for, when it was moved to another day. */
+  movedFrom?: string;
 }
 
 export interface WeekPlan {
@@ -104,6 +106,8 @@ export function placeSlots(slots: TimeSlot[]): { slot: TimeSlot; weekday: number
       // worst before a weeknight quality ride, less bad before the long, mostly steady, ride.
       let s = same.length ? Math.min(3, ...same.map((x) => circularGap(x, d))) : 3;
       const next = (d + 1) % 7;
+      // P20: never two strength days in a row while another day is free.
+      if (slot.kind === "strength" && same.some((x) => circularGap(x, d) === 1)) s -= 3;
       if (slot.kind === "strength" && next === longDay) s -= 1.5;
       else if (slot.kind === "strength" && rides.some((r) => r.weekday === next)) s -= 2;
       return s;
