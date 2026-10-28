@@ -41,7 +41,7 @@ export interface AthleteSettings {
   /** FTP the rider has accepted for zones. Never overwritten silently. */
   acceptedFtp: number;
   bikeWeightKg: number;
-  /** Upload rides ridden in Hour Power's player to Strava as soon as they finish. */
+  /** Upload rides ridden in Hour Power's player to Strava as soon as they finish. On unless turned off (see autoUploadOn). */
   autoUpload?: boolean;
   /** Hour power the rider accepted for training targets (W). */
   trainingHourPower?: number;

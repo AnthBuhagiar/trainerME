@@ -55,3 +55,12 @@ describe("Strava upload", () => {
     vi.useRealTimers();
   });
 });
+
+describe("auto-upload", () => {
+  test("is on unless the rider turned it off", async () => {
+    const { autoUploadOn } = await import("@/lib/strava/client");
+    expect(autoUploadOn({})).toBe(true);
+    expect(autoUploadOn({ autoUpload: true })).toBe(true);
+    expect(autoUploadOn({ autoUpload: false })).toBe(false);
+  });
+});
