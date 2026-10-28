@@ -19,7 +19,6 @@ function GoalPageView() {
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 px-5 py-6">
       <header className="flex flex-col gap-1">
         <h1 className="display text-[24px]">{goal ? goal.name : "Set a goal"}</h1>
-        <p className="text-[15px] text-muted">The plan is built backwards from this date: base, build, event-specific, then a two-week taper.</p>
       </header>
 
       {summary && current && (

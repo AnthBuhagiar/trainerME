@@ -167,7 +167,7 @@ export function GoalForm({ goal, hourPower }: { goal: Goal | null; hourPower: nu
             </div>
           ) : (
             <p className="text-[13px] text-muted">
-              Import a GPX from Strava, RideWithGPS, Komoot or the event website for climb-by-climb pacing and a better finish time.
+              Add a GPX for climb-by-climb pacing.
             </p>
           )}
           <input

@@ -28,7 +28,6 @@ interface Props {
   /** Save to Strava as soon as the ride finishes. */
   autoUpload: boolean;
   steps: PlayerStep[];
-  backHref: string;
 }
 
 const clock = (s: number) => {
@@ -39,7 +38,7 @@ const clock = (s: number) => {
   return h ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`;
 };
 
-export function RidePlayer({ name, autoUpload, steps, backHref, storageKey }: Props) {
+export function RidePlayer({ name, autoUpload, steps, storageKey }: Props) {
   const [supported, setSupported] = useState(true);
   const [trainer, setTrainer] = useState<string | null>(null);
   const [hrName, setHrName] = useState<string | null>(null);
@@ -658,15 +657,6 @@ export function RidePlayer({ name, autoUpload, steps, backHref, storageKey }: Pr
         </div>
       )}
 
-      <p className="text-[13px] text-muted">
-        Hour Power records the ride{autoUpload ? " and saves it to Strava when you finish" : "; save it to Strava when you finish"}. If your watch records it too, save only one of them so it isn’t
-        counted twice. If you switch to another app, the trainer holds its last target and the workout clock keeps time; come back and it
-        carries on from where you are. Phones pause web apps in the background, so recording resumes when you return.
-        {miniSupported && " To use another app mid-ride, tap Mini player first: the workout floats in a corner and keeps running."}{" "}
-        <a href={backHref} className="font-semibold">
-          Back to session
-        </a>
-      </p>
     </div>
   );
 }

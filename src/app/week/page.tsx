@@ -54,7 +54,6 @@ function WeekPageView() {
       <header className="flex flex-col gap-1">
         <h1 className="display text-[24px]">Week</h1>
         <p className="text-[15px] text-muted">
-          Built around the days you’re free. A missed session is simply skipped; nothing piles up.{" "}
           <a href="/settings#days" className="font-semibold text-signal-ink">
             Change my days
           </a>

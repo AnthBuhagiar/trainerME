@@ -20,7 +20,7 @@ const RANGES = [
 const month = new Intl.DateTimeFormat("en-AU", { month: "short" });
 const full = new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric" });
 
-export function HourPowerChart({ points, goal, goalName }: { points: ChartPoint[]; goal?: number; goalName?: string }) {
+export function HourPowerChart({ points, goal }: { points: ChartPoint[]; goal?: number }) {
   const [range, setRange] = useState(1);
   const last = points.length ? Date.parse(points[points.length - 1].date) : 0;
   const data = points
@@ -96,7 +96,7 @@ export function HourPowerChart({ points, goal, goalName }: { points: ChartPoint[
         </ResponsiveContainer>
       </div>
       <p className="text-[13px] text-muted">
-        Line: estimated hour power after each ride. Shaded: the likely range.{goal ? ` Dashed: ${goal} W, the hour power ${goalName ?? "your goal"} needs.` : ""}
+        Shaded: likely range.{goal ? ` Dashed: ${goal} W goal.` : ""}
       </p>
     </div>
   );
