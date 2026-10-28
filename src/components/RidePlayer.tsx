@@ -14,6 +14,7 @@ import {
   startOrResume,
   stopOrPause,
 } from "@/lib/player/ftms";
+import { MiniPlayer, miniPlayerSupported, type MiniState } from "@/lib/player/miniPlayer";
 import { clearRide, elapsedAt, emptyRide, end, isRunning, loadRide, pause, record, saveRide, skip, start, type RideState } from "@/lib/player/session";
 import { chooseDevice, connectRemembered, loadSensors } from "@/lib/player/devices";
 import { stepAt, type PlayerStep } from "@/lib/player/steps";
@@ -108,6 +109,9 @@ export function RidePlayer({ name, autoUpload, steps, backHref, storageKey }: Pr
         const v = (e.target as BluetoothRemoteGATTCharacteristic).value!;
         const b = parseIndoorBikeData(v);
         setLive((l) => ({ ...l, power: b.power ?? l.power, cadence: b.cadence ?? l.cadence, hr: b.heartRate ?? l.hr }));
+        // The trainer reports about once a second: tick the clock too, so the workout keeps time even when
+        // the phone slows the app's own timers in the background.
+        setNow(Date.now());
       });
       await data.startNotifications();
       const cp = await service.getCharacteristic(CONTROL_POINT);
@@ -336,6 +340,73 @@ export function RidePlayer({ name, autoUpload, steps, backHref, storageKey }: Pr
     setRide((r) => skip(r, at.remaining));
   }
 
+  // Mini player: the workout as a floating picture-in-picture tile (see miniPlayer.ts).
+  const [miniSupported, setMiniSupported] = useState(false);
+  const [miniOpen, setMiniOpen] = useState(false);
+  const mini = useRef<MiniPlayer | null>(null);
+  useEffect(() => setMiniSupported(miniPlayerSupported()), []);
+  const miniState: MiniState | null = at && current
+    ? { label: current.label, remaining: at.remaining, left: total - elapsed, target, power: live.power, hr: live.hr, cadence: live.cadence, work: current.work, running, progress: total ? elapsed / total : 0 }
+    : null;
+  const miniRef = useRef(miniState);
+  miniRef.current = miniState;
+  const actions = useRef({ toggle, skip: skipStep });
+  actions.current = { toggle, skip: skipStep };
+
+  const ensureMini = useCallback(() => {
+    if (!mini.current) {
+      mini.current = new MiniPlayer();
+      mini.current.onClose = () => setMiniOpen(false);
+    }
+    return mini.current;
+  }, []);
+
+  async function openMini() {
+    if (!miniRef.current) return;
+    try {
+      await ensureMini().show(miniRef.current);
+      setMiniOpen(true);
+    } catch (e) {
+      setError(`Couldn’t open the mini player: ${(e as Error).message}`);
+    }
+  }
+
+  // While riding: keep the hidden video playing so the browser can pop it out when you leave, and let the
+  // tile's play/pause and next buttons pause and skip.
+  useEffect(() => {
+    if (!miniSupported || !running) return;
+    const m = ensureMini();
+    if (miniRef.current) void m.prime(miniRef.current);
+    const ms = navigator.mediaSession;
+    if (!ms) return;
+    ms.metadata = new MediaMetadata({ title: name, artist: "Hour Power" });
+    const set = (action: string, handler: (() => void) | null) => {
+      try {
+        ms.setActionHandler(action as MediaSessionAction, handler);
+      } catch {
+        // Not every browser knows every action (enterpictureinpicture is new).
+      }
+    };
+    set("play", () => actions.current.toggle());
+    set("pause", () => actions.current.toggle());
+    set("nexttrack", () => actions.current.skip());
+    set("enterpictureinpicture", () => {
+      void m.enter().then(() => setMiniOpen(true)).catch(() => {});
+    });
+    return () => ["play", "pause", "nexttrack", "enterpictureinpicture"].forEach((a) => set(a, null));
+  }, [miniSupported, running, ensureMini, name]);
+
+  // Redraw the tile whenever the numbers change.
+  useEffect(() => {
+    if (mini.current && miniState) mini.current.draw(miniState);
+  });
+
+  // Finished, or leaving the page: close the tile.
+  useEffect(() => {
+    if (done) void mini.current?.hide();
+  }, [done]);
+  useEffect(() => () => mini.current?.destroy(), []);
+
   if (!supported) {
     return (
       <section className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-5">
@@ -377,12 +448,21 @@ export function RidePlayer({ name, autoUpload, steps, backHref, storageKey }: Pr
           onOffset={(d) => setRide((r) => ({ ...r, offset: Math.max(-20, Math.min(10, r.offset + d)) }))}
           onMinimise={() => setMinimised(true)}
           onConnect={() => connectTrainer()}
+          onMini={miniSupported ? openMini : undefined}
+          miniOpen={miniOpen}
         />
       )}
       {ride.startedAt && !done && minimised && (
-        <button onClick={() => setMinimised(false)} className="h-12 rounded-2xl border border-line bg-card text-[15px] font-semibold">
-          Back to the workout dashboard
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => setMinimised(false)} className="h-12 flex-1 rounded-2xl border border-line bg-card text-[15px] font-semibold">
+            Back to the dashboard
+          </button>
+          {miniSupported && (
+            <button onClick={openMini} className="h-12 rounded-2xl border border-line bg-card px-4 text-[15px] font-semibold">
+              {miniOpen ? "Mini player on" : "Mini player"}
+            </button>
+          )}
+        </div>
       )}
       <section className="flex flex-col gap-4 rounded-3xl bg-asphalt p-5 text-chalk">
         <div className="flex items-baseline justify-between gap-3">
@@ -557,7 +637,8 @@ export function RidePlayer({ name, autoUpload, steps, backHref, storageKey }: Pr
       <p className="text-[13px] text-muted">
         Hour Power records the ride{autoUpload ? " and saves it to Strava when you finish" : "; save it to Strava when you finish"}. If your watch records it too, save only one of them so it isn’t
         counted twice. If you switch to another app, the trainer holds its last target and the workout clock keeps time; come back and it
-        carries on from where you are. Phones pause web apps in the background, so recording resumes when you return.{" "}
+        carries on from where you are. Phones pause web apps in the background, so recording resumes when you return.
+        {miniSupported && " To use another app mid-ride, tap Mini player first: the workout floats in a corner and keeps running."}{" "}
         <a href={backHref} className="font-semibold">
           Back to session
         </a>

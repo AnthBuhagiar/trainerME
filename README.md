@@ -112,6 +112,9 @@ A server with nothing else on it can instead use `deploy/docker-compose.yml` (ap
 
 Pair your smart trainer and heart-rate strap once in **Settings and data → Trainer and heart rate**. They're remembered on that phone: in Chrome the workout connects to them by itself once they're switched on; in browsers that can't do that (Bluefy), the chooser lists only your paired device, so it's one tap. It's Bluetooth only, since browsers can't use ANT+; trainers and straps with ANT+ almost always have Bluetooth too. A strap that allows two Bluetooth connections (most recent Garmin, Wahoo and Polar straps) can talk to the phone and a watch at the same time.
 
+### Mini player
+Mid-ride, tap **Mini player** on the workout dashboard and the workout floats in a corner as a picture-in-picture tile (like YouTube): drag it, pinch to resize, tap play/pause or next to pause or skip a step. While it's showing, the browser treats the page as playing media, so the ride and the trainer keep running while you use other apps. It works where browsers offer video picture-in-picture (Chrome on Android, Windows and Mac). iPhone browsers that do Bluetooth (Bluefy) don't, so there the ride keeps time and catches up when you come back.
+
 ## Rides from Intervals.icu too
 
 With `INTERVALS_API_KEY` set, every sync also reads your rides from Intervals.icu (power and heart rate included), so Hour Power has a second source besides Strava. The same ride arriving from both is kept once. Rides that Intervals.icu itself got from Strava aren't shared over its API, so this mainly adds rides it receives from Garmin, Wahoo, Zwift and the like: connect those to Intervals.icu directly for the full benefit.
