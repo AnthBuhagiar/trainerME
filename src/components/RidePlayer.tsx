@@ -142,12 +142,14 @@ export function RidePlayer({ name, autoUpload, steps, backHref, storageKey }: Pr
   );
 
   /** The chooser, filtered to the paired trainer if there is one; `fresh` lists every trainer. */
-  async function connectTrainer(fresh = false) {
+  async function connectTrainer(fresh = false): Promise<boolean> {
     setError(null);
     try {
       await watchTrainer(await chooseDevice("trainer", fresh));
+      return true;
     } catch (e) {
       if ((e as Error).name !== "NotFoundError") setError(`Couldn't connect: ${(e as Error).message}`);
+      return false;
     }
   }
 
@@ -279,6 +281,12 @@ export function RidePlayer({ name, autoUpload, steps, backHref, storageKey }: Pr
       write(startOrResume());
     }
     setResumed(false);
+  }
+
+  /** One tap to ride: connect the trainer if it isn't yet, then start. */
+  async function startWorkout() {
+    if (!trainer && !(await connectTrainer())) return;
+    toggle();
   }
 
   function finish() {
@@ -550,34 +558,50 @@ export function RidePlayer({ name, autoUpload, steps, backHref, storageKey }: Pr
 
       {error && <p className="text-[14px] font-semibold text-signal-ink">{error}</p>}
 
-      {!trainer ? (
-        <div className="flex flex-col gap-1">
-          <button onClick={() => connectTrainer()} className="h-14 rounded-2xl bg-signal-ink text-[17px] font-semibold text-white">
-            {paired.trainer ? `Connect ${paired.trainer}` : "Connect trainer"}
-          </button>
-          {paired.trainer && (
-            <button onClick={() => connectTrainer(true)} className="h-10 text-[14px] font-semibold text-muted">
-              Use a different trainer
+      {!done &&
+        (!ride.startedAt ? (
+          <div className="flex flex-col gap-1">
+            <button onClick={startWorkout} className="h-14 rounded-2xl bg-signal-ink text-[17px] font-semibold text-white">
+              Start workout
             </button>
-          )}
-        </div>
-      ) : (
-        !done && (
+            {!trainer && (
+              <p className="text-center text-[13px] text-muted">
+                {paired.trainer ? `Connects your ${paired.trainer} first.` : "Connects your trainer first."}
+              </p>
+            )}
+            {!trainer && (
+              <div className="flex justify-center gap-5">
+                <button onClick={toggle} className="h-10 text-[14px] font-semibold text-muted">
+                  Start without trainer
+                </button>
+                {paired.trainer && (
+                  <button onClick={() => connectTrainer(true)} className="h-10 text-[14px] font-semibold text-muted">
+                    Use a different trainer
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
           <div className="grid grid-cols-[1fr_auto] gap-2">
             <button onClick={toggle} className="h-14 rounded-2xl bg-signal-ink text-[17px] font-semibold text-white">
-              {running ? "Pause" : elapsed ? "Resume" : "Start"}
+              {running ? "Pause" : "Resume"}
             </button>
             <button onClick={skipStep} className="h-14 rounded-2xl border border-line bg-card px-5 text-[16px] font-semibold">
               Skip step
             </button>
+            {!trainer && (
+              <button onClick={() => connectTrainer()} className="col-span-2 h-12 rounded-2xl border border-line bg-card text-[15px] font-semibold">
+                {paired.trainer ? `Connect ${paired.trainer}` : "Connect trainer"}
+              </button>
+            )}
             {elapsed > 0 && !running && (
               <button onClick={finish} className="col-span-2 h-12 text-[15px] font-semibold text-muted">
                 End ride here
               </button>
             )}
           </div>
-        )
-      )}
+        ))}
 
       {done && ridden > 0 && (
         <div className="flex flex-col gap-2">
