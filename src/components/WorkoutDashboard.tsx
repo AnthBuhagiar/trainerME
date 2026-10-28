@@ -22,6 +22,9 @@ interface Props {
   onOffset: (delta: number) => void;
   onMinimise: () => void;
   onConnect: () => void;
+  /** Pop the workout out as a floating tile; only where the browser supports it. */
+  onMini?: () => void;
+  miniOpen?: boolean;
 }
 
 const clock = (s: number) => {
@@ -58,9 +61,16 @@ export function WorkoutDashboard(p: Props) {
         <span className="label" style={MUTED}>
           Step {p.index + 1} of {p.steps.length}
         </span>
-        <button onClick={p.onMinimise} className="rounded-full px-3 py-1 text-[13px] font-semibold" style={{ background: "#1E242C" }}>
-          Minimise
-        </button>
+        <div className="flex gap-2">
+          {p.onMini && (
+            <button onClick={p.onMini} className="rounded-full px-3 py-1 text-[13px] font-semibold" style={{ background: p.miniOpen ? "#2A323D" : "#1E242C" }}>
+              {p.miniOpen ? "Mini player on" : "Mini player"}
+            </button>
+          )}
+          <button onClick={p.onMinimise} className="rounded-full px-3 py-1 text-[13px] font-semibold" style={{ background: "#1E242C" }}>
+            Minimise
+          </button>
+        </div>
       </div>
 
       <div className="grid flex-1 gap-3 landscape:grid-cols-2">
