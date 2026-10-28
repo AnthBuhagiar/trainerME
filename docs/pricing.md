@@ -66,6 +66,21 @@ The ×10 steps leave a few currencies well off A$5.99 in buying power, with no c
 
 Options per outlier: keep it (simplest, and the rule stays the same everywhere), or move that country to US$5.99. Moving rarely helps: for weaker currencies the US$ price converts to roughly the higher step.
 
+## Against JOIN
+
+JOIN charges €16.99 a month or €119.99 a year (join.cc/pricing, 29 Oct 2026; euro prices only), about A$26.88 and A$190 at today's rate. Hour Power's dearest countries, as a share of JOIN's price at market exchange rates:
+
+| Country | Monthly | Yearly |
+|---|---|---|
+| Indonesia | 17% | 24% |
+| South Africa | 19% | 27% |
+| Euro area | 35% | 49% |
+| Hong Kong | 40% | 56% |
+| UK | 42% | 59% |
+| Denmark | 47% | 66% |
+
+Both are priced in the same local money, so the shares hold in buying-power terms too. If JOIN sets lower local app-store prices in some countries, the gap there narrows.
+
 ## Before billing opens
 
 - Set each currency's prices in the billing provider to match this table, **tax-inclusive** everywhere (including US and Canadian sales tax, so the rider pays exactly what's shown and Hour Power absorbs the tax).

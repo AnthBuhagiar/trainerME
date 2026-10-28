@@ -267,7 +267,7 @@ Onboarding target for the average rider: **Sign in with Strava → Connect Garmi
 |---|---|
 | Message | "Get faster on 6 hours a week, with no FTP tests." |
 | Proof | Published estimate accuracy, and "watts gained per hour trained". |
-| Price | 5.99/month or 59/year in the rider's own currency (A$, US$, £, €), well under JOIN (~€90/yr) and TrainerRoad, and marketed on that gap. The value is less wasted time and less guilt, not more workouts. |
+| Price | 5.99/month or 59/year in the rider's own currency (A$, US$, £, €), well under JOIN (€16.99/month or €119.99/year, checked 29 Oct 2026) and TrainerRoad, and marketed on that gap: even in the dearest countries for Hour Power it costs under half of JOIN monthly and a quarter to two-thirds of it yearly (`docs/pricing.md`). The value is less wasted time and less guilt, not more workouts. |
 | Growth engine | Riders recruit riders: keep six riders you referred subscribed and your subscription is free, checked each year; six riders who stay two years make it free for life (F1, F2). Every rider has a code to share from Settings, and new riders enter it at sign-up instead of a discount code. Bunch rides and club mates are the natural audience. |
 | Channels | Local clubs, gran fondo events (e.g. Bowral Classic), Strava clubs, parent/dad cycling communities. Beta testers get their codes now, so their mates are counted from day one of billing. |
 | Wedge | Companion to JOIN/Zwift first ("the hour-power layer on top of the plan you already follow"), full planner second. |

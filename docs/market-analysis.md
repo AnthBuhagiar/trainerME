@@ -28,7 +28,7 @@ At the end there is a comparison matrix and a list of the gaps trainerME can own
 
 | # | Product | Category | Reported price |
 |---|---------|----------|----------------|
-| 1 | JOIN | Adaptive plan app (what you use now) | ~€9.99/mo, ~€89.99/yr |
+| 1 | JOIN | Adaptive plan app (what you use now) | €16.99/mo, €119.99/yr (€9.99/mo billed yearly; checked 29 Oct 2026) |
 | 2 | TrainerRoad | Adaptive plans + AI FTP detection | ~S$29.98/mo (SG App Store); US price not confirmed |
 | 3 | Xert | Fitness-signature modelling | ~$14.99/mo, ~$99.95/yr |
 | 4 | intervals.icu | Analytics platform | Free (optional supporter/Patreon) |
