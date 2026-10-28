@@ -6,7 +6,8 @@ import { SendExternal } from "@/components/SendExternal";
 import { WorkoutSteps } from "@/components/WorkoutSteps";
 import { hasIntervalsKey } from "@/lib/intervals/client";
 import { workMinutes } from "@/lib/plan/library";
-import { resolveSession } from "@/lib/plan/session";
+import { lengthLimits, resolveSession } from "@/lib/plan/session";
+import { LengthPicker } from "@/components/LengthPicker";
 import { dayLabel, length, plain } from "@/lib/ui/format";
 
 export const dynamic = "force-dynamic";
@@ -23,11 +24,7 @@ async function SessionPageView({
   const found = resolveSession(date, start, minutes);
   if (!found) notFound();
   const { state, week, planned, session, hourPower } = found;
-  // Long rides come down in half hours, weeknight sessions in quarter hours.
-  const options = planned.minutes >= 120 ? [planned.minutes - 30, planned.minutes - 60, 90] : [planned.minutes - 15, 45, 30];
-  const shorter = planned.ride
-    ? options.filter((m, i, all) => m < planned.minutes && m >= planned.ride!.workout.minMinutes && all.indexOf(m) === i)
-    : [];
+  const limits = lengthLimits(planned);
   // Share of the planned session kept: quality minutes for interval sessions, total time for steady rides.
   const kept =
     session.ride && planned.ride
@@ -35,7 +32,6 @@ async function SessionPageView({
         ? workMinutes(session.ride.workout) / workMinutes(planned.ride.workout)
         : session.minutes / planned.minutes
       : 1;
-  const href = (m?: number) => `/session/${date}?start=${planned.start}${m ? `&minutes=${m}` : ""}`;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-4 px-5 py-6">
@@ -93,31 +89,14 @@ async function SessionPageView({
         </section>
       )}
 
-      {planned.ride && (shorter.length > 0 || minutes) && (
+      {planned.ride && limits && (
         <section className="flex flex-col gap-2">
-          <h2 className="label">Less time?</h2>
-          <div className="flex flex-wrap gap-2">
-            {minutes && (
-              <Link href={href()} className="flex h-10 items-center rounded-full border border-line bg-card px-4 text-[15px] font-semibold">
-                Full {length(planned.minutes)}
-              </Link>
-            )}
-            {shorter.map((m) => (
-              <Link
-                key={m}
-                href={href(m)}
-                aria-current={Number(minutes) === m ? "true" : undefined}
-                className={`flex h-10 items-center rounded-full border px-4 text-[15px] font-semibold ${
-                  Number(minutes) === m ? "border-asphalt bg-asphalt text-chalk" : "border-line bg-card"
-                }`}
-              >
-                {length(m)}
-              </Link>
-            ))}
-          </div>
-          {minutes && session.ride && (
+          <h2 className="label">Change length</h2>
+          <LengthPicker value={session.minutes} planned={planned.minutes} min={limits.min} max={limits.max} baseHref={`/session/${date}?start=${planned.start}`} />
+          {minutes && session.ride && Number(minutes) < planned.minutes && (
             <p className="text-[13px] text-muted">Keeps {Math.round(Math.min(1, kept) * 100)}% of the work.</p>
           )}
+          {minutes && Number(minutes) > planned.minutes && <p className="text-[13px] text-muted">Extra time is easy riding.</p>}
         </section>
       )}
 

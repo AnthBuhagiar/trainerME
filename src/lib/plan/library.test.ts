@@ -53,3 +53,16 @@ describe("workout library", () => {
     expect(scaleWorkout(getWorkout("threshold-2x15"), 10).minutes).toBeGreaterThanOrEqual(30);
   });
 });
+
+describe("longer than planned", () => {
+  test("the extra is steady easy riding after the main set; the hard work is unchanged", () => {
+    const w = getWorkout("sprints-6x15s");
+    const base = totalMinutes(w);
+    const long = scaleWorkout(w, 60);
+    expect(long.minutes).toBe(60);
+    expect(long.workout.main).toEqual(w.main);
+    expect(long.workout.steady).toEqual({ seconds: (60 - base) * 60, target: [0.6, 0.75] });
+    expect(scaleWorkout(w, 200).minutes).toBe(90); // never past maxMinutes
+    expect(scaleWorkout(getWorkout("endurance"), 90).workout.steady!.seconds).toBe((90 - 15) * 60);
+  });
+});

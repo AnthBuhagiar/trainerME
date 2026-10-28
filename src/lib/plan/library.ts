@@ -290,9 +290,11 @@ export interface ScaledWorkout {
 }
 
 /**
- * Fit a workout into the time available ("Less time?"). Warm-up and cool-down
- * shrink first (to a floor), then reps or sets come off; steady riding absorbs
- * any change. Never stretches past maxMinutes.
+ * Fit a workout into the time available. Shorter: warm-up and cool-down
+ * shrink first (to a floor), then reps or sets come off. Longer: the extra is
+ * steady endurance riding after the main set, so the hard work stays as
+ * planned. Steady riding absorbs any change either way. Never stretches past
+ * maxMinutes.
  */
 export function scaleWorkout(w: Workout, minutes: number): ScaledWorkout {
   const target = Math.max(w.minMinutes, Math.min(w.maxMinutes, minutes));
@@ -318,6 +320,8 @@ export function scaleWorkout(w: Workout, minutes: number): ScaledWorkout {
     }
     // Hand any time freed by a cut back to the warm-up.
     if (over() < 0) out.warmup.seconds -= over();
+  } else if (target > original) {
+    out.steady = { seconds: (target - original) * 60, target: [0.6, 0.75] };
   }
   retitle(out);
 

@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { RidePlayer } from "@/components/RidePlayer";
 import { sessionTitle } from "@/components/SessionCard";
 import { playerSteps } from "@/lib/player/steps";
-import { resolveSession } from "@/lib/plan/session";
+import { lengthLimits, resolveSession } from "@/lib/plan/session";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +28,16 @@ async function RidePageView({
         ← Session
       </Link>
       <h1 className="display text-[22px] leading-tight">{sessionTitle(session)}</h1>
-      <RidePlayer storageKey={`${date}-${planned.start}`} name={sessionTitle(session)} autoUpload={autoUploadOn(found.state.settings) && canUpload()} steps={playerSteps(session.ride!.workout, hourPower)} />
+      <RidePlayer
+        storageKey={`${date}-${planned.start}`}
+        name={sessionTitle(session)}
+        autoUpload={autoUploadOn(found.state.settings) && canUpload()}
+        steps={playerSteps(session.ride!.workout, hourPower)}
+        length={(() => {
+          const limits = lengthLimits(planned);
+          return limits ? { value: session.minutes, planned: planned.minutes, ...limits, baseHref: `/ride/${date}?start=${planned.start}` } : undefined;
+        })()}
+      />
     </main>
   );
 }
