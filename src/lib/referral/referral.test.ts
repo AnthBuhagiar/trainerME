@@ -187,15 +187,47 @@ describe("referral codes", () => {
 
 describe("plans", async () => {
   const plans = await import("@/lib/billing/plans");
-  test("the same 5.99 a month or 59 a year, in each rider's own currency", () => {
-    const show = (country: string | null) => plans.PLANS.map((p) => plans.formatPrice(p.priceMinor, plans.currencyForCountry(country)));
+  const show = (country: string | null) => plans.PLANS.map((p) => plans.formatPrice(plans.priceIn(p, plans.currencyForCountry(country)), plans.currencyForCountry(country)));
+
+  test("exactly 5.99 a month or 59 a year in the six core currencies", () => {
     expect(show("AU")).toEqual(["A$5.99", "A$59"]);
     expect(show("US")).toEqual(["US$5.99", "US$59"]);
     expect(show("GB")).toEqual(["£5.99", "£59"]);
     expect(show("de")).toEqual(["€5.99", "€59"]);
     expect(show("NZ")).toEqual(["NZ$5.99", "NZ$59"]);
-    expect(show("JP")).toEqual(["US$5.99", "US$59"]); // elsewhere: US dollars
+    expect(show("CA")).toEqual(["CA$5.99", "CA$59"]);
     expect(show(null)).toEqual(["A$5.99", "A$59"]); // unknown: the home market
-    expect(plans.formatPrice(plans.yearlySavingMinor(), plans.CURRENCIES.GBP)).toBe("£12.88");
+    expect(show("NG")).toEqual(["US$5.99", "US$59"]); // not listed: US dollars
+  });
+
+  test("weaker currencies keep the 5.99 / 59 digits, scaled by a power of ten", () => {
+    expect(show("JP")).toEqual(["¥599", "¥5,900"]);
+    expect(show("KR")).toEqual(["₩5,990", "₩59,000"]);
+    expect(show("ID")).toEqual(["Rp 59,900", "Rp 590,000"]);
+    expect(show("IN")).toEqual(["₹59.90", "₹590"]);
+    expect(plans.formatPrice(plans.yearlySaving(plans.CURRENCIES.KRW), plans.CURRENCIES.KRW)).toBe("₩12,880");
+    expect(plans.formatPrice(plans.yearlySaving(plans.CURRENCIES.GBP), plans.CURRENCIES.GBP)).toBe("£12.88");
+    for (const c of Object.values(plans.CURRENCIES)) {
+      const monthly = plans.priceIn(plans.PLANS[0], c);
+      expect(String(monthly * 100 / 10 ** c.scale)).toBe("599");
+      expect(plans.priceIn(plans.PLANS[1], c)).toBe(59 * 10 ** c.scale);
+    }
+  });
+
+  test("each currency's power of ten is the one closest to what A$5.99 buys in Australia", () => {
+    for (const c of Object.values(plans.CURRENCIES)) {
+      if (plans.CORE.includes(c.code)) expect(c.scale).toBe(0);
+      else expect(c.scale, c.code).toBe(plans.nearestScale(c.ppp, c.decimals));
+    }
+  });
+
+  test("every country belongs to one currency", () => {
+    const seen = new Map<string, string>();
+    for (const c of Object.values(plans.CURRENCIES)) {
+      for (const country of c.countries) {
+        expect(seen.get(country), country).toBeUndefined();
+        seen.set(country, c.code);
+      }
+    }
   });
 });

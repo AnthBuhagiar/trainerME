@@ -6,7 +6,7 @@ import { SensorsPanel } from "@/components/SensorsPanel";
 import { RestoreBackup } from "@/components/RestoreBackup";
 import { ReferralCard } from "@/components/ReferralCard";
 import { headers } from "next/headers";
-import { currencyForCountry, formatPrice, PLANS, yearlySavingMinor, type Currency } from "@/lib/billing/plans";
+import { currencyForCountry, formatPrice, PLANS, priceIn, yearlySaving, type Currency } from "@/lib/billing/plans";
 import { currentAthlete, multiUser } from "@/lib/data/store";
 import { BILLING_OPEN, REFERRALS_FOR_REWARD, referralSummary } from "@/lib/referral/referral";
 import { authEnabled } from "@/lib/auth/session";
@@ -14,6 +14,11 @@ import { loadState } from "@/lib/plan/current";
 import { appUrl, autoUploadOn, canUpload } from "@/lib/strava/client";
 
 export const dynamic = "force-dynamic";
+
+/** One line, a size smaller for long prices (Rp 590,000) so they fit a half-width tile at 390 px. */
+function PriceText({ text }: { text: string }) {
+  return <span className={`display whitespace-nowrap ${text.length > 8 ? "text-[19px]" : "text-[24px]"}`}>{text.replace(/ /g, "\u00a0")}</span>;
+}
 
 function SettingsPageView({ currency }: { currency: Currency }) {
   const { settings, chosenDays, learnedBudget } = loadState();
@@ -54,9 +59,9 @@ function SettingsPageView({ currency }: { currency: Currency }) {
             {PLANS.map((plan) => (
               <div key={plan.id} className="flex flex-col gap-0.5 rounded-2xl border border-line p-4">
                 <span className="text-[14px] text-muted">{plan.label}</span>
-                <span className="display text-[24px]">{formatPrice(plan.priceMinor, currency)}</span>
+                <PriceText text={formatPrice(priceIn(plan, currency), currency)} />
                 <span className="text-[13px] text-muted">
-                  {plan.months === 1 ? "a month" : `a year · save ${formatPrice(yearlySavingMinor(), currency)}`}
+                  {plan.months === 1 ? "a month" : `a year · save ${formatPrice(yearlySaving(currency), currency).replace(/ /g, "\u00a0")}`}
                 </span>
               </div>
             ))}
@@ -65,8 +70,8 @@ function SettingsPageView({ currency }: { currency: Currency }) {
             {referral.lifetime || referral.freeUntil
               ? "Your referrals cover your subscription."
               : BILLING_OPEN
-                ? `Prices in ${currency.taxNote}`
-                : `Subscriptions aren’t open yet, so there’s nothing to pay. Prices in ${currency.taxNote}`}
+                ? `Prices in ${currency.name}, tax included.`
+                : `Subscriptions aren’t open yet, so there’s nothing to pay. Prices in ${currency.name}, tax included.`}
           </p>
         </section>
       )}
