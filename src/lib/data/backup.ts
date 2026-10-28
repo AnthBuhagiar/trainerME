@@ -8,7 +8,8 @@ import { dataDir } from "@/lib/data/store";
  * record stay behind: the new copy signs in to Strava itself.
  */
 
-const EXCLUDE = new Set(["strava-tokens.json", "owner.json", "intervals.json"]);
+// referral.json: who recommended whom and who has paid is the server's record, never restored from a file.
+const EXCLUDE = new Set(["strava-tokens.json", "owner.json", "intervals.json", "referral.json", "referral-codes.json"]);
 
 export interface Backup {
   app: "hour-power";
