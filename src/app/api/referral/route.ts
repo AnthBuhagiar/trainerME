@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { athleteRoute } from "@/lib/auth/athlete";
 import { currentAthlete, multiUser } from "@/lib/data/store";
-import { recordReferrer, type RecordResult } from "@/lib/referral/referral";
+import { markReminderSeen, recordReferrer, type RecordResult } from "@/lib/referral/referral";
 
 export const runtime = "nodejs";
 
@@ -12,11 +12,15 @@ const MESSAGES: Record<Exclude<RecordResult, "saved">, string> = {
   "already-paid": "A recommender can only be added before your subscription starts.",
 };
 
-/** A rider who skipped it at sign-up adds who recommended them (once). */
+/** A rider who skipped it at sign-up adds who recommended them (once), or closes this week's reminder. */
 async function post(request: Request) {
   const id = currentAthlete();
   if (!multiUser() || !id) return NextResponse.json({ error: "Only on a shared Hour Power." }, { status: 400 });
-  const body = (await request.json().catch(() => ({}))) as { code?: unknown };
+  const body = (await request.json().catch(() => ({}))) as { code?: unknown; reminderSeen?: unknown };
+  if (body.reminderSeen === true) {
+    markReminderSeen(id);
+    return NextResponse.json({ ok: true });
+  }
   const result = recordReferrer(id, body.code);
   if (result !== "saved") return NextResponse.json({ error: MESSAGES[result] }, { status: 400 });
   return NextResponse.json({ ok: true });

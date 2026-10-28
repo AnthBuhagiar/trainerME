@@ -6,16 +6,33 @@ interface Props {
   code: string;
   shareUrl: string;
   joined: number;
-  towardsNext: number;
+  active: number;
+  longTerm: number;
   needed: number;
   freeUntil: string | null;
+  lifetime: boolean;
   referredBy: string | null;
   canEnterCode: boolean;
-  /** Subscriptions are open, so paid referrals can count. */
+  /** Subscriptions are open, so subscribed referrals can count. */
   billingOpen: boolean;
 }
 
 const riders = (n: number) => `${n} rider${n === 1 ? "" : "s"}`;
+
+/** Open the share sheet, or copy the invite if there isn't one. Returns a note to show, if any. */
+export async function shareCode(code: string, url: string): Promise<string | null> {
+  const text = `I train with Hour Power. Use my code ${code} when you sign up.`;
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: "Hour Power", text, url });
+      return null;
+    }
+    await navigator.clipboard.writeText(`${text} ${url}`);
+    return "Link copied.";
+  } catch {
+    return null; // share sheet closed, or clipboard blocked
+  }
+}
 
 /** The rider's own code to share, how many have joined with it (a count, never who), and who recommended them. */
 export function ReferralCard(p: Props) {
@@ -24,17 +41,7 @@ export function ReferralCard(p: Props) {
   const [busy, setBusy] = useState(false);
 
   async function share() {
-    const text = `I train with Hour Power. Use my code ${p.code} when you sign up.`;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: "Hour Power", text, url: p.shareUrl });
-        return;
-      }
-      await navigator.clipboard.writeText(`${text} ${p.shareUrl}`);
-      setNote("Link copied.");
-    } catch {
-      // share sheet closed, or clipboard blocked: nothing to do
-    }
+    setNote(await shareCode(p.code, p.shareUrl));
   }
 
   async function copyCode() {
@@ -79,17 +86,22 @@ export function ReferralCard(p: Props) {
         </div>
       </div>
       <p className="text-[14px] leading-snug text-muted">
-        Share your code with riding mates. Once {p.needed} riders who joined with it have subscribed, your subscription is free for 12 months.
+        Share your code with riding mates. When {p.needed} riders who joined with it are subscribed, your subscription is free, renewed each year
+        while they stay. If {p.needed} of them stay subscribed for 2 years, you ride free for life.
       </p>
       <p className="text-[15px]">
-        {freeDate ? (
-          <span className="font-semibold">Your subscription is free until {freeDate}.</span>
+        {p.lifetime ? (
+          <span className="font-semibold">You ride free for life. Thanks for bringing so many riders to Hour Power.</span>
+        ) : freeDate ? (
+          <>
+            <span className="font-semibold">Free until {freeDate}.</span> {p.active} of {p.needed} subscribed now.
+          </>
         ) : p.billingOpen ? (
           <>
             <span className="font-semibold">
-              {p.towardsNext} of {p.needed}
+              {Math.min(p.active, p.needed)} of {p.needed}
             </span>{" "}
-            subscribed{p.joined > p.towardsNext ? ` · ${riders(p.joined)} joined with your code` : ""}
+            subscribed{p.joined > p.active ? ` · ${riders(p.joined)} joined with your code` : ""}
           </>
         ) : (
           <>
@@ -97,6 +109,11 @@ export function ReferralCard(p: Props) {
           </>
         )}
       </p>
+      {p.billingOpen && !p.lifetime && p.longTerm > 0 && (
+        <p className="text-[14px] text-muted">
+          Free for life: {Math.min(p.longTerm, p.needed)} of {p.needed} riders have been subscribed for 2 years.
+        </p>
+      )}
       {entered ? (
         <p className="text-[14px] text-muted">Recommended by code {entered}.</p>
       ) : (

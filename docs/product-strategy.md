@@ -198,8 +198,8 @@ to higher intakes over several weeks.
 | # | Feature | What it does |
 |---|---|---|
 | F1 | **Referral codes** | Every rider gets a 4-character code (no look-alike characters, no vowels) to share from Settings, as a code or a sign-in link that fills it in. A new rider enters their recommender's code when they sign up, or once later in Settings before they start paying. Riders see only a count of who joined with their code, never who. *Built; dormant until billing.* |
-| F2 | **Refer six, ride free for 12 months** | When six riders who joined with a rider's code have made their first subscription payment, that rider's subscription is free for 12 months, applied automatically by billing. Each further six paid referrals adds another 12 months, starting when the current free period ends. A reward stays earned if those riders later cancel or leave. *Logic built and tested (`src/lib/referral`); billing calls `recordFirstPayment` and checks `isFreeFromReferrals`.* |
-| F3 | **Low-price subscription** | About A$5.99 a month, well under JOIN and TrainerRoad, with a free hour-power-only tier. Billed on the web first (Stripe or Paddle); Apple in-app purchase only when an iOS app ships. |
+| F2 | **Refer six, ride free** | When six riders who joined with a rider's code are subscribed (any active subscription, including riders free through their own referrals), that rider's subscription is free for a year, applied automatically. It starts straight away, or when time already paid for runs out (a yearly subscriber finishes the year they paid for). At the end of each free year it renews if six are still subscribed; if not, payment starts again, and a new free year starts the day they're back to six. In the last month of a free year, if they're short, an encouraging pop-up on Today once a week says how many riders they need. **Free for life** once six of their riders have each been subscribed for 24 months in total (breaks allowed), even if those riders later leave. *Logic built and tested (`src/lib/referral`); billing calls `recordSubscriptionPeriod` for every paid month or year and checks `isFreeFromReferrals`. No scheduled job needed: rewards are worked out from subscription periods when needed.* |
+| F3 | **Low-price subscription** | **5.99 a month or 59 a year in the rider's own currency** (A$, US$, £, €, NZ$, CA$; the same numbers everywhere, no exchange-rate conversion; anywhere else pays in US$). The yearly plan saves 12.88. Currency picked from the rider's country (Cloudflare's CF-IPCountry header). Tax included where the law expects it (GST, VAT); US and Canadian sales tax added at checkout. Prices sit well under JOIN and TrainerRoad, with a free hour-power-only tier. Plans in `src/lib/billing/plans.ts`, shown in Settings → Subscription. Billed on the web first (Stripe or Paddle); Apple in-app purchase only when an iOS app ships. |
 
 ## 3. Roadmap
 
@@ -255,9 +255,9 @@ Onboarding target for the average rider: **Sign in with Strava → Connect Garmi
 - [ ] Direct Garmin / Wahoo / FIT-file import (don't rely on Strava alone; see risks).
 - [x] **Multi-user accounts** on the hosted app: Sign in with Strava for anyone, a folder per athlete, delete-my-account, privacy page, Strava deauthorisation webhook, optional `MAX_ATHLETES` cap. *Still JSON files on one server; a database comes when riders outgrow it.*
 - [ ] Onboarding from a time budget instead of an FTP test.
-- [ ] **F3** pricing: about A$5.99/month, well below JOIN/TrainerRoad; free tier showing hour power only. Web billing first (Stripe or Paddle), then Apple in-app purchase if an iOS app ships.
+- [ ] **F3** pricing: 5.99/month or 59/year in the rider's own currency (A$, US$, £, €…), well below JOIN/TrainerRoad; free tier showing hour power only. Plans defined and shown in Settings; billing itself not built. Web billing first (Stripe or Paddle), then Apple in-app purchase if an iOS app ships.
 - [x] **F1** referral codes and the recommender field at sign-up.
-- [ ] **F2** refer six, ride free for 12 months: switch on with billing (`BILLING_OPEN` in `src/lib/referral/referral.ts`). Add the reward rules to the terms when subscriptions open.
+- [ ] **F2** refer six, ride free (yearly check, free for life at six riders × 24 months): switch on with billing (`BILLING_OPEN` in `src/lib/referral/referral.ts`). Add the reward rules to the terms when subscriptions open.
 - [ ] Coach dashboard; monthly W/kg hour-power leaderboard (estimated, with range).
 - [ ] **Calendar-to-trainer player** (once hosted). *The Bluetooth workout player itself is built (Ride it on my trainer, FTMS ERG control); what remains is the .ics feed linking to it.* Each planned session becomes a calendar event (.ics feed) linking to a built-in workout player, which controls the smart trainer over Bluetooth (ERG mode): "Tap the calendar event, ride the workout, nothing to install." Not offered by JOIN or Strava. Limits: a live feed needs a hosted app; Bluetooth needs Chrome (Android/desktop) or Bluefy on iPhone; usually only one device controls the trainer at a time.
 
@@ -267,8 +267,8 @@ Onboarding target for the average rider: **Sign in with Strava → Connect Garmi
 |---|---|
 | Message | "Get faster on 6 hours a week, with no FTP tests." |
 | Proof | Published estimate accuracy, and "watts gained per hour trained". |
-| Price | About A$5.99/month (~A$72/yr), well under JOIN (~€90/yr) and TrainerRoad, and marketed on that gap. The value is less wasted time and less guilt, not more workouts. |
-| Growth engine | Riders recruit riders: refer six paying riders and your subscription is free for 12 months (F1, F2). Every rider has a code to share from Settings, and new riders enter it at sign-up instead of a discount code. Bunch rides and club mates are the natural audience. |
+| Price | 5.99/month or 59/year in the rider's own currency (A$, US$, £, €), well under JOIN (~€90/yr) and TrainerRoad, and marketed on that gap. The value is less wasted time and less guilt, not more workouts. |
+| Growth engine | Riders recruit riders: keep six riders you referred subscribed and your subscription is free, checked each year; six riders who stay two years make it free for life (F1, F2). Every rider has a code to share from Settings, and new riders enter it at sign-up instead of a discount code. Bunch rides and club mates are the natural audience. |
 | Channels | Local clubs, gran fondo events (e.g. Bowral Classic), Strava clubs, parent/dad cycling communities. Beta testers get their codes now, so their mates are counted from day one of billing. |
 | Wedge | Companion to JOIN/Zwift first ("the hour-power layer on top of the plan you already follow"), full planner second. |
 

@@ -17,7 +17,8 @@ export default function PrivacyPage() {
       <p>
         A summary of each ride (power curve, averages), the goals, days, away dates and check-ins you enter, and your Strava sign-in tokens. They are
         kept in your own folder on the Hour Power server and used only to show you your estimate and plan. Hour Power also keeps your referral
-        code and, if you entered one, the code of the rider who recommended you.
+        code, the code of the rider who recommended you (if you entered one) and, once subscriptions open, when you were subscribed, so
+        referral rewards can be worked out.
       </p>
       <h2 className="label">Who sees it</h2>
       <p>

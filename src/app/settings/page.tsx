@@ -5,6 +5,8 @@ import { choicesFromBudget } from "@/lib/plan/availability";
 import { SensorsPanel } from "@/components/SensorsPanel";
 import { RestoreBackup } from "@/components/RestoreBackup";
 import { ReferralCard } from "@/components/ReferralCard";
+import { headers } from "next/headers";
+import { currencyForCountry, formatPrice, PLANS, yearlySavingMinor, type Currency } from "@/lib/billing/plans";
 import { currentAthlete, multiUser } from "@/lib/data/store";
 import { BILLING_OPEN, REFERRALS_FOR_REWARD, referralSummary } from "@/lib/referral/referral";
 import { authEnabled } from "@/lib/auth/session";
@@ -13,7 +15,7 @@ import { appUrl, autoUploadOn, canUpload } from "@/lib/strava/client";
 
 export const dynamic = "force-dynamic";
 
-function SettingsPageView() {
+function SettingsPageView({ currency }: { currency: Currency }) {
   const { settings, chosenDays, learnedBudget } = loadState();
   const athlete = multiUser() ? currentAthlete() : null;
   const referral = athlete ? referralSummary(athlete) : null;
@@ -42,6 +44,30 @@ function SettingsPageView() {
             needed={REFERRALS_FOR_REWARD}
             billingOpen={BILLING_OPEN}
           />
+        </section>
+      )}
+
+      {referral && (
+        <section id="subscription" className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-5">
+          <h2 className="label">Subscription</h2>
+          <div className="grid grid-cols-2 gap-3">
+            {PLANS.map((plan) => (
+              <div key={plan.id} className="flex flex-col gap-0.5 rounded-2xl border border-line p-4">
+                <span className="text-[14px] text-muted">{plan.label}</span>
+                <span className="display text-[24px]">{formatPrice(plan.priceMinor, currency)}</span>
+                <span className="text-[13px] text-muted">
+                  {plan.months === 1 ? "a month" : `a year · save ${formatPrice(yearlySavingMinor(), currency)}`}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="text-[14px] leading-snug text-muted">
+            {referral.lifetime || referral.freeUntil
+              ? "Your referrals cover your subscription."
+              : BILLING_OPEN
+                ? `Prices in ${currency.taxNote}`
+                : `Subscriptions aren’t open yet, so there’s nothing to pay. Prices in ${currency.taxNote}`}
+          </p>
         </section>
       )}
 
@@ -103,5 +129,7 @@ function SettingsPageView() {
 }
 
 export default async function SettingsPage() {
-  return asAthlete(() => SettingsPageView());
+  // Prices show in the rider's own currency, from the country Cloudflare reports.
+  const currency = currencyForCountry((await headers()).get("cf-ipcountry"));
+  return asAthlete(() => SettingsPageView({ currency }));
 }

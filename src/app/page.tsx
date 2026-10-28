@@ -16,8 +16,11 @@ import { reviewWeekStart, weekReview } from "@/lib/plan/review";
 import { formatDuration } from "@/lib/goals/eventTime";
 import { isLastDayOfWeek } from "@/lib/plan/calendar";
 import { loadState, nextWeekStart } from "@/lib/plan/current";
-import { callbackDomain, hasCredentials, loadTokens } from "@/lib/strava/client";
+import { appUrl, callbackDomain, hasCredentials, loadTokens } from "@/lib/strava/client";
 import { lastSyncedAt } from "@/lib/strava/sync";
+import { ReferralReminder } from "@/components/ReferralReminder";
+import { currentAthlete, multiUser } from "@/lib/data/store";
+import { referralSummary } from "@/lib/referral/referral";
 
 export const dynamic = "force-dynamic";
 
@@ -42,9 +45,20 @@ async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: str
   const movedAway = upcoming.find((s) => s.movedFrom === today);
 
   const { goal: target } = ringGoal(summary?.targetHourPower, current?.hourPower ?? 0);
+  const athlete = multiUser() ? currentAthlete() : null;
+  const referral = athlete ? referralSummary(athlete) : null;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-4 px-5 py-6">
+      {referral?.reminder && (
+        <ReferralReminder
+          code={referral.code}
+          shareUrl={`${appUrl()}/login?ref=${referral.code}`}
+          needed={referral.reminder.needed}
+          active={referral.active}
+          freeUntil={referral.reminder.freeUntil}
+        />
+      )}
       <header className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-0.5">
           <div className="label">{new Intl.DateTimeFormat("en-AU", { weekday: "long", day: "numeric", month: "long" }).format(new Date())}</div>
