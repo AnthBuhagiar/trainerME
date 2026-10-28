@@ -1,7 +1,6 @@
 import { asAthlete } from "@/lib/auth/athlete";
 import { GoalForm } from "@/components/GoalForm";
 import { HourRing } from "@/components/HourRing";
-import { ringScale } from "@/lib/goals/ringScale";
 import { formatDuration } from "@/lib/goals/eventTime";
 import { eventFuelPlan } from "@/lib/goals/fuelPlan";
 import { loadGoals } from "@/lib/goals/model";
@@ -10,7 +9,7 @@ import { loadState } from "@/lib/plan/current";
 export const dynamic = "force-dynamic";
 
 function GoalPageView() {
-  const { current, goal: active, summary, settings, history } = loadState();
+  const { current, goal: active, summary, settings } = loadState();
   const goal = active ?? loadGoals().at(-1) ?? null;
   const plan = summary?.route?.target ?? summary?.route?.today;
   const fuel = summary?.predicted ? eventFuelPlan(settings.weightKg, summary.route?.target?.seconds ?? summary.predicted.seconds) : null;
@@ -23,10 +22,7 @@ function GoalPageView() {
 
       {summary && current && (
         <section className="flex items-center gap-4 rounded-3xl bg-asphalt p-4 text-chalk">
-          {(() => {
-            const scale = ringScale(active, summary.targetHourPower, history, current.hourPower);
-            return <HourRing hourPower={current.hourPower} low={current.low} high={current.high} start={scale.start} goal={scale.goal} size={128} />;
-          })()}
+          <HourRing hourPower={current.hourPower} low={current.low} high={current.high} goal={summary.targetHourPower} size={128} />
           <div className="flex min-w-0 flex-col gap-1">
             <span className="label" style={{ color: "var(--goal)" }}>
               Goal hour power
