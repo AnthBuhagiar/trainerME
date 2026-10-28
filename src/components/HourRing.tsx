@@ -1,44 +1,45 @@
 /**
- * The Hour Ring: 60 ticks, one per minute of the hour, filling clockwise from
- * 12 o'clock. Orange ticks are where your hour power is now; the sky-blue tick
- * is your goal (the same blue marks the goal everywhere in the app), with a
- * faint blue track for the distance still to go. Grey shows the likely range.
- * The goal sits at 50 minutes, leaving room to show going past it.
+ * The Hour Ring: a clock face from 0 W at 12 o'clock round to 350 W at 11:59,
+ * 60 ticks of about 6 W each, the same scale for every rider. Orange ticks are
+ * where your hour power is now; the sky-blue tick is your goal (the same blue
+ * marks the goal everywhere in the app), with a faint blue track for the
+ * distance still to go. Grey shows the likely range.
  */
 
 interface Props {
   hourPower: number;
   low: number;
   high: number;
-  start: number;
   goal: number;
   size?: number;
 }
 
 const TICKS = 60;
-const GOAL_TICK = 50;
+/** The top of the scale: 350 W sits at 11:59. */
+export const RING_MAX_WATTS = 350;
 const ORANGE = "#FF6A1A";
 const SKY = "#38BDF8";
 
-export function tickIndex(value: number, start: number, goal: number): number {
-  const t = goal > start ? (value - start) / (goal - start) : 1;
-  return Math.max(0, Math.min(TICKS - 1, Math.round(t * GOAL_TICK)));
+/** Which tick a wattage lands on: 0 W is 12 o'clock, 350 W (or more) the last tick before it. */
+export function tickIndex(watts: number): number {
+  return Math.max(0, Math.min(TICKS - 1, Math.round((watts / RING_MAX_WATTS) * TICKS)));
 }
 
-export function HourRing({ hourPower, low, high, start, goal, size = 220 }: Props) {
-  const now = tickIndex(hourPower, start, goal);
-  const rangeFrom = tickIndex(low, start, goal);
-  const rangeTo = tickIndex(high, start, goal);
+export function HourRing({ hourPower, low, high, goal, size = 220 }: Props) {
+  const now = tickIndex(hourPower);
+  const goalTick = tickIndex(goal);
+  const rangeFrom = tickIndex(low);
+  const rangeTo = tickIndex(high);
   const c = 100;
   const outer = 94;
   const ticks = Array.from({ length: TICKS }, (_, i) => {
     const a = (i / TICKS) * 2 * Math.PI - Math.PI / 2;
-    const isGoal = i === GOAL_TICK;
+    const isGoal = i === goalTick;
     const isNow = i === now && now > 0;
     let stroke = "#2A323D";
     let opacity = 1;
     if (i >= rangeFrom && i <= rangeTo) stroke = "#5B6672";
-    if (i > now && i < GOAL_TICK) {
+    if (i > now && i < goalTick) {
       stroke = SKY; // still to go
       opacity = 0.38;
     }
@@ -63,12 +64,12 @@ export function HourRing({ hourPower, low, high, start, goal, size = 220 }: Prop
       />
     );
   });
-  const pct = Math.round(((hourPower - start) / (goal - start)) * 100);
+
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg
         role="img"
-        aria-label={`Hour ring: ${Math.round(hourPower)} watts, ${pct}% of the way from ${start} to your ${goal} watt goal`}
+        aria-label={`Hour ring: ${Math.round(hourPower)} watts now, goal ${goal} watts, on a scale of 0 to ${RING_MAX_WATTS}`}
         width={size}
         height={size}
         viewBox="0 0 200 200"

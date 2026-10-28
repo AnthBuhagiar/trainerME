@@ -2,7 +2,7 @@ import { asAthlete } from "@/lib/auth/athlete";
 import { ChangeList } from "@/components/ChangeList";
 import { CheckIn } from "@/components/CheckIn";
 import { HourRing } from "@/components/HourRing";
-import { ringScale } from "@/lib/goals/ringScale";
+import { ringGoal } from "@/lib/goals/ringScale";
 import { SessionCard, sessionTitle } from "@/components/SessionCard";
 import { WeekStrip } from "@/components/WeekStrip";
 import { weekStrip } from "@/lib/plan/weekStrip";
@@ -26,7 +26,7 @@ const fmtDate = new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short
 async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: string }> }) {
   const { strava: notice } = await searchParams;
   const tokens = loadTokens();
-  const { adaptation, activities, targets, checkIns, today, settings, rides, history, current, goal, summary, thisWeekStart, week, budget } = loadState();
+  const { adaptation, activities, targets, checkIns, today, settings, rides, history, current, summary, thisWeekStart, week, budget } = loadState();
   const missing = rides.filter((r) => !r.streams).length;
   const upcoming = budget.slots.length
     ? [...week(thisWeekStart).sessions, ...week(nextWeekStart(thisWeekStart)).sessions].filter((s) => s.date >= today)
@@ -41,7 +41,7 @@ async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: str
   const strip = budget.slots.length ? weekStrip(week(thisWeekStart), activities, today, sessionTitle) : null;
   const movedAway = upcoming.find((s) => s.movedFrom === today);
 
-  const { start, goal: target } = ringScale(summary ? goal : null, summary?.targetHourPower, history, current?.hourPower ?? 0);
+  const { goal: target } = ringGoal(summary?.targetHourPower, current?.hourPower ?? 0);
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-4 px-5 py-6">
@@ -63,7 +63,7 @@ async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: str
 
       {current ? (
         <section className="flex flex-col items-center gap-3 rounded-3xl bg-asphalt p-5 text-chalk">
-          <HourRing hourPower={current.hourPower} low={current.low} high={current.high} start={start} goal={target} />
+          <HourRing hourPower={current.hourPower} low={current.low} high={current.high} goal={target} />
           <div className="flex w-full justify-between text-[13px]" style={{ color: "#B9C4D0" }}>
             <span className="flex items-center gap-1.5 whitespace-nowrap">
               <span className="inline-block h-2 w-2 rounded-full bg-signal" />
