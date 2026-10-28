@@ -29,9 +29,14 @@ export function WeekStrip({ days }: { days: StripDay[] }) {
     <div className="flex flex-col gap-2 rounded-3xl border border-line bg-card px-2 py-3">
       <ol className="grid grid-cols-7">
         {days.map((d, i) => (
-          <li key={d.date} className={`flex flex-col items-center gap-1.5 rounded-2xl py-1.5 ${d.today ? "bg-background ring-1 ring-signal-ink" : ""}`}>
-            <span className={`text-[11px] font-semibold ${d.today ? "text-signal-ink" : "text-muted"}`}>{LETTER[i]}</span>
-            <span className={`text-[13px] ${d.today ? "font-semibold" : "text-muted"}`}>{Number(d.date.slice(8, 10))}</span>
+          <li key={d.date} className={`flex flex-col items-center gap-1.5 rounded-2xl py-1.5 ${d.today ? "bg-background" : ""}`} aria-current={d.today ? "date" : undefined}>
+            <span className={`text-[11px] font-semibold ${d.today ? "text-foreground" : "text-muted"}`}>{d.today ? "Today" : LETTER[i]}</span>
+            {/* Today is marked like a calendar date, never in orange: orange rings mean key sessions. */}
+            <span
+              className={`flex h-6 w-6 items-center justify-center rounded-full text-[13px] ${d.today ? "bg-asphalt font-semibold text-chalk dark:bg-chalk dark:text-asphalt" : "text-muted"}`}
+            >
+              {Number(d.date.slice(8, 10))}
+            </span>
             {d.items.length ? (
               d.items.slice(0, 3).map((item, j) => <Chip key={j} item={item} />)
             ) : (
