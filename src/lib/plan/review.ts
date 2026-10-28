@@ -80,8 +80,8 @@ export function weekReview(plan: WeekPlan, activities: Activity[], history: Hist
       : done >= planned
         ? "Every session done."
         : done === 0
-          ? "Life won this week. Nothing is owed; next week starts fresh."
-          : `${done} of ${planned} done. Missed sessions are gone, not owed.`;
+          ? "None done. Next week starts fresh."
+          : `${done} of ${planned} done.`;
   return {
     weekStart: plan.weekStart,
     planned,

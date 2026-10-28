@@ -80,8 +80,8 @@ export function DaysEditor({ initial, custom }: { initial: DayChoice[]; custom: 
       <p className="text-[14px]">
         <strong>{fmtLength(total)}</strong> a week · {rides.length} {rides.length === 1 ? "ride" : "rides"} · {strength} strength
       </p>
-      {strength < 2 && <p className="text-[13px] text-muted">Two strength sessions a week are recommended (heavy strength helps cycling).</p>}
-      {rides.length > 0 && !rides.some((r) => r.minutes >= 120) && <p className="text-[13px] text-muted">A ride of 2 hours or more each week builds the endurance long events need.</p>}
+      {strength < 2 && <p className="text-[13px] text-muted">Two strength sessions a week are recommended.</p>}
+      {rides.length > 0 && !rides.some((r) => r.minutes >= 120) && <p className="text-[13px] text-muted">Add a ride of 2 hours or more each week.</p>}
 
       <button
         onClick={() => post({ days }, "Saved. Your plan now uses these days.")}

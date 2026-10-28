@@ -54,7 +54,7 @@ async function SessionPageView({
         <>
           <p className="text-[15px] leading-snug">{plain(session.ride.workout.summary)}</p>
           {hourPower > 0 && <WorkoutSteps workout={session.ride.workout} hourPower={hourPower} />}
-          {hourPower > 0 && <p className="text-[13px] text-muted">Targets from your training hour power of {hourPower} W. When your estimate moves, Today asks before changing it.</p>}
+          {hourPower > 0 && <p className="text-[13px] text-muted">Targets from your {hourPower} W training hour power.</p>}
           {hourPower > 0 && session.indoor && (
             <Link
               href={`/ride/${date}?start=${planned.start}${minutes ? `&minutes=${minutes}` : ""}`}
@@ -116,7 +116,7 @@ async function SessionPageView({
             ))}
           </div>
           {minutes && session.ride && (
-            <p className="text-[13px] text-muted">Keeps {Math.round(Math.min(1, kept) * 100)}% of the work. Shorter is better than skipped.</p>
+            <p className="text-[13px] text-muted">Keeps {Math.round(Math.min(1, kept) * 100)}% of the work.</p>
           )}
         </section>
       )}

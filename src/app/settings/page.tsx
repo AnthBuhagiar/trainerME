@@ -43,7 +43,7 @@ function SettingsPageView() {
         <p className="text-[14px] leading-snug text-muted">
           {chosenDays
             ? "Your plan uses the days you chose."
-            : "Filled in from your last 12 weeks of rides. Change any day you’re not free, then save."}
+            : "Taken from your recent rides. Change any day, then save."}
         </p>
         <DaysEditor initial={chosenDays ?? choicesFromBudget(learnedBudget)} custom={!!chosenDays} />
       </section>
@@ -51,8 +51,7 @@ function SettingsPageView() {
       <section className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-5">
         <h2 className="label">Back up or move your data</h2>
         <p className="text-[14px] leading-snug text-muted">
-          One file with your goals, route, away days, check-ins, settings and rides. Use it to move Hour Power to a new home, or keep it as a
-          backup. Strava sign-in isn’t included; you connect again in the new place.
+          Your goals, settings and rides in one file.
         </p>
         <a href="/api/backup" className="flex h-12 items-center justify-center rounded-2xl border border-line text-[15px] font-semibold">
           Download backup

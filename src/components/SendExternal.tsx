@@ -47,7 +47,7 @@ export function SendExternal({ intervals, session }: Props) {
           ▾
         </span>
       </summary>
-      <p className="px-4 pb-2 text-[13px] text-muted">Hour Power can run {session ? "this workout" : "these"} on your trainer itself. If you’d rather use something else, send {what} there:</p>
+      <p className="px-4 pb-2 text-[13px] text-muted">Send {what} to:</p>
       <ul className="flex flex-col divide-y divide-line border-t border-line">
         {!session && (
           <li className={row}>

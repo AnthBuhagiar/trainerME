@@ -30,7 +30,7 @@ describe("weekly review", () => {
       current: null,
     });
     expect(r).toMatchObject({ planned: 4, done: 2, doneMinutes: 212, rides: 2, strength: 0, change: 2.4, best: { name: "Sunday ride", delta: 2.4 } });
-    expect(r.headline).toBe("2 of 4 done. Missed sessions are gone, not owed.");
+    expect(r.headline).toBe("2 of 4 done.");
   });
 
   test("recaps this week on Saturday (the week's last day), last week otherwise", () => {

@@ -53,7 +53,6 @@ function PlanPageView() {
     ).length;
   const weeks: WeekPlan[] = [];
   for (let m = state.thisWeekStart; m <= summary.goal.date; m = nextWeekStart(m)) weeks.push(state.week(m));
-  const totalWeeks = summary.phases.reduce((n, p) => n + p.weeks, 0);
 
   const row = (w: WeekPlan, i: number) => {
             const line = weekLine(w);
@@ -121,9 +120,6 @@ function PlanPageView() {
             </li>
           ))}
         </ol>
-        <p className="text-[13px] text-muted">
-          {totalWeeks} weeks from {day(summary.phases[0].start)}, laid out backwards from event day.
-        </p>
       </section>
 
       <section className="flex flex-col gap-2">
@@ -140,9 +136,6 @@ function PlanPageView() {
             <ol className="flex flex-col divide-y divide-line rounded-2xl border border-line bg-card">{weeks.slice(SHOWN).map((w, i) => row(w, i + SHOWN))}</ol>
           </details>
         )}
-        <p className="px-1 text-[13px] text-muted">
-          Weeks further out are a guide: targets and sessions adjust as your hour power changes.
-        </p>
       </section>
 
       <AwayManager periods={state.away} today={state.today} />

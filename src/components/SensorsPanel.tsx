@@ -137,12 +137,6 @@ export function SensorsPanel() {
         })}
       </ul>
       {error && <p className="text-[14px] font-semibold text-signal-ink">{error}</p>}
-      <p className="text-[13px] leading-snug text-muted">
-        {remembers
-          ? "Paired once, remembered on this phone: switch them on and a workout connects by itself."
-          : "Remembered on this phone. This browser asks once per ride: the chooser shows only your device, so it’s one tap."}{" "}
-        Bluetooth only: browsers can’t use ANT+, but almost every trainer and strap that has ANT+ has Bluetooth too.
-      </p>
     </div>
   );
 }

@@ -47,7 +47,7 @@ function ProgressPageView() {
       </dl>
 
       <section className="rounded-3xl border border-line bg-card p-4">
-        <HourPowerChart points={history.points} goal={target} goalName={goal?.name} />
+        <HourPowerChart points={history.points} goal={target} />
       </section>
 
       {(current.cp || current.hr) && (
