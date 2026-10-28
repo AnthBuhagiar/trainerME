@@ -6,7 +6,7 @@ import { SensorsPanel } from "@/components/SensorsPanel";
 import { RestoreBackup } from "@/components/RestoreBackup";
 import { authEnabled } from "@/lib/auth/session";
 import { loadState } from "@/lib/plan/current";
-import { canUpload } from "@/lib/strava/client";
+import { autoUploadOn, canUpload } from "@/lib/strava/client";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +30,7 @@ function SettingsPageView() {
 
       <section className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-5">
         <h2 className="label">Strava</h2>
-        <AutoUploadToggle initial={!!settings.autoUpload} canUpload={canUpload()} />
+        <AutoUploadToggle initial={autoUploadOn(settings)} canUpload={canUpload()} />
       </section>
 
       <section id="sensors" className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-5">

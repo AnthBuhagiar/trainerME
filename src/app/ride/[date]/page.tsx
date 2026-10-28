@@ -1,3 +1,4 @@
+import { autoUploadOn, canUpload } from "@/lib/strava/client";
 import { asAthlete } from "@/lib/auth/athlete";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -27,7 +28,7 @@ async function RidePageView({
         ← Session
       </Link>
       <h1 className="display text-[22px] leading-tight">{sessionTitle(session)}</h1>
-      <RidePlayer storageKey={`${date}-${planned.start}`} name={sessionTitle(session)} autoUpload={!!found.state.settings.autoUpload} steps={playerSteps(session.ride!.workout, hourPower)} backHref={back} />
+      <RidePlayer storageKey={`${date}-${planned.start}`} name={sessionTitle(session)} autoUpload={autoUploadOn(found.state.settings) && canUpload()} steps={playerSteps(session.ride!.workout, hourPower)} backHref={back} />
     </main>
   );
 }

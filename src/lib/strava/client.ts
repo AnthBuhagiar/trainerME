@@ -122,6 +122,9 @@ export async function deauthorize(): Promise<void> {
   }).catch(() => {});
 }
 
+/** Auto-upload is on by default; only the rider turning it off in Settings stops it. */
+export const autoUploadOn = (settings: { autoUpload?: boolean }) => settings.autoUpload !== false;
+
 export function canUpload(tokens = loadTokens()): boolean {
   return !!tokens?.scope?.split(",").includes("activity:write");
 }
