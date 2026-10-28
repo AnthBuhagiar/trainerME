@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { athleteRoute } from "@/lib/auth/athlete";
 import { SESSION_COOKIE } from "@/lib/auth/session";
 import { currentAthlete, dataDir, multiUser } from "@/lib/data/store";
+import { retireCode } from "@/lib/referral/referral";
 import { appUrl, deauthorize } from "@/lib/strava/client";
 
 export const runtime = "nodejs";
@@ -11,6 +12,7 @@ export const runtime = "nodejs";
 async function post() {
   if (!multiUser() || !currentAthlete()) return NextResponse.json({ error: "Only on a shared Hour Power." }, { status: 400 });
   await deauthorize();
+  retireCode(currentAthlete()!);
   fs.rmSync(dataDir(), { recursive: true, force: true });
   const res = NextResponse.redirect(`${appUrl()}/login?deleted=1`, 303);
   res.cookies.delete(SESSION_COOKIE);
