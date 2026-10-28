@@ -20,6 +20,7 @@ import { chooseDevice, connectRemembered, loadSensors } from "@/lib/player/devic
 import { stepAt, type PlayerStep } from "@/lib/player/steps";
 import { buildTcx } from "@/lib/strava/tcx";
 import { WorkoutDashboard } from "@/components/WorkoutDashboard";
+import { LengthPicker } from "@/components/LengthPicker";
 
 interface Props {
   name: string;
@@ -28,6 +29,8 @@ interface Props {
   /** Save to Strava as soon as the ride finishes. */
   autoUpload: boolean;
   steps: PlayerStep[];
+  /** Change the workout's length before starting. */
+  length?: { value: number; planned: number; min: number; max: number; baseHref: string };
 }
 
 const clock = (s: number) => {
@@ -38,7 +41,7 @@ const clock = (s: number) => {
   return h ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`;
 };
 
-export function RidePlayer({ name, autoUpload, steps, storageKey }: Props) {
+export function RidePlayer({ name, autoUpload, steps, storageKey, length: lengthPick }: Props) {
   const [supported, setSupported] = useState(true);
   const [trainer, setTrainer] = useState<string | null>(null);
   const [hrName, setHrName] = useState<string | null>(null);
@@ -556,6 +559,13 @@ export function RidePlayer({ name, autoUpload, steps, storageKey }: Props) {
       )}
 
       {error && <p className="text-[14px] font-semibold text-signal-ink">{error}</p>}
+
+      {!ride.startedAt && lengthPick && (
+        <div className="flex flex-col gap-2">
+          <span className="label">Length</span>
+          <LengthPicker {...lengthPick} />
+        </div>
+      )}
 
       {!done &&
         (!ride.startedAt ? (

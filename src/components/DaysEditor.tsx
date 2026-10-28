@@ -2,13 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { DurationInput } from "@/components/DurationInput";
 import type { DayChoice, DayKind } from "@/lib/plan/availability";
 
 const NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 /** Sunday first: weeks run Sunday to Saturday. */
 const ORDER = [6, 0, 1, 2, 3, 4, 5];
-const LENGTHS = [30, 45, 60, 75, 90, 120, 150, 180, 210, 240, 300];
 const chip = (on: boolean) =>
   `h-9 min-w-0 flex-1 rounded-full border px-1 text-[13px] font-semibold ${on ? "border-asphalt bg-asphalt text-chalk dark:border-chalk dark:bg-chalk dark:text-asphalt" : "border-line"}`;
 const fmtLength = (m: number) => (m < 90 ? `${m} min` : `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60}` : ""}`);
@@ -52,19 +52,8 @@ export function DaysEditor({ initial, custom }: { initial: DayChoice[]; custom: 
                 ))}
               </div>
               {d.kind !== "off" && (
-                <div className="flex items-center gap-2 text-[14px]">
-                  <select
-                    value={d.minutes}
-                    onChange={(e) => set(weekday, { minutes: Number(e.target.value) })}
-                    className="h-9 min-w-0 flex-1 rounded-lg border border-line bg-card px-2"
-                    aria-label={`${NAMES[weekday]} length`}
-                  >
-                    {[...new Set([...LENGTHS, d.minutes])].sort((a, b) => a - b).map((m) => (
-                      <option key={m} value={m}>
-                        {fmtLength(m)}
-                      </option>
-                    ))}
-                  </select>
+                <div className="flex flex-wrap items-center justify-between gap-2 text-[14px]">
+                  <DurationInput value={d.minutes} onChange={(m) => set(weekday, { minutes: m })} label={`${NAMES[weekday]} length`} />
                   {d.kind === "ride" && (
                     <button type="button" onClick={() => set(weekday, { indoor: !d.indoor })} className="h-9 shrink-0 rounded-lg border border-line px-2 text-[13px] font-semibold">
                       {d.indoor ? "Indoor" : "Outdoor"}
