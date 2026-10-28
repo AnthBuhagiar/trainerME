@@ -2,6 +2,7 @@ import fs from "node:fs";
 import { NextResponse, type NextRequest } from "next/server";
 import { athleteIds } from "@/lib/auth/owner";
 import { dataDir, runAsAthlete } from "@/lib/data/store";
+import { retireCode } from "@/lib/referral/referral";
 import { stillAuthorized } from "@/lib/strava/client";
 
 export const runtime = "nodejs";
@@ -33,7 +34,10 @@ export async function POST(req: NextRequest) {
   const id = Number(event?.owner_id);
   if (event?.object_type === "athlete" && event.updates?.authorized === "false" && athleteIds().includes(id)) {
     await runAsAthlete(id, async () => {
-      if (!(await stillAuthorized())) fs.rmSync(dataDir(), { recursive: true, force: true });
+      if (!(await stillAuthorized())) {
+        retireCode(id);
+        fs.rmSync(dataDir(), { recursive: true, force: true });
+      }
     });
   }
   return NextResponse.json({ ok: true }); // Strava expects a quick 200 either way

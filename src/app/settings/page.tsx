@@ -4,14 +4,19 @@ import { DaysEditor } from "@/components/DaysEditor";
 import { choicesFromBudget } from "@/lib/plan/availability";
 import { SensorsPanel } from "@/components/SensorsPanel";
 import { RestoreBackup } from "@/components/RestoreBackup";
+import { ReferralCard } from "@/components/ReferralCard";
+import { currentAthlete, multiUser } from "@/lib/data/store";
+import { BILLING_OPEN, REFERRALS_FOR_REWARD, referralSummary } from "@/lib/referral/referral";
 import { authEnabled } from "@/lib/auth/session";
 import { loadState } from "@/lib/plan/current";
-import { autoUploadOn, canUpload } from "@/lib/strava/client";
+import { appUrl, autoUploadOn, canUpload } from "@/lib/strava/client";
 
 export const dynamic = "force-dynamic";
 
 function SettingsPageView() {
   const { settings, chosenDays, learnedBudget } = loadState();
+  const athlete = multiUser() ? currentAthlete() : null;
+  const referral = athlete ? referralSummary(athlete) : null;
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 px-5 py-6">
       <h1 className="display text-[24px]">Settings and data</h1>
@@ -27,6 +32,18 @@ function SettingsPageView() {
           <span className="font-semibold">{settings.trainingHourPower ? `${settings.trainingHourPower} W` : "–"}</span>
         </div>
       </section>
+
+      {referral && (
+        <section id="refer" className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-5">
+          <h2 className="label">Your referral code</h2>
+          <ReferralCard
+            {...referral}
+            shareUrl={`${appUrl()}/login?ref=${referral.code}`}
+            needed={REFERRALS_FOR_REWARD}
+            billingOpen={BILLING_OPEN}
+          />
+        </section>
+      )}
 
       <section className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-5">
         <h2 className="label">Strava</h2>
