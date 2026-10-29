@@ -5,21 +5,57 @@
 # On the Droplet:
 #   curl -fsSL https://raw.githubusercontent.com/AnthBuhagiar/trainerME/main/site/install-site.sh | sudo bash
 #
-# Safe to re-run to publish a new version of site/index.html. The Caddyfile is backed up,
-# and Caddy only reloads a config that validates.
+# It also turns on auto-update: every 15 minutes the Droplet downloads site/index.html from main
+# and publishes it if it changed. Safe to re-run. The Caddyfile is backed up, and Caddy only
+# reloads a config that validates.
 set -euo pipefail
 DOMAIN="${DOMAIN:-www.hourpowerapp.cc}"
 SITE_DIR=/var/www/hour-power-site
 CADDYFILE=/etc/caddy/Caddyfile
 SOURCE="${SOURCE:-https://raw.githubusercontent.com/AnthBuhagiar/trainerME/main/site/index.html}"
 
+# The updater: downloads the page from GitHub and replaces it only when it changed.
+# It never runs code from GitHub, only copies the one HTML page.
+cat > /usr/local/bin/hour-power-site-update <<UPDATER
+#!/usr/bin/env bash
+set -euo pipefail
 mkdir -p "$SITE_DIR"
-tmp=$(mktemp)
-curl -fsSL "$SOURCE" -o "$tmp"
-grep -q "<title>Hour Power</title>" "$tmp" || { echo "Downloaded page doesn't look right; nothing changed." >&2; exit 1; }
-install -m 644 "$tmp" "$SITE_DIR/index.html"
-rm -f "$tmp"
-echo "Website copied to $SITE_DIR."
+tmp=\$(mktemp)
+trap 'rm -f "\$tmp"' EXIT
+curl -fsSL "$SOURCE" -o "\$tmp"
+grep -q "<title>Hour Power</title>" "\$tmp" || { echo "Downloaded page doesn't look right; kept the current one." >&2; exit 1; }
+if cmp -s "\$tmp" "$SITE_DIR/index.html"; then echo "Website already up to date."; exit 0; fi
+install -m 644 "\$tmp" "$SITE_DIR/index.html"
+echo "Website updated."
+UPDATER
+chmod 755 /usr/local/bin/hour-power-site-update
+
+# Check GitHub every 15 minutes, like the app's own updater.
+cat > /etc/systemd/system/hour-power-site-update.service <<UNIT
+[Unit]
+Description=Update the Hour Power website from GitHub
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/hour-power-site-update
+UNIT
+cat > /etc/systemd/system/hour-power-site-update.timer <<UNIT
+[Unit]
+Description=Check for a new Hour Power website every 15 minutes
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=15min
+
+[Install]
+WantedBy=timers.target
+UNIT
+systemctl daemon-reload
+systemctl enable --now hour-power-site-update.timer >/dev/null
+/usr/local/bin/hour-power-site-update
+echo "Auto-update on: the website checks GitHub every 15 minutes."
 
 if grep -q "^${DOMAIN} " "$CADDYFILE"; then
   echo "Caddy already serves ${DOMAIN}; the new page is live."
