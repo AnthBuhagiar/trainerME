@@ -1,7 +1,7 @@
 import { asAthlete } from "@/lib/auth/athlete";
 import { SendExternal } from "@/components/SendExternal";
 import { OtherTraining } from "@/components/OtherTraining";
-import { SessionCard } from "@/components/SessionCard";
+import { SessionCard, sessionTitle } from "@/components/SessionCard";
 import { kindOn, type AwayPeriod } from "@/lib/plan/away";
 import { dayLabel } from "@/lib/ui/format";
 import { WeekReviewCard } from "@/components/WeekReviewCard";
@@ -9,12 +9,31 @@ import { reviewWeekStart, weekReview, type WeekReview } from "@/lib/plan/review"
 import { hasIntervalsKey } from "@/lib/intervals/client";
 import { nextWeekStart, loadState } from "@/lib/plan/current";
 import { length } from "@/lib/ui/format";
-import type { WeekPlan } from "@/lib/plan/week";
+import type { PlannedSession, WeekPlan } from "@/lib/plan/week";
+import { missedSessions, weekStatus } from "@/lib/plan/weekStrip";
 
 export const dynamic = "force-dynamic";
 
-function Week({ plan, title, today, away, other = [] }: { plan: WeekPlan; title: string; today: string; away: AwayPeriod[]; other?: WeekReview["other"] }) {
-  const sessions = plan.sessions.filter((s) => s.date >= today);
+function Week({
+  plan,
+  title,
+  today,
+  away,
+  other = [],
+  missed = [],
+  covered,
+}: {
+  plan: WeekPlan;
+  title: string;
+  today: string;
+  away: AwayPeriod[];
+  other?: WeekReview["other"];
+  missed?: PlannedSession[];
+  /** Already done (on its day or another), so not shown as still to do. */
+  covered?: Set<PlannedSession>;
+}) {
+  // Upcoming, less any already ridden early.
+  const sessions = plan.sessions.filter((s) => s.date >= today && !(s.date > today && covered?.has(s)));
   const awayDates = Array.from({ length: 7 }, (_, i) => new Date(Date.parse(`${plan.weekStart}T00:00:00Z`) + i * 86_400_000).toISOString().slice(0, 10)).filter(
     (d) => d >= today && kindOn(away, d) === "away",
   );
@@ -34,6 +53,9 @@ function Week({ plan, title, today, away, other = [] }: { plan: WeekPlan; title:
         </p>
       )}
       <OtherTraining items={other.filter((o) => o.date <= today)} today={today} title="Also done this week" />
+      {missed.map((s) => (
+        <SessionCard key={`missed-${s.date}-${s.start}`} session={s} today={today} missed />
+      ))}
       {sessions.length === 0 && <p className="px-1 text-[15px] text-muted">Nothing left this week.</p>}
       {sessions.map((s) => (
         <SessionCard key={`${s.date}-${s.start}`} session={s} today={today} />
@@ -60,7 +82,10 @@ function WeekPageView() {
         </p>
       </header>
       <WeekReviewCard review={review} next={isSunday ? next : undefined} title={isSunday ? "Your week" : "Last week"} />
-      <Week plan={thisWeek} title="This week" today={state.today} away={state.away} other={weekReview(thisWeek, state.activities, state.history).other} />
+      <Week plan={thisWeek} title="This week" today={state.today} away={state.away} other={weekReview(thisWeek, state.activities, state.history).other}
+        missed={missedSessions(thisWeek, state.activities, state.today, sessionTitle).filter((s) => s.ride)}
+        covered={weekStatus(thisWeek, state.activities, state.today, sessionTitle).covered}
+      />
       <Week plan={next} title="Next week" today={state.today} away={state.away} />
       <SendExternal intervals={hasIntervalsKey()} />
     </main>
