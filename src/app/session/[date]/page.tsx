@@ -51,12 +51,12 @@ async function SessionPageView({
           <p className="text-[15px] leading-snug">{plain(session.ride.workout.summary)}</p>
           {hourPower > 0 && <WorkoutSteps workout={session.ride.workout} hourPower={hourPower} />}
           {hourPower > 0 && <p className="text-[13px] text-muted">Targets from your {hourPower} W training hour power.</p>}
-          {hourPower > 0 && session.indoor && (
+          {hourPower > 0 && (
             <Link
               href={`/ride/${date}?start=${planned.start}${minutes ? `&minutes=${minutes}` : ""}`}
               className="flex h-14 items-center justify-center rounded-2xl bg-signal-ink text-[17px] font-semibold text-white"
             >
-              Ride it on my trainer
+              {date === state.today && session.indoor ? "Ride it on my trainer" : "Do this workout now"}
             </Link>
           )}
         </>

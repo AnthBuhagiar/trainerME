@@ -14,14 +14,30 @@ export function sessionTitle(s: PlannedSession): string {
  * A planned session. Under a heading that already names the day (Today), pass
  * `showDay={false}`: the card then leads with what kind of session it is.
  */
-export function SessionCard({ session, today, compact = false, showDay = true }: { session: PlannedSession; today: string; compact?: boolean; showDay?: boolean }) {
+export function SessionCard({
+  session,
+  today,
+  compact = false,
+  showDay = true,
+  missed = false,
+}: {
+  session: PlannedSession;
+  today: string;
+  compact?: boolean;
+  showDay?: boolean;
+  /** Planned earlier this week and not done: shown faded, still tappable to ride now. */
+  missed?: boolean;
+}) {
   const where = place(session);
   const icon = sessionIcon(session);
   return (
-    <Link href={`/session/${session.date}?start=${session.start}`} className="flex flex-col gap-1 rounded-2xl border border-line bg-card px-4 py-3">
+    <Link href={`/session/${session.date}?start=${session.start}`} className={`flex flex-col gap-1 rounded-2xl border px-4 py-3 ${missed ? "border-dashed border-line bg-transparent" : "border-line bg-card"}`}>
       <div className="flex items-baseline justify-between gap-3">
         {showDay ? (
-          <span className="label">{dayLabel(session.date, today)}</span>
+          <span className="label">
+            {missed ? "Missed · " : ""}
+            {dayLabel(session.date, today)}
+          </span>
         ) : (
           <span className="label flex items-center gap-1.5">
             <ActivityIcon icon={icon} size={18} />

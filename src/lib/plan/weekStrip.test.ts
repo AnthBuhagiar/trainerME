@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import type { PlannedSession, WeekPlan } from "@/lib/plan/week";
-import { weekStrip } from "@/lib/plan/weekStrip";
+import { missedSessions, weekStatus, weekStrip } from "@/lib/plan/weekStrip";
 import type { Activity } from "@/lib/types";
 
 const s = (date: string, kind: PlannedSession["kind"], extra: Partial<PlannedSession> = {}): PlannedSession => ({
@@ -39,5 +39,24 @@ describe("week strip", () => {
     const days = weekStrip(plan, [a("2026-10-24", "Ride", { isTrainer: true })], "2026-10-25", () => "x");
     expect(days[2].items[0]).toMatchObject({ icon: "indoor", state: "planned", key: true });
     expect(days[6].items[0]).toMatchObject({ icon: "bike", key: false });
+  });
+
+  test("a missed session can still be opened and ridden", () => {
+    const days = weekStrip(plan, [], "2026-10-28", () => "x");
+    expect(days[2].items[0]).toMatchObject({ state: "missed", href: "/session/2026-10-27?start=19:30" });
+    expect(missedSessions(plan, [], "2026-10-28", () => "x").map((s) => s.date)).toEqual(["2026-10-26", "2026-10-27"]);
+  });
+
+  test("a workout ridden on another day with Hour Power counts for its planned day", () => {
+    const title = (x: PlannedSession) => (x.date === "2026-10-29" ? "Endurance + 6 × 15 s sprints" : "Other");
+    // Thursday's session ridden on Wednesday: Strava has it under the workout's name.
+    const early = a("2026-10-28", "VirtualRide", { name: "Endurance + 6 × 15 s sprints", isTrainer: true });
+    const { days, covered } = weekStatus(plan, [early], "2026-10-28", title);
+    expect(days[4].items).toEqual([]); // Thursday: nothing left to do
+    expect(days[3].items.map((x) => x.state)).toEqual(["done"]);
+    expect([...covered].map((s) => s.date)).toEqual(["2026-10-29"]);
+    // Tuesday's missed session ridden today counts too.
+    const late = a("2026-10-28", "VirtualRide", { name: "Other", isTrainer: true });
+    expect(missedSessions(plan, [late], "2026-10-28", (x) => (x.date === "2026-10-27" ? "Other" : "y")).map((s) => s.date)).toEqual(["2026-10-26"]);
   });
 });
