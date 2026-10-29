@@ -83,7 +83,7 @@ function WeekPageView() {
       </header>
       <WeekReviewCard review={review} next={isSunday ? next : undefined} title={isSunday ? "Your week" : "Last week"} />
       <Week plan={thisWeek} title="This week" today={state.today} away={state.away} other={weekReview(thisWeek, state.activities, state.history).other}
-        missed={missedSessions(thisWeek, state.activities, state.today, sessionTitle).filter((s) => s.ride)}
+        missed={missedSessions(thisWeek, state.activities, state.today, sessionTitle).filter((s) => s.ride && s.indoor)}
         covered={weekStatus(thisWeek, state.activities, state.today, sessionTitle).covered}
       />
       <Week plan={next} title="Next week" today={state.today} away={state.away} />

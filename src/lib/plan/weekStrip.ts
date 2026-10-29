@@ -21,7 +21,7 @@ export interface StripItem {
   minutes: number;
   /** Planned key sessions are marked. */
   key?: boolean;
-  /** Planned and missed sessions open their page (a missed one can still be ridden). */
+  /** Planned sessions open their page, and missed trainer rides (they can still be ridden). */
   href?: string;
   session?: PlannedSession;
 }
@@ -88,7 +88,9 @@ export function weekStatus(plan: WeekPlan, activities: Activity[], today: string
         continue;
       }
       if (date < today) {
-        items.push({ icon: sessionIcon(s), state: "missed", title: title(s), minutes: s.minutes, href: `/session/${s.date}?start=${s.start}`, session: s });
+        // Missed trainer rides can still be ridden now, so they open; others are just shown.
+        const rideable = s.kind === "ride" && s.indoor;
+        items.push({ icon: sessionIcon(s), state: "missed", title: title(s), minutes: s.minutes, href: rideable ? `/session/${s.date}?start=${s.start}` : undefined, session: s });
         continue;
       }
       items.push({
@@ -106,7 +108,7 @@ export function weekStatus(plan: WeekPlan, activities: Activity[], today: string
   return { days, covered };
 }
 
-/** Sessions earlier this week that nothing on Strava covers: shown on the Week tab, and still rideable. */
+/** Sessions earlier this week that nothing on Strava covers (the Week tab lists the trainer rides, which can still be ridden). */
 export function missedSessions(plan: WeekPlan, activities: Activity[], today: string, title: (s: PlannedSession) => string): PlannedSession[] {
   return weekStrip(plan, activities, today, title)
     .flatMap((d) => d.items)
