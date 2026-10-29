@@ -1,6 +1,6 @@
 # Hour Power — Training Science
 
-*Version 1.1 · October 2026 · next review January 2027*
+*Version 1.3 · October 2026 · next review January 2027*
 
 This is the evidence behind every workout and planning rule in Hour Power. Workouts in
 `src/lib/plan/library.ts` reference these entries by ID, and the app shows the reason for each
@@ -75,6 +75,10 @@ target intensity kept, number of rides kept where possible.
   running and cycling; for cycling, the most compelling evidence of an added benefit is for **heavy**
   strength training. Proposed mechanisms include better neuromuscular efficiency and more
   fatigue-resistant muscle fibres.
+- The protocol behind those trials (Rønnestad, Hansen & Raastad 2010; Rønnestad et al. 2017): half squat,
+  one-legged leg press, one-legged hip flexion and calf raise, **3 sets of 4–10RM, twice a week**, about
+  2 min between sets, lifting fast and lowering slowly, with the load rising every few weeks
+  (10RM/6RM → 8RM/5RM → 6RM/4RM).
 
 **How Hour Power uses it:** 1–2 strength sessions a week are welcomed, not replaced. Hard rides are not
 scheduled the morning after heavy leg sessions where the week allows; strength volume drops in the taper.
@@ -127,8 +131,11 @@ roughly 30–40% less volume with one short quality session kept.
   between polarised and other mixes, and weekly volume wasn't linked to bigger gains.
 - **Short intervals are efficient.** Effort-matched 30/15s beat 4 × 5 min for peak aerobic power
   (Rønnestad et al. 2015; 2020 in elite riders; 2021 one-week block). See E2.
-- **Intervals work fast, then level off.** Adding 4 weeks of 6–8 × 5 min to base training improved 40 km
-  time trials (Lindsay, Hawley et al. 1996); only some interval formats helped (Stepto et al. 1999).
+- **Intervals work fast, then level off.** Adding 4 weeks of 6–8 × 5 min (80% of peak aerobic power, 60 s
+  recovery) to base training improved 40 km time trials (Lindsay, Hawley et al. 1996). Only some interval
+  formats helped: of 12 × 30 s at 175%, 12 × 60 s at 100%, 12 × 2 min at 90%, 8 × 4 min at 85% and
+  4 × 8 min at 80% of peak aerobic power (six sessions over three weeks, 20 trained men), the 85% and
+  175% formats improved 40 km time trials most (Stepto et al. 1999).
 - **Sequence:** pyramidal then polarised did best in runners (Filipas et al. 2022).
 - **Low-volume HIIT raises VO2max** even in short, small doses (Wen et al. 2019 meta-analysis; mostly non-elite).
 
@@ -178,6 +185,7 @@ but never for a key session or the long ride. A hard or long run the day before 
 
 ## Changelog
 
+- **1.3 (Oct 2026)** — Added the protocol details (Rønnestad strength programme; Lindsay and Stepto interval formats) used by the workout catalogue (`src/lib/plan/catalogue.ts`, `docs/workout-library.md`).
 - **1.2 (Oct 2026)** — Added E10 (runs and other training alongside cycling).
 - **1.1 (Oct 2026)** — Added E9 (training on 5–6 hours a week) and the training protocol built on it.
 - **1.0 (Oct 2026)** — Initial library: E1–E8.

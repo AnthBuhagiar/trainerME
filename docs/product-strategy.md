@@ -225,6 +225,8 @@ Goal: a trustworthy hour-power number and a week that fits real life.
 - [x] **A5** back-testing against long efforts; publish accuracy (Progress → How accurate is it?).
 - [ ] **C4** Sunday summary.
 - [x] **B5** time-off forecasts: away and busy days, planned months ahead (Plan tab).
+- [x] **B9** workout catalogue: 31 rides in 11 families of graded variations plus a 5-step strength programme, each tagged with phases, plan roles and its study protocol (`src/lib/plan/catalogue.ts`, `docs/workout-library.md`).
+- [ ] **B10** planner draws on the catalogue: step variations up or down a family with P6/P14 progression instead of only adding reps, and widen the P5 rotation menus.
 - [ ] **B8** gym-aware scheduling and **B7** evening session tuning.
 - [ ] **C5** "on track" score.
 - [ ] **D2** event demands from the route, **D4** readiness score, **D5** key rehearsal rides, **D6** event-specific sessions.
