@@ -20,6 +20,8 @@ export interface RideState {
   ended: boolean;
   /** % adjustment to all targets. */
   offset: number;
+  /** After the workout: riding on at a power the rider sets (W). */
+  freeWatts?: number;
   samples: RideSample[];
   /** Last time this state was saved (epoch ms). */
   savedAt: number;

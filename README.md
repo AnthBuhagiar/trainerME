@@ -71,6 +71,16 @@ The codespace stops when idle. For an app that's always there, run Hour Power on
 - Logs: `journalctl -u hour-power -n 50`. Status: `systemctl status hour-power`.
 - Your data is in `/opt/hour-power/data`; download a backup from Settings now and then.
 
+### Move to a new address
+To run Hour Power on its own domain (e.g. `hourpower.app`):
+1. Buy the domain (Cloudflare Registrar sells `.app`) and add an **A** record pointing at the Droplet's IP.
+2. On the server:
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/AnthBuhagiar/trainerME/main/deploy/change-domain.sh -o change-domain.sh && bash change-domain.sh hourpower.app
+   ```
+   The old address becomes a permanent redirect to the new one; other sites on the server aren't touched.
+3. In [Strava API settings](https://www.strava.com/settings/api), set **Authorization Callback Domain** to the new domain, and re-subscribe the webhook if you use it. Riders sign in once more on the new address.
+
 ### Several riders
 Anyone with Strava can sign in to a hosted Hour Power. Each athlete gets their own folder, `data/athletes/<Strava athlete id>/`, and every page and request reads and writes only the signed-in athlete's folder (with sign-in on, the app refuses to touch data without one). Nobody sees anyone else's rides.
 

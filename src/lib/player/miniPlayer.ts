@@ -13,7 +13,8 @@ export interface MiniState {
   label: string;
   /** Seconds left in this step and in the workout. */
   remaining: number;
-  left: number;
+  /** Seconds left in the workout; left out in free ride. */
+  left?: number;
   target: number;
   power?: number;
   hr?: number;
@@ -57,7 +58,7 @@ export function drawMini(ctx: CanvasRenderingContext2D, s: MiniState, font: stri
   ctx.textAlign = "left";
   ctx.fillText(s.label.toUpperCase().slice(0, 26), 28, 48);
   ctx.textAlign = "right";
-  ctx.fillText(`${clock(s.left)} to go`, W - 28, 48);
+  if (s.left !== undefined) ctx.fillText(`${clock(s.left)} to go`, W - 28, 48);
 
   // Step countdown, left; target and power, right.
   ctx.textAlign = "left";

@@ -20,6 +20,8 @@ import { chooseDevice, connectRemembered, loadSensors } from "@/lib/player/devic
 import { stepAt, type PlayerStep } from "@/lib/player/steps";
 import { buildTcx } from "@/lib/strava/tcx";
 import { WorkoutDashboard } from "@/components/WorkoutDashboard";
+import { FreeRide } from "@/components/FreeRide";
+import { RideFinished } from "@/components/RideFinished";
 import { LengthPicker } from "@/components/LengthPicker";
 
 interface Props {
@@ -67,8 +69,13 @@ export function RidePlayer({ name, autoUpload, steps, storageKey, length: length
   const at = stepAt(steps, elapsed);
   const current = at ? steps[at.index] : null;
   const next = at ? steps[at.index + 1] : null;
-  const target = current ? Math.round((current.watts * (1 + offset / 100)) / 5) * 5 : 0;
-  const done = ride.ended || elapsed >= total;
+  const scaled = (w: number) => Math.round((w * (1 + offset / 100)) / 5) * 5;
+  // The workout's time is up: it carries on (holding the last target, then free ride) until the rider ends it.
+  const timeUp = !!ride.startedAt && elapsed >= total;
+  const free = ride.freeWatts !== undefined;
+  const target = free ? ride.freeWatts! : current ? scaled(current.watts) : timeUp && steps.length ? scaled(steps[steps.length - 1].watts) : 0;
+  const done = ride.ended;
+  const askToEnd = timeUp && !done && !free;
 
   useEffect(() => setSupported(typeof navigator !== "undefined" && !!navigator.bluetooth), []);
 
@@ -252,13 +259,6 @@ export function RidePlayer({ name, autoUpload, steps, storageKey, length: length
     write(setTargetPower(target));
   }, [running, trainer, target, done, write]);
 
-  // Finished: release the trainer.
-  useEffect(() => {
-    if (done && !ride.ended && ride.startedAt) {
-      setRide((r) => end(r, Date.now()));
-      write(stopOrPause());
-    }
-  }, [done, ride.ended, ride.startedAt, write]);
 
   // Keep the screen awake while riding.
   useEffect(() => {
@@ -294,6 +294,20 @@ export function RidePlayer({ name, autoUpload, steps, storageKey, length: length
   function finish() {
     setRide((r) => end(r, Date.now()));
     write(stopOrPause());
+  }
+
+  /** End the ride and upload it to Strava straight away (the end-of-workout and free-ride End buttons). */
+  function endAndUpload() {
+    autoSaved.current = true; // this upload, not the automatic one as well
+    finish();
+    void save();
+  }
+
+  function freeRide() {
+    const watts = Math.max(50, target || 150);
+    lastTarget.current = null;
+    setRide((r) => ({ ...r, freeWatts: watts }));
+    setMinimised(false);
   }
 
   function discard() {
@@ -355,9 +369,11 @@ export function RidePlayer({ name, autoUpload, steps, storageKey, length: length
   const [miniOpen, setMiniOpen] = useState(false);
   const mini = useRef<MiniPlayer | null>(null);
   useEffect(() => setMiniSupported(miniPlayerSupported()), []);
-  const miniState: MiniState | null = at && current
-    ? { label: current.label, remaining: at.remaining, left: total - elapsed, target, power: live.power, hr: live.hr, cadence: live.cadence, work: current.work, running, progress: total ? elapsed / total : 0 }
-    : null;
+  const miniState: MiniState | null = free
+    ? { label: "Free ride", remaining: elapsed, target, power: live.power, hr: live.hr, cadence: live.cadence, work: false, running, progress: 1 }
+    : at && current
+      ? { label: current.label, remaining: at.remaining, left: total - elapsed, target, power: live.power, hr: live.hr, cadence: live.cadence, work: current.work, running, progress: total ? elapsed / total : 0 }
+      : null;
   const miniRef = useRef(miniState);
   miniRef.current = miniState;
   const actions = useRef({ toggle, skip: skipStep });
@@ -439,6 +455,20 @@ export function RidePlayer({ name, autoUpload, steps, storageKey, length: length
 
   return (
     <div className="flex flex-col gap-4">
+      {askToEnd && <RideFinished elapsed={elapsed} avg={avg} onEnd={endAndUpload} onFree={freeRide} />}
+      {free && !done && !minimised && (
+        <FreeRide
+          watts={ride.freeWatts!}
+          elapsed={elapsed}
+          live={live}
+          running={running}
+          trainer={!!trainer}
+          onWatts={(w) => setRide((r) => ({ ...r, freeWatts: w }))}
+          onToggle={toggle}
+          onEnd={endAndUpload}
+          onMinimise={() => setMinimised(true)}
+        />
+      )}
       {showDashboard && (
         <WorkoutDashboard
           steps={steps}
@@ -477,7 +507,7 @@ export function RidePlayer({ name, autoUpload, steps, storageKey, length: length
       <section className="flex flex-col gap-4 rounded-3xl bg-asphalt p-5 text-chalk">
         <div className="flex items-baseline justify-between gap-3">
           <span className="label" style={{ color: "#B9C4D0" }}>
-            {done ? "Done" : current?.label}
+            {done ? "Done" : free ? "Free ride" : current?.label}
           </span>
           <span className="display text-[16px]" style={{ color: "#B9C4D0" }}>
             {done ? "" : `${clock(total - elapsed)} left`}
@@ -530,7 +560,7 @@ export function RidePlayer({ name, autoUpload, steps, storageKey, length: length
           <div className="flex flex-col gap-1">
             <div className="display text-[32px]">Nice work.</div>
             <div className="text-[15px]" style={{ color: "#C9D3DD" }}>
-              {clock(ridden)} ridden{avg ? ` · ${avg} W average` : ""}. Save it to Strava and it feeds your hour power on the next sync.
+              {clock(ridden)} ridden{avg ? ` · ${avg} W average` : ""}.
             </div>
           </div>
         )}
@@ -604,10 +634,17 @@ export function RidePlayer({ name, autoUpload, steps, storageKey, length: length
                 {paired.trainer ? `Connect ${paired.trainer}` : "Connect trainer"}
               </button>
             )}
-            {elapsed > 0 && !running && (
-              <button onClick={finish} className="col-span-2 h-12 text-[15px] font-semibold text-muted">
-                End ride here
+            {free ? (
+              <button onClick={endAndUpload} className="col-span-2 h-14 rounded-2xl bg-signal-ink text-[17px] font-semibold text-white">
+                End ride
               </button>
+            ) : (
+              elapsed > 0 &&
+              !running && (
+                <button onClick={finish} className="col-span-2 h-12 text-[15px] font-semibold text-muted">
+                  End ride here
+                </button>
+              )
             )}
           </div>
         ))}
