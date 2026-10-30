@@ -2,13 +2,16 @@
  * Website and app traffic for the admin dashboard (F4), from Cloudflare's
  * GraphQL Analytics API. The domain already runs through Cloudflare, so this
  * reads what Cloudflare counts at the edge: no tracking script, no cookies,
- * nothing per visitor. Needs CLOUDFLARE_API_TOKEN (Zone → Analytics → Read)
- * and CLOUDFLARE_ZONE_ID on the server; without them traffic is left out.
+ * nothing per visitor. Needs CLOUDFLARE_API_TOKEN (Zone → Analytics → Read) on
+ * the server; without it traffic is left out. The zone is hourpowerapp.cc's unless
+ * CLOUDFLARE_ZONE_ID says otherwise (a zone ID is an identifier, not a secret).
  *
  * Page views are HTML responses to real visitors (requestSource "eyeball").
  */
 
 const ENDPOINT = "https://api.cloudflare.com/client/v4/graphql";
+/** hourpowerapp.cc's Cloudflare zone. */
+export const HOUR_POWER_ZONE_ID = "cb9d99cc237b7f756e7bc3818edc5a7c";
 export const TRAFFIC_DAYS = 29; // free plans allow 30 days a query
 
 export type Section = "App" | "Website" | "Other";
@@ -122,7 +125,7 @@ const CACHE_MS = 10 * 60_000;
 
 export async function fetchTraffic(now = new Date(), fetchImpl: typeof fetch = fetch): Promise<Traffic> {
   const token = process.env.CLOUDFLARE_API_TOKEN;
-  const zone = process.env.CLOUDFLARE_ZONE_ID;
+  const zone = process.env.CLOUDFLARE_ZONE_ID || HOUR_POWER_ZONE_ID;
   if (!token || !zone) return empty(false);
   if (cache && now.getTime() - cache.at < CACHE_MS) return cache.value;
   const to = now.toISOString().slice(0, 10);
