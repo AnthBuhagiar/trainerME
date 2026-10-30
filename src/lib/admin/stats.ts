@@ -43,6 +43,10 @@ export interface RiderRow {
   plannedLast4: number;
   doneLast4: number;
   adherence4: number | null;
+  /** When plan-following starts counting (joined, or first goal if earlier). */
+  startedAt: string | null;
+  /** Finished weeks counted so far (0 until their first full week). */
+  weeksCounted: number;
 }
 
 export interface WeekAdherence {
@@ -142,9 +146,9 @@ function folderCreated(id: number): string | null {
 
 const pct = (done: number, planned: number) => (planned ? Math.round((done / planned) * 1000) / 10 : null);
 
-function safeUsage(): PlanUsage {
+function safeUsage(since?: string): PlanUsage {
   try {
-    return planUsage(8);
+    return planUsage(8, since);
   } catch {
     return { weeks: [], sessions: [] };
   }
@@ -169,11 +173,14 @@ function riderRow(id: number, owner: number | null, now: Date): RiderRow & { usa
     const next = upcoming.find((g) => g.priority === "A") ?? upcoming[0];
     const code = codeFor(id);
 
-    const usage = safeUsage();
+    // Plan-following counts from when they started with Hour Power: joining, or their first goal (riders from before hosting).
+    const goalDates = goals.map((g) => g.createdAt).filter((d): d is string => typeof d === "string");
+    const joinedCandidates = [terms?.acceptedAt, folderCreated(id)].filter((x): x is string => !!x).sort();
+    const startedAt = [...joinedCandidates, ...goalDates].sort()[0];
+    const usage = safeUsage(startedAt);
     const last4 = usage.weeks.slice(-4);
     const plannedLast4 = last4.reduce((n, w) => n + w.planned, 0);
     const doneLast4 = last4.reduce((n, w) => n + w.done, 0);
-    const joinedCandidates = [terms?.acceptedAt, folderCreated(id)].filter((x): x is string => !!x).sort();
     return {
       athleteId: id,
       name: displayName(tokens?.athlete?.firstname, tokens?.athlete?.lastname),
@@ -200,6 +207,8 @@ function riderRow(id: number, owner: number | null, now: Date): RiderRow & { usa
       plannedLast4,
       doneLast4,
       adherence4: pct(doneLast4, plannedLast4),
+      startedAt: startedAt ?? null,
+      weeksCounted: usage.weeks.length,
       usage,
     };
   });
