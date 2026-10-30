@@ -8,7 +8,8 @@ import type { WeekPlan } from "@/lib/plan/week";
  * to the same session, not counted twice.
  */
 
-export const OTHER_APPS = ["Zwift", "MyWhoosh", "TrainerRoad", "Rouvy", "Other app"] as const;
+/** Which app isn't asked: confirming it's done is enough. */
+export const ANOTHER_APP = "another app";
 
 const FILE = "completions.json";
 type Completions = Record<string, { app: string; at: string }>;
@@ -19,7 +20,7 @@ export function loadCompletions(): Completions {
   return readJson<Completions>(FILE, {});
 }
 
-export function markDoneElsewhere(date: string, start: string, app: string, now = new Date()): void {
+export function markDoneElsewhere(date: string, start: string, app = ANOTHER_APP, now = new Date()): void {
   writeJson(FILE, { ...loadCompletions(), [completionKey(date, start)]: { app, at: now.toISOString() } });
 }
 

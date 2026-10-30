@@ -82,7 +82,7 @@ export function weekStatus(plan: WeekPlan, activities: Activity[], today: string
         // Done in another app: its synced ride (if any) already shows; otherwise show the session as done.
         covered.add(s);
         if (match) used.add(match);
-        else items.push({ icon: sessionIcon(s), state: "done", title: `${title(s)} · ${s.completedIn}`, minutes: s.minutes, href: `/session/${s.date}?start=${s.start}`, session: s });
+        else items.push({ icon: sessionIcon(s), state: "done", title: `${title(s)} · done in ${s.completedIn}`, minutes: s.minutes, href: `/session/${s.date}?start=${s.start}`, session: s });
         continue;
       }
       if (match) {

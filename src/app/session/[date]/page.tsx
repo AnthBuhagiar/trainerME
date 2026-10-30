@@ -5,7 +5,6 @@ import { sessionTitle } from "@/components/SessionCard";
 import { SendExternal } from "@/components/SendExternal";
 import { WorkoutSteps } from "@/components/WorkoutSteps";
 import { DoneElsewhere } from "@/components/DoneElsewhere";
-import { OTHER_APPS } from "@/lib/plan/completions";
 import { hasIntervalsKey } from "@/lib/intervals/client";
 import { workMinutes } from "@/lib/plan/library";
 import { lengthLimits, resolveSession } from "@/lib/plan/session";
@@ -61,7 +60,7 @@ async function SessionPageView({
               {date === state.today ? "Ride it on my trainer" : "Do this workout now"}
             </Link>
           )}
-          {session.indoor && <DoneElsewhere date={date} start={planned.start} apps={OTHER_APPS} doneIn={planned.completedIn} />}
+          {session.indoor && <DoneElsewhere date={date} start={planned.start} doneIn={planned.completedIn} />}
         </>
       )}
 
