@@ -53,7 +53,7 @@ describe("admin stats", () => {
     store.runAsAthlete(22, () => store.writeJson("strava-tokens.json", { access_token: "a", refresh_token: "r", expires_at: 0, athlete: { id: 22, firstname: "Sam" } }));
     referral.recordReferrer(22, code);
 
-    const stats = buildAdminStats(now);
+    let stats = buildAdminStats(now);
     expect(stats.summary.riders).toBe(2);
     const a = stats.riders.find((r) => r.athleteId === 11)!;
     expect(a.name).toBe("Anthony B.");
@@ -69,7 +69,11 @@ describe("admin stats", () => {
     expect(stats.dailyActive.at(-1)).toEqual({ date: "2026-10-30", riders: 1 });
     expect(store.runAsAthlete(11, () => seen.loadSeen().days)).toEqual(["2026-10-30"]);
 
-    // The plan built from those rides is measured week by week.
+    // The plan built from those rides is measured week by week, from their first goal (before hosting) on.
+    store.runAsAthlete(11, () => store.writeJson("goals.json", [{ id: "g", name: "Event", type: "event", priority: "A", date: "2027-04-18", createdAt: "2026-08-20T00:00:00.000Z" }]));
+    stats = buildAdminStats(now);
+    expect(stats.weeklyAdherence[0].weekStart >= "2026-08-20").toBe(true);
+    expect(stats.riders.find((r) => r.athleteId === 22)!.weeksCounted).toBe(0);
     expect(stats.weeklyAdherence.length).toBeGreaterThan(0);
     expect(stats.workouts.length).toBeGreaterThan(0);
     expect(stats.summary.adherence8).not.toBeNull();
