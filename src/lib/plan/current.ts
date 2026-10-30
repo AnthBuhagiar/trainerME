@@ -64,6 +64,9 @@ export function loadState() {
   const thisWeekStart = weekStartOf(today);
   const adaptation = adapt({ today, thisWeekStart, phases: summary?.phases ?? [], activities, history, planned });
 
+  // The week before check-ins, away days and same-week adjustments (the admin dashboard compares the two).
+  const basePlan = (weekStart: string): WeekPlan => planWeek(budget, { ...baseContext(weekStart), ...adaptation.context(weekStart) });
+
   const week = (weekStart: string): WeekPlan => {
     const plan = applyCheckIns(applyAway(planWeek(budget, { ...baseContext(weekStart), ...adaptation.context(weekStart) }), away, today), checkIns);
     if (weekStart !== thisWeekStart) return plan;
@@ -71,7 +74,7 @@ export function loadState() {
     return targets ? afterHardRide(spaced, rides, targets.training, today, activities) : spaced;
   };
 
-  return { learnedBudget, chosenDays, away, model, activities, targets, checkIns, now, today, settings, rides, history, current, budget, goal, summary, thisWeekStart, week, adaptation };
+  return { learnedBudget, chosenDays, away, model, activities, targets, checkIns, now, today, settings, rides, history, current, budget, goal, summary, thisWeekStart, week, basePlan, adaptation };
 }
 
 export function nextWeekStart(weekStart: string): string {

@@ -199,6 +199,7 @@ to higher intakes over several weeks.
 |---|---|---|
 | F1 | **Referral codes** | Every rider gets a 4-character code (no look-alike characters, no vowels) to share from Settings, as a code or a sign-in link that fills it in. A new rider enters their recommender's code when they sign up, or once later in Settings before they start paying. Riders see only a count of who joined with their code, never who. *Built; dormant until billing.* |
 | F2 | **Refer six, ride free for 12 months** | When six riders who joined with a rider's code have made their first subscription payment, that rider's subscription is free for 12 months, applied automatically by billing. Each further six paid referrals adds another 12 months, starting when the current free period ends. A reward stays earned if those riders later cancel or leave. *Logic built and tested (`src/lib/referral`); billing calls `recordFirstPayment` and checks `isFreeFromReferrals`.* |
+| F4 | **Admin dashboard** | For the owner only: riders and their referral counts, active riders, how much of the plan is done (%), which sessions get swapped, shortened or moved and why, and website and app traffic by country, page and referrer (Cloudflare, no tracking script). Account and usage only, never power, heart rate, weight, check-in answers or routes. *Data at `/api/admin/stats` (`src/lib/admin`); the dashboard itself is built in Claude for now and moves to the app later.* |
 | F3 | **Low-price subscription** | About A$5.99 a month, well under JOIN and TrainerRoad, with a free hour-power-only tier. Billed on the web first (Stripe or Paddle); Apple in-app purchase only when an iOS app ships. |
 
 ## 3. Roadmap
@@ -259,6 +260,7 @@ Onboarding target for the average rider: **Sign in with Strava → Connect Garmi
 - [ ] Onboarding from a time budget instead of an FTP test.
 - [ ] **F3** pricing: about A$5.99/month, well below JOIN/TrainerRoad; free tier showing hour power only. Web billing first (Stripe or Paddle), then Apple in-app purchase if an iOS app ships.
 - [x] **F1** referral codes and the recommender field at sign-up.
+- [x] **F4** admin data for the owner (`/api/admin/stats`). Next: an `/admin` page in the app.
 - [ ] **F2** refer six, ride free for 12 months: switch on with billing (`BILLING_OPEN` in `src/lib/referral/referral.ts`). Add the reward rules to the terms when subscriptions open.
 - [ ] Coach dashboard; monthly W/kg hour-power leaderboard (estimated, with range).
 - [ ] **Calendar-to-trainer player** (once hosted). *The Bluetooth workout player itself is built (Ride it on my trainer, FTMS ERG control); what remains is the .ics feed linking to it.* Each planned session becomes a calendar event (.ics feed) linking to a built-in workout player, which controls the smart trainer over Bluetooth (ERG mode): "Tap the calendar event, ride the workout, nothing to install." Not offered by JOIN or Strava. Limits: a live feed needs a hosted app; Bluetooth needs Chrome (Android/desktop) or Bluefy on iPhone; usually only one device controls the trainer at a time.

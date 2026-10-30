@@ -5,6 +5,7 @@ import { moveSingleRiderData, ownerId } from "@/lib/auth/owner";
 import { SESSION_COOKIE, verifySession } from "@/lib/auth/session";
 import { multiUser, runAsAthlete } from "@/lib/data/store";
 import { hasAcceptedTerms } from "@/lib/legal/acceptance";
+import { recordSeen } from "@/lib/admin/seen";
 
 /** The athlete signed in on this request (hosted copies only). */
 export async function signedInAthlete(): Promise<number | null> {
@@ -13,7 +14,14 @@ export async function signedInAthlete(): Promise<number | null> {
 
 function enter<T>(athleteId: number, fn: () => T): T {
   if (athleteId === ownerId()) moveSingleRiderData(athleteId);
-  return runAsAthlete(athleteId, fn);
+  return runAsAthlete(athleteId, () => {
+    try {
+      recordSeen(); // the day only, for the owner's active-rider count
+    } catch {
+      // never block a request on it
+    }
+    return fn();
+  });
 }
 
 /**
