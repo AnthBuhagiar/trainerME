@@ -18,9 +18,9 @@ const modelCache = smallCache<{ model: ReturnType<typeof buildModel> | null; his
 
 /** Everything the screens need, read from the local store once per request. */
 export function loadState() {
-  const now = todayLocal();
-  const today = dateOnly(now);
   const settings = loadSettings();
+  const now = todayLocal(settings.timeZone ?? process.env.APP_TIMEZONE);
+  const today = dateOnly(now);
   const rides = loadRides();
   // The estimate only changes with new rides or a new day, so work it out once for both.
   const { model, history } = modelCache(dataDir(), `${rideDataVersion()}:${today}`, () => {

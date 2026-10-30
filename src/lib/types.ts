@@ -38,6 +38,8 @@ export interface Ride extends Activity {
 
 export interface AthleteSettings {
   weightKg: number;
+  /** The rider's time zone (IANA, from their latest Strava activity), so "today" is their today. */
+  timeZone?: string;
   /** FTP the rider has accepted for zones. Never overwritten silently. */
   acceptedFtp: number;
   bikeWeightKg: number;
