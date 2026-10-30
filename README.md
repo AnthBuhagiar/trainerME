@@ -105,9 +105,9 @@ Anyone with Strava can sign in to a hosted Hour Power. Each athlete gets their o
 **Traffic** (website and app, by day, country, page, referrer and device) comes from Cloudflare, which already counts every visit at the edge: no tracking script or cookies. In Cloudflare: **My Profile → API Tokens → Create Token → Custom token**, permission **Zone · Analytics · Read** for the domain's zone. Then add to `/etc/hour-power.env`:
 ```
 CLOUDFLARE_API_TOKEN=<the token>
-CLOUDFLARE_ZONE_ID=<the zone ID, on the domain's Overview page>
+CLOUDFLARE_ZONE_ID=<only if not hourpowerapp.cc: the zone ID, on the domain's Overview page>
 ```
-and `systemctl restart hour-power`. Cloudflare must proxy both addresses (orange cloud) to count them. Active riders are counted from the days each rider opens the app (dates only, kept for 120 days).
+and `systemctl restart hour-power`. `CLOUDFLARE_ZONE_ID` is optional: it defaults to hourpowerapp.cc's zone. Cloudflare must proxy both addresses (orange cloud) to count them. Active riders are counted from the days each rider opens the app (dates only, kept for 120 days).
 
 ### Keep the server patched (whole server)
 Security fixes for Ubuntu, PHP, Node.js and everything else installed with `apt` are applied every 6 hours, and services using an updated library are restarted. If a kernel update needs a reboot, the server reboots at 3:30 am Sydney time, only then. This covers **every app on the Droplet**, so make sure the other apps start on boot (`systemctl is-enabled <service>`).
