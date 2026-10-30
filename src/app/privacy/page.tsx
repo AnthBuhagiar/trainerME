@@ -17,13 +17,15 @@ export default function PrivacyPage() {
       <p>
         A summary of each ride (power curve, averages), the goals, days, away dates and check-ins you enter, and your Strava sign-in tokens. They are
         kept in your own folder on the Hour Power server and used only to show you your estimate and plan. Hour Power also keeps your referral
-        code and, if you entered one, the code of the rider who recommended you.
+        code and, if you entered one, the code of the rider who recommended you, and the dates you open the app (dates only).
       </p>
       <h2 className="label">Who sees it</h2>
       <p>
         Only you. If someone joins with your code, you see a count of riders who joined, never who they are, and they see only the code they
         entered. Your data is never shown to other riders, sold or shared, and isn’t used for advertising or to train AI. The plan is worked out by fixed
-        rules, not an AI service.
+        rules, not an AI service. To run the service, Hour Power’s owner sees an account summary for each rider: first name and last initial, when
+        you joined and last used the app, how many activities synced, how much of the plan was done and which sessions were changed, and referral
+        counts. Never your power, heart rate, weight, check-in answers or routes.
       </p>
       <h2 className="label">Deleting it</h2>
       <p>
