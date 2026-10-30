@@ -93,3 +93,7 @@ export function clearRide(key: string): void {
     // nothing to clear
   }
 }
+
+/** All-targets adjustment: 5% a tap, as often as needed, within a safe -50% to +50%. */
+export const OFFSET_LIMITS = [-50, 50] as const;
+export const adjustOffset = (offset: number, delta: number) => Math.max(OFFSET_LIMITS[0], Math.min(OFFSET_LIMITS[1], offset + delta));
