@@ -15,7 +15,7 @@ import {
   stopOrPause,
 } from "@/lib/player/ftms";
 import { MiniPlayer, miniPlayerSupported, type MiniState } from "@/lib/player/miniPlayer";
-import { clearRide, elapsedAt, emptyRide, end, isRunning, loadRide, pause, record, saveRide, skip, start, type RideState } from "@/lib/player/session";
+import { adjustOffset, clearRide, elapsedAt, emptyRide, end, isRunning, loadRide, pause, record, saveRide, skip, start, type RideState } from "@/lib/player/session";
 import { chooseDevice, connectRemembered, loadSensors } from "@/lib/player/devices";
 import { stepAt, type PlayerStep } from "@/lib/player/steps";
 import { buildTcx } from "@/lib/strava/tcx";
@@ -485,7 +485,7 @@ export function RidePlayer({ name, autoUpload, steps, storageKey, length: length
           error={error}
           onToggle={toggle}
           onSkip={skipStep}
-          onOffset={(d) => setRide((r) => ({ ...r, offset: Math.max(-20, Math.min(10, r.offset + d)) }))}
+          onOffset={(d) => setRide((r) => ({ ...r, offset: adjustOffset(r.offset, d) }))}
           onMinimise={() => setMinimised(true)}
           onConnect={() => connectTrainer()}
           onMini={miniSupported ? openMini : undefined}
@@ -693,11 +693,11 @@ export function RidePlayer({ name, autoUpload, steps, storageKey, length: length
         <div className="flex items-center justify-between gap-3">
           <span className="text-[14px] text-muted">Feeling {offset > 0 ? "strong" : offset < 0 ? "off" : "normal"}? Adjust all targets</span>
           <div className="flex items-center gap-2">
-            <button onClick={() => setRide((r) => ({ ...r, offset: Math.max(-20, r.offset - 5) }))} className="h-10 w-12 rounded-xl border border-line bg-card font-semibold">
+            <button onClick={() => setRide((r) => ({ ...r, offset: adjustOffset(r.offset, -5) }))} className="h-10 w-12 rounded-xl border border-line bg-card font-semibold">
               −5%
             </button>
             <span className="w-10 text-center text-[14px] font-semibold">{offset > 0 ? `+${offset}` : offset}%</span>
-            <button onClick={() => setRide((r) => ({ ...r, offset: Math.min(10, r.offset + 5) }))} className="h-10 w-12 rounded-xl border border-line bg-card font-semibold">
+            <button onClick={() => setRide((r) => ({ ...r, offset: adjustOffset(r.offset, 5) }))} className="h-10 w-12 rounded-xl border border-line bg-card font-semibold">
               +5%
             </button>
           </div>

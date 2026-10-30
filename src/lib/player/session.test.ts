@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { elapsedAt, emptyRide, end, isRunning, pause, record, skip, start } from "@/lib/player/session";
+import { adjustOffset, elapsedAt, emptyRide, end, isRunning, pause, record, skip, start } from "@/lib/player/session";
 
 describe("ride clock", () => {
   test("runs on the wall clock, so time away from the app still counts", () => {
@@ -29,5 +29,17 @@ describe("ride clock", () => {
     s = record(s, 300, { power: 200 });
     expect(s.samples.map((x) => x.t)).toEqual([0, 1, 300]);
     expect(s.samples[0].power).toBe(150);
+  });
+});
+
+describe("adjusting all targets", () => {
+  test("5% a tap, as many times as needed, within -50% to +50%", () => {
+    let o = 0;
+    for (let i = 0; i < 6; i++) o = adjustOffset(o, 5);
+    expect(o).toBe(30);
+    for (let i = 0; i < 20; i++) o = adjustOffset(o, 5);
+    expect(o).toBe(50);
+    for (let i = 0; i < 30; i++) o = adjustOffset(o, -5);
+    expect(o).toBe(-50);
   });
 });
