@@ -23,6 +23,7 @@ function activity(id: number, day: number, sport = "Ride") {
     elapsed_time: 3700,
     total_elevation_gain: 300,
     suffer_score: 50,
+    timezone: "(GMT+10:00) Australia/Sydney",
   };
 }
 
@@ -68,6 +69,7 @@ describe("Strava sync", () => {
     const rides = store.loadRides();
     expect(rides.map((r) => r.id)).toEqual(["1", "3"]);
     expect(rides[0].streams?.powerCurve?.["300"]).toBe(210);
+    expect(store.loadSettings().timeZone).toBe("Australia/Sydney"); // so "today" is the rider's today
     expect(store.loadSettings().weightKg).toBe(77);
   });
 

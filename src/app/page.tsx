@@ -47,7 +47,7 @@ async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: str
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-4 px-5 py-6">
       <header className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-0.5">
-          <div className="label">{new Intl.DateTimeFormat("en-AU", { weekday: "long", day: "numeric", month: "long" }).format(new Date())}</div>
+          <div className="label">{new Intl.DateTimeFormat("en-AU", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${today}T00:00:00Z`))}</div>
           <h1 className="display text-[24px]">
             {tokens?.athlete?.firstname ? `Hi, ${tokens.athlete.firstname}` : "Hour Power"}
           </h1>
