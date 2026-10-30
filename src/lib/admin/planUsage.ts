@@ -79,8 +79,9 @@ export function compareWeeks(base: WeekPlan, given: WeekPlan, doneFlags: boolean
 
 /**
  * The last `weeks` finished weeks for the rider in scope (call inside runAsAthlete).
- * Only weeks starting on or after `since` (when they started using Hour Power)
- * count: before that nobody was following the plan, so it would measure history, not the app.
+ * Only weeks the rider started by the Tuesday of (`since`: when they started using
+ * Hour Power) count: before that nobody was following the plan, so it would measure
+ * history, not the app. Weeks run Sunday to Saturday, so joining on a Monday counts that week.
  */
 export function planUsage(weeks = 8, since?: string): PlanUsage {
   const state = loadState();
@@ -90,7 +91,7 @@ export function planUsage(weeks = 8, since?: string): PlanUsage {
   for (let k = weeks; k >= 1; k--) {
     const ws = addDays(state.thisWeekStart, -7 * k);
     if (!first || addDays(ws, 6) < first) continue;
-    if (since && ws < since.slice(0, 10)) continue;
+    if (since && addDays(ws, 2) < since.slice(0, 10)) continue;
     const given = state.week(ws);
     const review = weekReview(given, state.activities, state.history);
     out.weeks.push({ weekStart: ws, planned: review.planned, done: review.done });
