@@ -14,6 +14,8 @@ export interface WeekReview {
   weekStart: string;
   planned: number;
   done: number;
+  /** For each planned session, in order: was it done? */
+  sessionsDone: boolean[];
   plannedMinutes: number;
   /** Minutes of riding and strength actually done that week. */
   doneMinutes: number;
@@ -48,6 +50,7 @@ export function weekReview(plan: WeekPlan, activities: Activity[], history: Hist
   const used = new Set<number>();
   const credited = new Set<number>();
   let done = 0;
+  const sessionsDone: boolean[] = [];
   for (const s of plan.sessions) {
     let i = kinds.findIndex((k, j) => !used.has(j) && k.kind === s.kind && k.date === s.date);
     if (i < 0) i = kinds.findIndex((k, j) => !used.has(j) && k.kind === s.kind);
@@ -60,6 +63,7 @@ export function weekReview(plan: WeekPlan, activities: Activity[], history: Hist
       used.add(i);
       done++;
     }
+    sessionsDone.push(i >= 0);
   }
   const relevant = kinds.filter((k, i) => k.kind === "ride" || k.kind === "strength" || credited.has(i));
   const other = inWeek
@@ -86,6 +90,7 @@ export function weekReview(plan: WeekPlan, activities: Activity[], history: Hist
     weekStart: plan.weekStart,
     planned,
     done: Math.min(done, planned),
+    sessionsDone,
     plannedMinutes: plan.sessions.reduce((n, s) => n + s.minutes, 0),
     doneMinutes: relevant.reduce((n, k) => n + k.minutes, 0),
     rides: relevant.filter((k) => k.kind === "ride").length,

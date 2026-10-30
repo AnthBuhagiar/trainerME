@@ -99,6 +99,16 @@ Anyone with Strava can sign in to a hosted Hour Power. Each athlete gets their o
 - Data from before this change moves into the first rider's folder on their next visit.
 - The server's `INTERVALS_API_KEY` is only used for the rider who runs the server.
 
+### Admin data (owner only)
+`/api/admin/stats` returns what the admin dashboard shows: riders (first name and last initial, joined, last used, activities synced, goals, referral code and how many riders joined with it), how much of the plan is done each week, which sessions get swapped, shortened or moved and why, and traffic. Account and usage only: never power, heart rate, weight, check-in answers or routes. Open it signed in as the owner (add `?download=1` to save a file); anyone else gets a 404. A tool outside the browser can send `Authorization: Bearer $ADMIN_TOKEN` instead (`ADMIN_TOKEN` in `/etc/hour-power.env`, at least 32 characters: `openssl rand -hex 32`).
+
+**Traffic** (website and app, by day, country, page, referrer and device) comes from Cloudflare, which already counts every visit at the edge: no tracking script or cookies. In Cloudflare: **My Profile → API Tokens → Create Token → Custom token**, permission **Zone · Analytics · Read** for the domain's zone. Then add to `/etc/hour-power.env`:
+```
+CLOUDFLARE_API_TOKEN=<the token>
+CLOUDFLARE_ZONE_ID=<only if not hourpowerapp.cc: the zone ID, on the domain's Overview page>
+```
+and `systemctl restart hour-power`. `CLOUDFLARE_ZONE_ID` is optional: it defaults to hourpowerapp.cc's zone. Cloudflare must proxy both addresses (orange cloud) to count them. Active riders are counted from the days each rider opens the app (dates only, kept for 120 days).
+
 ### Keep the server patched (whole server)
 Security fixes for Ubuntu, PHP, Node.js and everything else installed with `apt` are applied every 6 hours, and services using an updated library are restarted. If a kernel update needs a reboot, the server reboots at 3:30 am Sydney time, only then. This covers **every app on the Droplet**, so make sure the other apps start on boot (`systemctl is-enabled <service>`).
 ```bash
