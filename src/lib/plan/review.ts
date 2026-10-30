@@ -50,8 +50,18 @@ export function weekReview(plan: WeekPlan, activities: Activity[], history: Hist
   const used = new Set<number>();
   const credited = new Set<number>();
   let done = 0;
+  let elsewhereMinutes = 0;
   const sessionsDone: boolean[] = [];
   for (const s of plan.sessions) {
+    if (s.completedIn) {
+      // Done in another app: its ride, if it reached Strava, belongs to this session and nothing else.
+      const j = kinds.findIndex((k, n) => !used.has(n) && k.kind === s.kind && k.date === s.date);
+      if (j >= 0) used.add(j);
+      else elsewhereMinutes += s.minutes;
+      done++;
+      sessionsDone.push(true);
+      continue;
+    }
     let i = kinds.findIndex((k, j) => !used.has(j) && k.kind === s.kind && k.date === s.date);
     if (i < 0) i = kinds.findIndex((k, j) => !used.has(j) && k.kind === s.kind);
     // P18: a run or other cardio that day covers an easy ride.
@@ -92,7 +102,7 @@ export function weekReview(plan: WeekPlan, activities: Activity[], history: Hist
     done: Math.min(done, planned),
     sessionsDone,
     plannedMinutes: plan.sessions.reduce((n, s) => n + s.minutes, 0),
-    doneMinutes: relevant.reduce((n, k) => n + k.minutes, 0),
+    doneMinutes: relevant.reduce((n, k) => n + k.minutes, 0) + elsewhereMinutes,
     rides: relevant.filter((k) => k.kind === "ride").length,
     strength: relevant.filter((k) => k.kind === "strength").length,
     other,

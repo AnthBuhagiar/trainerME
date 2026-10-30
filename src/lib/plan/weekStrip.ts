@@ -78,6 +78,13 @@ export function weekStatus(plan: WeekPlan, activities: Activity[], today: string
     const items: StripItem[] = done.map((a) => ({ icon: activityIcon(a), state: "done", title: a.name, minutes: Math.round(a.movingTime / 60), href: `/activity/${a.id}` }));
     for (const s of plan.sessions.filter((x) => x.date === date)) {
       const match = done.find((a) => !used.has(a) && sameKind(s, a));
+      if (s.completedIn) {
+        // Done in another app: its synced ride (if any) already shows; otherwise show the session as done.
+        covered.add(s);
+        if (match) used.add(match);
+        else items.push({ icon: sessionIcon(s), state: "done", title: `${title(s)} · ${s.completedIn}`, minutes: s.minutes, href: `/session/${s.date}?start=${s.start}`, session: s });
+        continue;
+      }
       if (match) {
         used.add(match);
         covered.add(s);

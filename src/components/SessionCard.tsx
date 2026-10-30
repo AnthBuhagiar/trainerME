@@ -47,7 +47,11 @@ export function SessionCard({
         <span className="display whitespace-nowrap text-[16px]">{length(session.minutes)}</span>
       </div>
       <div className="text-[16px] font-semibold leading-snug">{sessionTitle(session)}</div>
-      {session.adjusted && <div className="text-[13px] font-semibold text-signal-ink">{session.adjusted}</div>}
+      {session.completedIn ? (
+        <div className="text-[13px] font-semibold text-done">✓ Done in {session.completedIn}</div>
+      ) : (
+        session.adjusted && <div className="text-[13px] font-semibold text-signal-ink">{session.adjusted}</div>
+      )}
       {!compact && (showDay || session.fuel) && (
         <div className="text-[13px] text-muted">
           {showDay ? where : ""}

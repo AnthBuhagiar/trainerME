@@ -66,4 +66,13 @@ describe("weekly review", () => {
     ]);
     expect(r.other.map((o) => o.date)).toEqual(["2026-10-14", "2026-10-15", "2026-10-16", "2026-10-17"]);
   });
+
+  test("a trainer workout marked as done in another app counts once, synced or not", () => {
+    const zwift = { ...plan, sessions: plan.sessions.map((x) => (x.date === "2026-10-14" ? { ...x, completedIn: "Zwift" } : x)) };
+    // Not on Strava (yet): done, with the planned minutes.
+    expect(weekReview(zwift, [], null)).toMatchObject({ done: 1, doneMinutes: 60 });
+    // Zwift's ride reached Strava that day: it belongs to the marked session, not a second one.
+    const r = weekReview(zwift, [act("z", "2026-10-14T19:30:00", "VirtualRide", 62)], null);
+    expect(r).toMatchObject({ done: 1, doneMinutes: 62 });
+  });
 });

@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { sessionTitle } from "@/components/SessionCard";
 import { SendExternal } from "@/components/SendExternal";
 import { WorkoutSteps } from "@/components/WorkoutSteps";
+import { DoneElsewhere } from "@/components/DoneElsewhere";
+import { OTHER_APPS } from "@/lib/plan/completions";
 import { hasIntervalsKey } from "@/lib/intervals/client";
 import { workMinutes } from "@/lib/plan/library";
 import { lengthLimits, resolveSession } from "@/lib/plan/session";
@@ -51,7 +53,7 @@ async function SessionPageView({
           <p className="text-[15px] leading-snug">{plain(session.ride.workout.summary)}</p>
           {hourPower > 0 && <WorkoutSteps workout={session.ride.workout} hourPower={hourPower} />}
           {hourPower > 0 && <p className="text-[13px] text-muted">Targets from your {hourPower} W training hour power.</p>}
-          {hourPower > 0 && session.indoor && (
+          {hourPower > 0 && session.indoor && !planned.completedIn && (
             <Link
               href={`/ride/${date}?start=${planned.start}${minutes ? `&minutes=${minutes}` : ""}`}
               className="flex h-14 items-center justify-center rounded-2xl bg-signal-ink text-[17px] font-semibold text-white"
@@ -59,6 +61,7 @@ async function SessionPageView({
               {date === state.today ? "Ride it on my trainer" : "Do this workout now"}
             </Link>
           )}
+          {session.indoor && <DoneElsewhere date={date} start={planned.start} apps={OTHER_APPS} doneIn={planned.completedIn} />}
         </>
       )}
 
@@ -89,7 +92,7 @@ async function SessionPageView({
         </section>
       )}
 
-      {planned.ride && limits && (
+      {planned.ride && limits && !planned.completedIn && (
         <section className="flex flex-col gap-2">
           <h2 className="label">Change length</h2>
           <LengthPicker value={session.minutes} planned={planned.minutes} min={limits.min} max={limits.max} baseHref={`/session/${date}?start=${planned.start}`} />
@@ -100,7 +103,7 @@ async function SessionPageView({
         </section>
       )}
 
-      {session.ride && hourPower > 0 && <SendExternal intervals={hasIntervalsKey()} session={{ date, start: planned.start, minutes }} />}
+      {session.ride && hourPower > 0 && !planned.completedIn && <SendExternal intervals={hasIntervalsKey()} session={{ date, start: planned.start, minutes }} />}
 
       {planned.adjusted && <p className="text-[14px] font-semibold text-signal-ink">{planned.adjusted}</p>}
       <p className="text-[13px] text-muted">{plain(planned.why)}</p>
