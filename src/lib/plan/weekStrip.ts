@@ -21,7 +21,7 @@ export interface StripItem {
   minutes: number;
   /** Planned key sessions are marked. */
   key?: boolean;
-  /** Planned sessions open their page, and missed trainer rides (they can still be ridden). */
+  /** Done activities open their details; planned sessions and missed trainer rides open their page. */
   href?: string;
   session?: PlannedSession;
 }
@@ -75,7 +75,7 @@ export function weekStatus(plan: WeekPlan, activities: Activity[], today: string
     const date = addDays(plan.weekStart, i);
     const done = activities.filter((a) => day(a.startLocal) === date).sort((a, b) => a.startLocal.localeCompare(b.startLocal));
     const used = new Set<Activity>();
-    const items: StripItem[] = done.map((a) => ({ icon: activityIcon(a), state: "done", title: a.name, minutes: Math.round(a.movingTime / 60) }));
+    const items: StripItem[] = done.map((a) => ({ icon: activityIcon(a), state: "done", title: a.name, minutes: Math.round(a.movingTime / 60), href: `/activity/${a.id}` }));
     for (const s of plan.sessions.filter((x) => x.date === date)) {
       const match = done.find((a) => !used.has(a) && sameKind(s, a));
       if (match) {

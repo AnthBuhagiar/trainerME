@@ -24,14 +24,16 @@ export function ChangeList({ entries, limit, detail = true }: { entries: LedgerE
       </div>
       <ol className="flex flex-col divide-y divide-line rounded-2xl border border-line bg-card">
         {shown.map((e) => (
-          <li key={e.rideId} className="flex items-start gap-3 px-4 py-3">
-            <span className={`display w-[4.75rem] shrink-0 whitespace-nowrap text-[16px] ${e.delta > 0 ? "text-done" : e.delta < 0 ? "text-signal-ink" : "text-muted"}`}>{signed(e.delta)}</span>
-            <span className="min-w-0">
-              <span className="block truncate text-[15px] font-semibold">
-                {fmt.format(new Date(dateOnly(e.date)))} · {e.rideName}
+          <li key={e.rideId}>
+            <Link href={`/activity/${e.rideId}`} className="flex items-start gap-3 px-4 py-3">
+              <span className={`display w-[4.75rem] shrink-0 whitespace-nowrap text-[16px] ${e.delta > 0 ? "text-done" : e.delta < 0 ? "text-signal-ink" : "text-muted"}`}>{signed(e.delta)}</span>
+              <span className="min-w-0">
+                <span className="block truncate text-[15px] font-semibold">
+                  {fmt.format(new Date(dateOnly(e.date)))} · {e.rideName}
+                </span>
+                {detail && e.reasons[0] && <span className="block text-[13px] leading-snug text-muted">{e.reasons[0]}</span>}
               </span>
-              {detail && e.reasons[0] && <span className="block text-[13px] leading-snug text-muted">{e.reasons[0]}</span>}
-            </span>
+            </Link>
           </li>
         ))}
       </ol>

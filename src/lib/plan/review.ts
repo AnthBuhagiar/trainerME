@@ -22,7 +22,7 @@ export interface WeekReview {
   rides: number;
   strength: number;
   /** Runs, rows, swims, walks: everything else that week, by day. */
-  other: { date: string; name: string; minutes: number; counted: boolean }[];
+  other: { id: string; date: string; name: string; minutes: number; counted: boolean }[];
   /** Change in estimated hour power across the week (W). */
   change: number | null;
   /** The ride that moved the estimate most, if it went up. */
@@ -69,7 +69,7 @@ export function weekReview(plan: WeekPlan, activities: Activity[], history: Hist
   const other = inWeek
     .map((a, i) => ({ a, i }))
     .filter(({ a }) => isOtherTraining(a))
-    .map(({ a, i }) => ({ date: day(a.startLocal), name: label(a.sportType), minutes: kinds[i].minutes, counted: credited.has(i) }))
+    .map(({ a, i }) => ({ id: a.id, date: day(a.startLocal), name: label(a.sportType), minutes: kinds[i].minutes, counted: credited.has(i) }))
     .sort((a, b) => a.date.localeCompare(b.date));
   const start = history ? estimateOn(history, addDays(plan.weekStart, -1)) : null;
   const end = history ? estimateOn(history, lastDay) : null;
