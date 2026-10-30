@@ -8,6 +8,7 @@ import { adapt, afterHardRide } from "@/lib/plan/adapt";
 import { budgetFromChoices, loadAvailability } from "@/lib/plan/availability";
 import { applyAway, awayWeeks, loadAway } from "@/lib/plan/away";
 import { applyCheckIns, loadCheckIns } from "@/lib/plan/checkin";
+import { applyCompletions, loadCompletions } from "@/lib/plan/completions";
 import { targetsState } from "@/lib/plan/targets";
 import { weekStartOf, phaseOn } from "@/lib/plan/periodise";
 import { spaceStrength } from "@/lib/plan/strengthSpacing";
@@ -60,7 +61,9 @@ export function loadState() {
     };
   };
   // The week as planned, before adapting to what was actually ridden (used to measure what got done).
-  const planned = (weekStart: string): WeekPlan => applyCheckIns(applyAway(planWeek(budget, baseContext(weekStart)), away, today), checkIns);
+  const completions = loadCompletions();
+  const planned = (weekStart: string): WeekPlan =>
+    applyCompletions(applyCheckIns(applyAway(planWeek(budget, baseContext(weekStart)), away, today), checkIns), completions);
   const thisWeekStart = weekStartOf(today);
   const adaptation = adapt({ today, thisWeekStart, phases: summary?.phases ?? [], activities, history, planned });
 
@@ -68,7 +71,10 @@ export function loadState() {
   const basePlan = (weekStart: string): WeekPlan => planWeek(budget, { ...baseContext(weekStart), ...adaptation.context(weekStart) });
 
   const week = (weekStart: string): WeekPlan => {
-    const plan = applyCheckIns(applyAway(planWeek(budget, { ...baseContext(weekStart), ...adaptation.context(weekStart) }), away, today), checkIns);
+    const plan = applyCompletions(
+      applyCheckIns(applyAway(planWeek(budget, { ...baseContext(weekStart), ...adaptation.context(weekStart) }), away, today), checkIns),
+      completions,
+    );
     if (weekStart !== thisWeekStart) return plan;
     const spaced = spaceStrength(plan, activities, today);
     return targets ? afterHardRide(spaced, rides, targets.training, today, activities) : spaced;

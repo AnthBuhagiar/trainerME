@@ -59,4 +59,12 @@ describe("week strip", () => {
     const late = a("2026-10-28", "VirtualRide", { name: "Other", isTrainer: true });
     expect(missedSessions(plan, [late], "2026-10-28", (x) => (x.date === "2026-10-27" ? "Other" : "y")).map((s) => s.date)).toEqual(["2026-10-26"]);
   });
+
+  test("done in another app shows as done, not missed", () => {
+    const marked = { ...plan, sessions: plan.sessions.map((x) => (x.date === "2026-10-27" ? { ...x, completedIn: "MyWhoosh" } : x)) };
+    const { days, covered } = weekStatus(marked, [], "2026-10-28", () => "Threshold");
+    expect(days[2].items).toEqual([expect.objectContaining({ state: "done", title: "Threshold · MyWhoosh" })]);
+    expect([...covered].map((x) => x.date)).toContain("2026-10-27");
+    expect(missedSessions(marked, [], "2026-10-28", () => "x").map((x) => x.date)).toEqual(["2026-10-26"]);
+  });
 });

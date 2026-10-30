@@ -40,6 +40,8 @@ export interface PlannedSession {
   adjusted?: string;
   /** P20: the date it was planned for, when it was moved to another day. */
   movedFrom?: string;
+  /** Marked by the rider as done in another app (Zwift, MyWhoosh…). */
+  completedIn?: string;
 }
 
 export interface WeekPlan {
