@@ -1,5 +1,5 @@
 import {
-  hasRideSummary,
+  needsRideSummary,
   loadRawActivities,
   loadSettings,
   readJson,
@@ -137,7 +137,7 @@ export async function syncStrava(streamBudget = DEFAULT_STREAM_BUDGET): Promise<
     newActivities = await syncActivities();
     // Newest rides first: they matter most for today's estimate.
     const pending = loadRawActivities()
-      .filter((a) => a.source !== "intervals" && a.sport_type.includes("Ride") && !hasRideSummary(a.id))
+      .filter((a) => a.source !== "intervals" && a.sport_type.includes("Ride") && needsRideSummary(a))
       .reverse();
     for (const ride of pending.slice(0, streamBudget)) {
       saveRideSummary(summariseStreams(ride.id, await fetchStreams(ride.id)));
@@ -153,7 +153,7 @@ export async function syncStrava(streamBudget = DEFAULT_STREAM_BUDGET): Promise<
     newActivities,
     totalActivities: all.length,
     streamsFetched,
-    ridesMissingStreams: all.filter((a) => a.source !== "intervals" && a.sport_type.includes("Ride") && !hasRideSummary(a.id)).length,
+    ridesMissingStreams: all.filter((a) => a.source !== "intervals" && a.sport_type.includes("Ride") && needsRideSummary(a)).length,
     rateLimited,
   };
 }

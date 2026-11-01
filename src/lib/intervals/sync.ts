@@ -1,4 +1,4 @@
-import { hasRideSummary, loadRawActivities, saveRawActivities, saveRideSummary, type RawActivity } from "@/lib/data/store";
+import { hasRideSummary, loadRawActivities, needsRideSummary, saveRawActivities, saveRideSummary, type RawActivity } from "@/lib/data/store";
 import { hasIntervalsKey, intervalsGet } from "@/lib/intervals/client";
 import { summariseStreams, type RawStreams } from "@/lib/strava/process";
 
@@ -94,7 +94,7 @@ export async function syncIntervals(streamBudget = DEFAULT_STREAM_BUDGET, now = 
       (s) => s.source !== "intervals" && s.sport_type.includes("Ride") && Math.abs(Date.parse(`${s.start_local}Z`) - Date.parse(`${a.start_local}Z`)) <= 120_000 && hasRideSummary(s.id),
     );
   const pending = merged
-    .filter((a) => a.source === "intervals" && a.sport_type.includes("Ride") && !hasRideSummary(a.id) && !coveredByStrava(a))
+    .filter((a) => a.source === "intervals" && a.sport_type.includes("Ride") && needsRideSummary(a) && !coveredByStrava(a))
     .sort((a, b) => b.start_local.localeCompare(a.start_local));
   let streamsFetched = 0;
   for (const ride of pending.slice(0, streamBudget)) {
