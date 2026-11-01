@@ -1,9 +1,10 @@
 import { describe, expect, test } from "vitest";
-import { bestAverage, normalisedPower, resample, summariseStreams } from "@/lib/strava/process";
+import { bestAverage, normalisedPower, resample, ridingSeconds, summariseStreams } from "@/lib/strava/process";
 
 describe("stream processing", () => {
-  test("resample fills pauses with zeros", () => {
-    expect(resample([0, 1, 4], [100, 110, 120])).toEqual([100, 110, 0, 0, 120]);
+  test("resample holds a reading across short recording gaps, and treats long ones as stops", () => {
+    expect(resample([0, 1, 4], [100, 110, 120])).toEqual([100, 110, 110, 110, 120]);
+    expect(resample([0, 40], [100, 120])).toEqual([100, ...new Array(39).fill(0), 120]);
   });
 
   test("best average finds the strongest window", () => {
@@ -37,5 +38,18 @@ describe("stream processing", () => {
     const s = summariseStreams("2", { time: [0, 1, 2], heartrate: [120, 121, 122] });
     expect(s.power_curve).toBeUndefined();
     expect(s.avg_hr).toBe(121);
+  });
+
+  test("a ride recorded every 7 seconds (smart recording) reads its real power", () => {
+    // 3 hours at a steady 135 W, one reading every 7 s, with a 10-minute café stop in the middle.
+    const time: number[] = [];
+    for (let t = 0; t < 5400; t += 7) time.push(t);
+    for (let t = 6000; t < 11400; t += 7) time.push(t);
+    const s = summariseStreams("sparse", { time, watts: time.map(() => 135) });
+    expect(s.avg_watts).toBe(135); // was about 19 W with the gaps read as zero
+    expect(s.np).toBeGreaterThan(125);
+    expect(s.kj).toBeGreaterThanOrEqual(1455); // 135 W for 3 h ≈ 1458 kJ
+    expect(s.power_curve?.["3600"]).toBe(135);
+    expect(ridingSeconds(time)).toBeLessThan(10900); // the stop isn't riding time
   });
 });

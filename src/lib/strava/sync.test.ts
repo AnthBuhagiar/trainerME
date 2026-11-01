@@ -86,4 +86,17 @@ describe("Strava sync", () => {
     const result = await syncStrava(1);
     expect(result).toMatchObject({ streamsFetched: 1, ridesMissingStreams: 1 });
   });
+
+  test("rides summarised before sparse recordings were handled are read again; good ones aren't", async () => {
+    await syncStrava();
+    // Ride 1: an old summary from an every-few-seconds device (few samples for an hour): re-read.
+    store.saveRideSummary({ id: "1", samples: 500, avg_watts: 20 });
+    // Ride 3: an old summary with a sample every second: fine as it is.
+    store.saveRideSummary({ id: "3", samples: 3600, avg_watts: 210 });
+    streamCalls = 0;
+    await syncStrava();
+    expect(streamCalls).toBe(1);
+    expect(store.loadRides().find((r) => r.id === "1")?.streams?.avgWatts).toBe(210);
+    expect(store.loadRides().find((r) => r.id === "3")?.streams?.avgWatts).toBe(210);
+  });
 });

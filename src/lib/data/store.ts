@@ -102,6 +102,8 @@ export interface RawActivity {
 export interface RawRideSummary {
   id: string;
   samples: number;
+  /** Processing version (see SUMMARY_VERSION in lib/strava/process.ts). */
+  v?: number;
   avg_watts?: number;
   np?: number | null;
   kj?: number;
@@ -234,6 +236,18 @@ export function saveRideSummary(summary: RawRideSummary): void {
 
 export function hasRideSummary(id: string): boolean {
   return fs.existsSync(file("rides", `${id}.json`));
+}
+
+/**
+ * Does this ride need its streams read (again)? Yes if it has no summary, or
+ * an old one from a device that records every few seconds: those were summarised
+ * with the gaps as zero watts, which made power far too low.
+ */
+export function needsRideSummary(activity: RawActivity): boolean {
+  const summary = readJson<RawRideSummary | null>(path.join("rides", `${activity.id}.json`), null);
+  if (!summary) return true;
+  if ((summary.v ?? 1) >= 2) return false;
+  return summary.samples < 0.8 * activity.summary.moving_time;
 }
 
 export function loadRides(): Ride[] {

@@ -16,12 +16,38 @@ export interface RawStreams {
 
 export const CURVE_DURATIONS = [5, 15, 30, 60, 120, 300, 480, 600, 1200, 1800, 3600];
 
-/** Expand to 1 Hz, filling recording gaps (pauses) with zeros, as power meters do. */
-export function resample(time: number[], values: (number | null)[]): number[] {
+/**
+ * Gaps up to this long are the device recording less often than once a second
+ * (Garmin "smart recording" and similar save every few seconds): the reading
+ * holds until the next one. Longer gaps are stops (auto-pause): zero, and not
+ * riding time.
+ */
+export const MAX_HOLD_S = 30;
+
+/** Summaries made before sparse recordings were handled; older ones from such devices are re-read. */
+export const SUMMARY_VERSION = 2;
+
+/** Expand to 1 Hz: each reading holds until the next, across gaps up to MAX_HOLD_S; longer gaps (stops) are zero. */
+export function resample(time: number[], values: (number | null)[], maxHold = MAX_HOLD_S): number[] {
   if (!time.length) return [];
   const out = new Array<number>(time[time.length - 1] + 1).fill(0);
-  for (let i = 0; i < time.length; i++) out[time[i]] = values[i] ?? 0;
+  for (let i = 0; i < time.length; i++) {
+    const v = values[i] ?? 0;
+    const next = i + 1 < time.length ? time[i + 1] : time[i] + 1;
+    const until = next - time[i] <= maxHold ? next : time[i] + 1;
+    for (let t = time[i]; t < until; t++) out[t] = v;
+  }
   return out;
+}
+
+/** Seconds spent riding: recorded seconds, plus gaps short enough to be the device, not a stop. */
+export function ridingSeconds(time: number[], maxHold = MAX_HOLD_S): number {
+  let s = 0;
+  for (let i = 0; i < time.length; i++) {
+    const gap = i + 1 < time.length ? time[i + 1] - time[i] : 1;
+    s += gap <= maxHold ? gap : 1;
+  }
+  return s;
 }
 
 export function bestAverage(series: number[], window: number): number | null {
@@ -56,16 +82,18 @@ function mean(xs: number[]): number | undefined {
 
 export function summariseStreams(id: string, streams: RawStreams): RawRideSummary {
   const time = streams.time ?? [];
-  const summary: RawRideSummary = { id, samples: time.length };
+  const summary: RawRideSummary = { id, samples: time.length, v: SUMMARY_VERSION };
   const watts = streams.watts;
   const hr = streams.heartrate;
   let power: number[] | null = null;
 
   if (watts && watts.some((w) => w)) {
     power = resample(time, watts);
-    summary.avg_watts = Math.round(power.reduce((a, b) => a + b, 0) / power.length);
+    const joules = power.reduce((a, b) => a + b, 0);
+    // Average over riding time (stops left out), as Strava does: total work / time riding.
+    summary.avg_watts = Math.round(joules / Math.max(1, ridingSeconds(time)));
     summary.np = normalisedPower(power);
-    summary.kj = Math.round(power.reduce((a, b) => a + b, 0) / 1000);
+    summary.kj = Math.round(joules / 1000);
     summary.power_curve = Object.fromEntries(CURVE_DURATIONS.map((d) => [String(d), bestAverage(power!, d)]));
   }
 
