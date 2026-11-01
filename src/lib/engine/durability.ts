@@ -1,5 +1,6 @@
 import type { Ride } from "@/lib/types";
 import { daysBetween } from "@/lib/engine/dates";
+import { isRolling } from "@/lib/engine/terrain";
 
 /**
  * Durability: how well power holds up late in long rides. It decides how close
@@ -37,6 +38,8 @@ export function durabilityAt(rides: Ride[], asOf: string): Durability {
     if (age < 0 || age > WINDOW_DAYS || ride.movingTime < LONG_RIDE_SECONDS) continue;
     const minutes = ride.streams?.minutes;
     if (!minutes || minutes.length < 120) continue;
+    // On rolling routes the hills decide where the best 20 min falls, not fatigue.
+    if (isRolling(minutes)) continue;
     const cut = Math.floor(minutes.length * 0.6);
     const early = best20(minutes.slice(0, cut));
     const late = best20(minutes.slice(cut));

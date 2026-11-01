@@ -34,7 +34,7 @@ Ranked by defensibility (how hard they are to copy).
 ### A. The hour-power engine (high defensibility)
 | # | Feature | What it does |
 |---|---|---|
-| A1 | **Every-ride hour-power estimate** | Combines (1) best 3–30 min efforts on a 2-parameter critical-power curve, (2) watts at a fixed heart rate on steady minutes compared with the rider's own history, and (3) how well power holds up in the last hour of long rides, which adjusts FTP to hour power. |
+| A1 | **Every-ride hour-power estimate** | Combines (1) best 3–30 min efforts on a 2-parameter critical-power curve, (2) watts at a fixed heart rate on steady minutes compared with the rider's own history, and (3) how well power holds up in the last hour of long rides, which adjusts FTP to hour power. Minutes just after a harder effort are skipped (heart rate lags), and rolling routes count half for heart rate and are left out of durability. |
 | A2 | **Condition-corrected heart rate** | Corrects heart rate for temperature (Strava `temp` stream), recent load and time of day before comparing, so a hot day doesn't read as lost fitness. |
 | A3 | **Indoor/outdoor power reconciliation** | Learns the offset between power sources (e.g. outdoor CoospoRide vs indoor trainer) from heart rate at matched power, giving one consistent hour-power number. |
 | A4 | **Confidence range** | Shows "201 W ± 6 W". The range narrows with fresh strong evidence and widens as evidence ages. |

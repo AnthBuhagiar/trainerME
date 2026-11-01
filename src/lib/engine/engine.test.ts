@@ -5,6 +5,8 @@ import { rideEfficiency, steadyBlocks } from "@/lib/engine/hrEfficiency";
 import { durabilityAt } from "@/lib/engine/durability";
 import { buildModel, estimateAt } from "@/lib/engine/hourPower";
 import { addDays } from "@/lib/engine/dates";
+import { efficiencyAt } from "@/lib/engine/hrEfficiency";
+import { isRolling, variabilityIndex } from "@/lib/engine/terrain";
 
 const CP = 250;
 const W_PRIME = 20_000;
@@ -68,6 +70,19 @@ describe("heart-rate efficiency", () => {
     expect(steadyBlocks([[200, 140], [400, 150], [410, 155]])).toEqual([[410, 155]]);
   });
 
+  test("minutes just after a harder effort are skipped while heart rate catches up", () => {
+    const m: [number, number][] = [[250, 170], [150, 165], [150, 160], [150, 150], [150, 148]];
+    expect(steadyBlocks(m)).toEqual([[150, 150], [150, 148]]);
+  });
+
+  test("rolling rides count half in the efficiency average", () => {
+    const effs = [
+      { rideId: "a", date: "2026-10-01T08:00:00", indoor: false, powerAtRefHr: 150, blocks: 40, rolling: false },
+      { rideId: "b", date: "2026-10-02T08:00:00", indoor: false, powerAtRefHr: 120, blocks: 40, rolling: true },
+    ];
+    expect(efficiencyAt(effs, "2026-10-03T08:00:00", false)!.power).toBeCloseTo(140, 5);
+  });
+
   test("lower heart rate at the same power means more watts at reference HR", () => {
     const base = rideEfficiency(ride("a", "2026-10-01T08:00:00"), 140)!;
     const fitter = rideEfficiency(ride("b", "2026-10-02T08:00:00", { hrOffset: -5 }), 140)!;
@@ -75,7 +90,24 @@ describe("heart-rate efficiency", () => {
   });
 });
 
+describe("rolling routes", () => {
+  test("steady power is not rolling; short climbs and descents are", () => {
+    const flat: [number, number][] = Array.from({ length: 60 }, (_, i) => [180 + (i % 3) * 5, 150]);
+    const hilly: [number, number][] = Array.from({ length: 60 }, (_, i) => [i % 4 < 2 ? 240 : 80, 160]);
+    expect(variabilityIndex(flat)!).toBeLessThan(1.05);
+    expect(isRolling(flat)).toBe(false);
+    expect(isRolling(hilly)).toBe(true);
+  });
+});
+
 describe("durability", () => {
+  test("long rolling rides are left out", () => {
+    const minutes: [number, number][] = Array.from({ length: 180 }, (_, i) => [i % 4 < 2 ? 240 : 80, 160]);
+    const r = ride("a", "2026-10-01T08:00:00", { movingTime: 3 * 3600 });
+    r.streams = { ...r.streams, minutes };
+    expect(durabilityAt([r], "2026-10-02T08:00:00").rides).toBe(0);
+  });
+
   test("defaults when there are no long rides", () => {
     expect(durabilityAt([ride("a", "2026-10-01T08:00:00")], "2026-10-02T08:00:00").factor).toBe(0.97);
   });
