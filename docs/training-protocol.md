@@ -32,7 +32,7 @@ Intensities are shares of the rider's **training hour power** (their accepted be
 | **P9 · Strength twice a week** | Heavy in base and build, maintenance in event-specific, mobility only in the taper. Kept off the day before a quality ride where the week allows. | E5 |
 | **P10 · The long ride** | Weekly, in the rider's own long slot: steady in base, efforts in the final hour from build on, and about once a month stretched to 3.5 h. | E6, E7 |
 | **P11 · Taper** | The last two weeks: volume down to about 60%, then about 45% in event week. Short efforts stay at target power. | E4 |
-| **P12 · Life first** | Plans fit inside the rider's week: the days they choose in Settings, or, until they do, the usual week read from their own ride history. Missed sessions are never carried over. Away days, busy days and check-ins adjust that day only, or re-plan the block for a week away. | E8, E9 (Cove: consistency over volume) |
+| **P12 · Life first** | Plans fit inside the rider's week: the days they choose in Settings, or, until they do, the usual week read from their own ride history. Missed sessions are never carried over. Away days, busy days and check-ins adjust that day only (a day off shifts the rest of the week to the next free day), or re-plan the block for a week away. | E8, E9 (Cove: consistency over volume) |
 
 ## Adapting to what was actually done (P13–P20)
 
@@ -54,7 +54,7 @@ Today ("Plan adjusted") and on the Week tab.
 | **P20 · Strength days apart** | Strength logged yesterday, strength logged earlier than planned, or two strength sessions planned on neighbouring days | No strength is proposed the day after a strength day. Strength done early covers the next planned session. A session next to another strength day moves to a later free day that isn't, preferring one that isn't the day before a key or long ride; if there's none left that week, it's dropped. When building the week, two strength days are never placed back to back while another day is free. Riders can still lift two days running if their week needs it; the plan just never suggests it. | E5 |
 
 These come on top of the day-level rules that were already there:
-- **Check-ins:** tired or short on time.
+- **Check-ins:** tired, short on time, or a day off. A day off moves that day's session and each one after it along a day, up to the next free day that week; with no free day left, the session comes off the plan.
 - **Away and busy days** (P12).
 - **Training targets:** asked before they change.
 - **The usual week:** re-read from the last 12 weeks of rides, so it follows changes in routine.

@@ -93,7 +93,7 @@ function WeekPageView() {
   const isSunday = recapWeekStart === state.thisWeekStart;
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 px-5 py-6">
-      <Watermark src="/photos/gong-finish.jpg" position="50% 35%" />
+      <Watermark src="/photos/gong-finish.jpg" position="53% 50%" zoom={1.4} origin="55% 134%" />
       <header className="flex flex-col gap-1 pt-12">
         <h1 className="display text-[24px]">Week</h1>
         <p className="text-[15px] text-muted">
