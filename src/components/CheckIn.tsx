@@ -8,6 +8,7 @@ const OPTIONS: { mood: Mood; label: string }[] = [
   { mood: "good", label: "Good to go" },
   { mood: "tired", label: "Tired" },
   { mood: "short", label: "Short on time" },
+  { mood: "off", label: "Need a day off" },
 ];
 
 export function CheckIn({ date, mood }: { date: string; mood?: Mood }) {
@@ -24,13 +25,13 @@ export function CheckIn({ date, mood }: { date: string; mood?: Mood }) {
   return (
     <div className="flex flex-col gap-1.5 px-1">
       <span className="text-[14px] text-muted">How are you today?</span>
-      <div className="flex gap-2" role="group" aria-label="Check-in">
+      <div className="grid grid-cols-2 gap-2" role="group" aria-label="Check-in">
         {OPTIONS.map((o) => (
           <button
             key={o.mood}
             onClick={() => pick(o.mood)}
             aria-pressed={current === o.mood}
-            className={`h-10 flex-1 rounded-full border text-[14px] font-semibold ${
+            className={`h-10 rounded-full border text-[14px] font-semibold ${
               current === o.mood ? "border-asphalt bg-asphalt text-chalk dark:border-chalk dark:bg-chalk dark:text-asphalt" : "border-line bg-card"
             }`}
           >

@@ -41,6 +41,7 @@ async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: str
   const recap = budget.slots.length && (endOfWeek || today === thisWeekStart) ? weekReview(week(recapWeekStart), activities, history) : null;
   const strip = budget.slots.length ? weekStrip(week(thisWeekStart), activities, today, sessionTitle) : null;
   const movedAway = upcoming.find((s) => s.movedFrom === today);
+  const dayOff = checkIns[today] === "off";
 
   const { goal: target } = ringGoal(summary?.targetHourPower, current?.hourPower ?? 0);
 
@@ -97,16 +98,20 @@ async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: str
             </a>
           </div>
           {strip && <WeekStrip days={strip} />}
-          <h2 className="label mt-2 px-1">{todays.length ? "Today" : "Today · rest"}</h2>
-          {todays.length > 0 && <CheckIn date={today} mood={checkIns[today]} />}
+          <h2 className="label mt-2 px-1">{todays.length ? "Today" : dayOff ? "Today · day off" : "Today · rest"}</h2>
+          {(todays.length > 0 || dayOff) && <CheckIn date={today} mood={checkIns[today]} />}
           {todays.map((s) => (
             <SessionCard key={s.start} session={s} today={today} showDay={false} />
           ))}
           {!todays.length && (
             <p className="px-1 text-[15px] text-muted">
-              {movedAway
-                ? `Strength moved to ${dayLabel(movedAway.date, today)}: you did it yesterday. Rest today.`
-                : "Rest day."}
+              {dayOff
+                ? movedAway
+                  ? `Day off. ${sessionTitle(movedAway)} moved to ${dayLabel(movedAway.date, today)}.`
+                  : "Day off. Today's session is off the plan this week."
+                : movedAway
+                  ? `Strength moved to ${dayLabel(movedAway.date, today)}: you did it yesterday. Rest today.`
+                  : "Rest day."}
             </p>
           )}
         </section>
