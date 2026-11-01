@@ -14,7 +14,7 @@ export function WeekReviewCard({ review, next, title }: { review: WeekReview; ne
   const long = rides.length ? rides.reduce((a, b) => (b.minutes > a.minutes ? b : a)) : null;
   const key = rides.find((s) => s !== long && s.ride!.workout.intensity === "hard");
   return (
-    <section className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-5">
+    <section className="flex flex-col gap-3 rounded-3xl border border-line bg-card/80 p-5 backdrop-blur-sm">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="label">{title}</h2>
         <span className="text-[13px] text-muted">from {fmt.format(new Date(`${review.weekStart}T00:00:00Z`))}</span>

@@ -1,3 +1,4 @@
+import { Watermark } from "@/components/Watermark";
 import { asAthlete } from "@/lib/auth/athlete";
 import { SendExternal } from "@/components/SendExternal";
 import { DoneList, type DoneItem } from "@/components/DoneList";
@@ -92,10 +93,11 @@ function WeekPageView() {
   const isSunday = recapWeekStart === state.thisWeekStart;
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 px-5 py-6">
-      <header className="flex flex-col gap-1">
+      <Watermark src="/photos/gong-finish.jpg" position="50% 35%" />
+      <header className="flex flex-col gap-1 pt-12">
         <h1 className="display text-[24px]">Week</h1>
         <p className="text-[15px] text-muted">
-          <a href="/settings#days" className="font-semibold text-signal-ink">
+          <a href="/settings#days" className="font-semibold text-signal-ink dark:text-signal">
             Change my days
           </a>
         </p>
