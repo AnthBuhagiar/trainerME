@@ -2,6 +2,7 @@ import type { Ride } from "@/lib/types";
 import { daysBetween } from "@/lib/engine/dates";
 import { estimateAt, type HourPowerEstimate, type Model } from "@/lib/engine/hourPower";
 import { rideEfficiency } from "@/lib/engine/hrEfficiency";
+import { isRolling } from "@/lib/engine/terrain";
 
 /**
  * Timeline of the hour-power estimate plus a "why it changed" ledger.
@@ -56,6 +57,9 @@ function explain(model: Model, ride: Ride, before: HourPowerEstimate | null, aft
           `${where} 6-week average (${pct > 0 ? "+" : ""}${pct.toFixed(0)}%)`,
       );
     }
+  }
+  if (eff && !ride.indoor && isRolling(ride.streams?.minutes)) {
+    reasons.push("Rolling route: heart rate counts half and it's left out of durability");
   }
   return reasons;
 }

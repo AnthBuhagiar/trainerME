@@ -1,5 +1,6 @@
 import type { Ride } from "@/lib/types";
 import { daysBetween } from "@/lib/engine/dates";
+import { isRolling, ROLLING_EFFICIENCY_WEIGHT } from "@/lib/engine/terrain";
 
 /**
  * Heart-rate efficiency: watts produced at a fixed reference heart rate.
@@ -12,15 +13,25 @@ const MIN_BLOCK_POWER = 60;
 const MIN_BLOCK_HR = 95;
 const STEADY_TOLERANCE = 0.15;
 const MIN_BLOCKS = 8;
+/** Minutes after a big drop in power are skipped: heart rate takes ~2 min to come down. */
+const HR_LAG_MINUTES = 2;
 
-/** Minutes where power was steady relative to the previous minute (HR has settled). */
+/**
+ * Minutes where power was steady relative to the previous minute and had not
+ * just dropped from a harder effort, so heart rate has settled.
+ */
 export function steadyBlocks(minutes: [number, number][]): [number, number][] {
   const out: [number, number][] = [];
   for (let i = 1; i < minutes.length; i++) {
     const [p, hr] = minutes[i];
     const prev = minutes[i - 1][0];
     if (p < MIN_BLOCK_POWER || hr < MIN_BLOCK_HR || prev <= 0) continue;
-    if (Math.abs(p - prev) / prev <= STEADY_TOLERANCE) out.push([p, hr]);
+    if (Math.abs(p - prev) / prev > STEADY_TOLERANCE) continue;
+    let lagging = false;
+    for (let j = 1; j <= HR_LAG_MINUTES && i - j >= 0; j++) {
+      if (minutes[i - j][0] > p * (1 + STEADY_TOLERANCE)) lagging = true;
+    }
+    if (!lagging) out.push([p, hr]);
   }
   return out;
 }
@@ -43,6 +54,8 @@ export interface RideEfficiency {
   /** Estimated power (W) at the reference heart rate. */
   powerAtRefHr: number;
   blocks: number;
+  /** Rolling route: counts for less in the trailing average. */
+  rolling: boolean;
 }
 
 /**
@@ -70,7 +83,8 @@ export function rideEfficiency(ride: Ride, refHr: number): RideEfficiency | null
   const slope = sxx / n >= 9 ? sxy / sxx : 0;
   const powerAtRefHr = slope > 0 ? my + slope * (refHr - mx) : (my / mx) * refHr;
   if (!Number.isFinite(powerAtRefHr) || powerAtRefHr <= 0) return null;
-  return { rideId: ride.id, date: ride.startLocal, indoor: ride.indoor, powerAtRefHr, blocks: n };
+  const rolling = isRolling(ride.streams?.minutes);
+  return { rideId: ride.id, date: ride.startLocal, indoor: ride.indoor, powerAtRefHr, blocks: n, rolling };
 }
 
 export interface EfficiencySnapshot {
@@ -78,6 +92,7 @@ export interface EfficiencySnapshot {
   /** Block-weighted mean power at reference HR over the trailing window. */
   power: number;
   rides: number;
+  /** Weighted block count (rolling rides count half). */
   blocks: number;
 }
 
@@ -94,8 +109,9 @@ export function efficiencyAt(
     if (e.indoor !== indoor) continue;
     const age = daysBetween(e.date, asOf);
     if (age < 0 || age > EFFICIENCY_WINDOW_DAYS) continue;
-    wsum += e.blocks;
-    psum += e.powerAtRefHr * e.blocks;
+    const weight = e.blocks * (e.rolling ? ROLLING_EFFICIENCY_WEIGHT : 1);
+    wsum += weight;
+    psum += e.powerAtRefHr * weight;
     rides++;
   }
   if (!rides) return null;
