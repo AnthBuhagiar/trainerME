@@ -1,3 +1,4 @@
+import { Watermark } from "@/components/Watermark";
 import { asAthlete } from "@/lib/auth/athlete";
 import Link from "next/link";
 import { AwayManager } from "@/components/AwayManager";
@@ -90,14 +91,15 @@ function PlanPageView() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 px-5 py-6">
-      <header className="flex flex-col gap-1">
+      <Watermark src="/photos/forest-climb.jpg" position="50% 45%" />
+      <header className="flex flex-col gap-1 pt-12">
         <h1 className="display text-[24px]">Plan</h1>
         <p className="text-[15px] text-muted">
           {summary.goal.name} · {day(summary.goal.date)} · {summary.weeksToGo} weeks
         </p>
       </header>
 
-      <section className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-5">
+      <section className="flex flex-col gap-3 rounded-3xl border border-line bg-card/80 p-5 backdrop-blur-sm">
         <div className="flex h-3 gap-1">
           {summary.phases.map((p) => (
             <div key={p.start} style={{ flexGrow: p.weeks }} className={`rounded-full ${PHASE_COLOUR[p.name]}`} title={p.label} />

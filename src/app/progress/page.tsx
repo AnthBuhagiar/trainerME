@@ -1,3 +1,4 @@
+import { Watermark } from "@/components/Watermark";
 import { asAthlete } from "@/lib/auth/athlete";
 import { ChangeList } from "@/components/ChangeList";
 import { HourPowerChart } from "@/components/HourPowerChart";
@@ -34,11 +35,12 @@ function ProgressPageView() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 px-5 py-6">
-      <h1 className="display text-[24px]">Progress</h1>
+      <Watermark src="/photos/climb-effort.jpg" position="30% 30%" />
+      <h1 className="display pt-12 text-[24px]">Progress</h1>
 
       <dl className="grid grid-cols-2 gap-3">
         {stats.map(([label, value, sub]) => (
-          <div key={label} className="rounded-2xl border border-line bg-card px-4 py-3">
+          <div key={label} className="rounded-2xl border border-line bg-card/80 px-4 py-3 backdrop-blur-sm">
             <dt className="label">{label}</dt>
             <dd className="display text-[24px]">{value}</dd>
             {sub && <dd className="text-[13px] text-muted">{sub}</dd>}

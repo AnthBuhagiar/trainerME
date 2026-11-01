@@ -1,3 +1,4 @@
+import { Watermark } from "@/components/Watermark";
 import { asAthlete } from "@/lib/auth/athlete";
 import { ChangeList } from "@/components/ChangeList";
 import { CheckIn } from "@/components/CheckIn";
@@ -45,6 +46,7 @@ async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: str
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-4 px-5 py-6">
+      <Watermark src="/photos/bridge.jpg" position="38% 40%" tint="signal" />
       <header className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-0.5">
           <div className="label">{new Intl.DateTimeFormat("en-AU", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${today}T00:00:00Z`))}</div>
@@ -62,7 +64,7 @@ async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: str
       </header>
 
       {current ? (
-        <section className="flex flex-col items-center gap-3 rounded-3xl bg-asphalt p-5 text-chalk">
+        <section className="flex flex-col items-center gap-3 rounded-3xl bg-asphalt/80 p-5 text-chalk backdrop-blur-sm">
           <HourRing hourPower={current.hourPower} low={current.low} high={current.high} goal={target} />
           <div className="flex w-full justify-between text-[13px]" style={{ color: "#B9C4D0" }}>
             <span className="flex items-center gap-1.5 whitespace-nowrap">

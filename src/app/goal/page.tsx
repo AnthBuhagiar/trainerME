@@ -1,3 +1,4 @@
+import { Watermark } from "@/components/Watermark";
 import { asAthlete } from "@/lib/auth/athlete";
 import { GoalForm } from "@/components/GoalForm";
 import { HourRing } from "@/components/HourRing";
@@ -16,12 +17,13 @@ function GoalPageView() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 px-5 py-6">
-      <header className="flex flex-col gap-1">
+      <Watermark src="/photos/bowral-finish.jpg" position="52% 30%" tint="goal" />
+      <header className="flex flex-col gap-1 pt-16">
         <h1 className="display text-[24px]">{goal ? goal.name : "Set a goal"}</h1>
       </header>
 
       {summary && current && (
-        <section className="flex items-center gap-4 rounded-3xl bg-asphalt p-4 text-chalk">
+        <section className="flex items-center gap-4 rounded-3xl bg-asphalt/80 p-4 text-chalk backdrop-blur-sm">
           <HourRing hourPower={current.hourPower} low={current.low} high={current.high} goal={summary.targetHourPower} size={128} />
           <div className="flex min-w-0 flex-col gap-1">
             <span className="label" style={{ color: "var(--goal)" }}>

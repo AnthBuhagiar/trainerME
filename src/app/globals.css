@@ -66,3 +66,16 @@ body {
   text-transform: uppercase;
   color: var(--muted);
 }
+
+/* Page photos (Watermark): faint, black and white, fading out by mid-screen. Fainter on a light background. */
+.watermark {
+  opacity: 0.16;
+  filter: contrast(1.15); /* the photos are stored black and white */
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 40%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 40%, transparent 100%);
+}
+.watermark-goal { background: linear-gradient(180deg, rgba(56, 189, 248, 0.6), rgba(56, 189, 248, 0.1)); }
+.watermark-signal { background: linear-gradient(180deg, rgba(255, 106, 26, 0.25), transparent); }
+@media (prefers-color-scheme: dark) {
+  .watermark { opacity: 0.32; }
+}
