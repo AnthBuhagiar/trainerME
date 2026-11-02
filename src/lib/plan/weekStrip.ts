@@ -61,6 +61,8 @@ export function weekStrip(plan: WeekPlan, activities: Activity[], today: string,
 /** The strip's days, plus which planned sessions are already done (on their day or another). */
 export function weekStatus(plan: WeekPlan, activities: Activity[], today: string, title: (s: PlannedSession) => string) {
   const covered = new Set<PlannedSession>();
+  /** The activity that did each planned session, where there is one. */
+  const doneBy = new Map<Activity, PlannedSession>();
   const weekEnd = addDays(plan.weekStart, 6);
   const inWeek = activities.filter((a) => day(a.startLocal) >= plan.weekStart && day(a.startLocal) <= weekEnd);
   // Done early or late: a ride this week named like the session, not on its own day.
@@ -68,7 +70,10 @@ export function weekStatus(plan: WeekPlan, activities: Activity[], today: string
   const doneElsewhere = (s: PlannedSession) => {
     const name = title(s);
     const a = name && inWeek.find((x) => !elsewhere.has(x) && day(x.startLocal) !== s.date && sameKind(s, x) && x.name === name);
-    if (a) elsewhere.add(a);
+    if (a) {
+      elsewhere.add(a);
+      doneBy.set(a, s);
+    }
     return !!a;
   };
   const days = Array.from({ length: 7 }, (_, i): StripDay => {
@@ -81,13 +86,17 @@ export function weekStatus(plan: WeekPlan, activities: Activity[], today: string
       if (s.completedIn) {
         // Done in another app: its synced ride (if any) already shows; otherwise show the session as done.
         covered.add(s);
-        if (match) used.add(match);
+        if (match) {
+          used.add(match);
+          doneBy.set(match, s);
+        }
         else items.push({ icon: sessionIcon(s), state: "done", title: `${title(s)} · done in ${s.completedIn}`, minutes: s.minutes, href: `/session/${s.date}?start=${s.start}`, session: s });
         continue;
       }
       if (match) {
         used.add(match);
         covered.add(s);
+        doneBy.set(match, s);
         continue;
       }
       if (doneElsewhere(s)) {
@@ -112,7 +121,7 @@ export function weekStatus(plan: WeekPlan, activities: Activity[], today: string
     }
     return { date, today: date === today, items };
   });
-  return { days, covered };
+  return { days, covered, doneBy };
 }
 
 /** Sessions earlier this week that nothing on Strava covers (the Week tab lists the trainer rides, which can still be ridden). */

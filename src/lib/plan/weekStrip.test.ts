@@ -60,6 +60,16 @@ describe("week strip", () => {
     expect(missedSessions(plan, [late], "2026-10-28", (x) => (x.date === "2026-10-27" ? "Other" : "y")).map((s) => s.date)).toEqual(["2026-10-26"]);
   });
 
+  test("knows which planned session each activity did, on its day or another", () => {
+    const strength = a("2026-10-26", "WeightTraining");
+    const early = a("2026-10-28", "VirtualRide", { name: "Thu ride", isTrainer: true });
+    const run = a("2026-10-25", "Run");
+    const { doneBy } = weekStatus(plan, [run, strength, early], "2026-10-28", (x) => (x.date === "2026-10-29" ? "Thu ride" : "x"));
+    expect(doneBy.get(strength)?.date).toBe("2026-10-26");
+    expect(doneBy.get(early)?.date).toBe("2026-10-29");
+    expect(doneBy.has(run)).toBe(false); // unplanned
+  });
+
   test("done in another app shows as done, not missed", () => {
     const marked = { ...plan, sessions: plan.sessions.map((x) => (x.date === "2026-10-27" ? { ...x, completedIn: "MyWhoosh" } : x)) };
     const { days, covered } = weekStatus(marked, [], "2026-10-28", () => "Threshold");

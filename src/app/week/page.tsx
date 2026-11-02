@@ -67,7 +67,7 @@ function Week({
 }
 
 /** Everything on Strava this week so far, newest first; a run that stood in for an easy ride says so. */
-function doneThisWeek(plan: WeekPlan, activities: Activity[], today: string, other: WeekReview["other"]): DoneItem[] {
+function doneThisWeek(plan: WeekPlan, activities: Activity[], today: string, other: WeekReview["other"], doneBy: Map<Activity, PlannedSession>): DoneItem[] {
   const end = addDays(plan.weekStart, 6);
   const last = end < today ? end : today;
   return activities
@@ -80,6 +80,7 @@ function doneThisWeek(plan: WeekPlan, activities: Activity[], today: string, oth
       minutes: Math.round(a.movingTime / 60),
       icon: activityIcon(a),
       note: other.find((o) => o.id === a.id)?.counted ? "counted as that day’s easy ride" : undefined,
+      planned: doneBy.has(a) ? { title: sessionTitle(doneBy.get(a)!), minutes: doneBy.get(a)!.minutes } : undefined,
     }));
 }
 
@@ -90,6 +91,7 @@ function WeekPageView() {
   const recapWeekStart = reviewWeekStart(state.today, state.thisWeekStart);
   const review = weekReview(state.week(recapWeekStart), state.activities, state.history);
   const isSunday = recapWeekStart === state.thisWeekStart;
+  const status = weekStatus(thisWeek, state.activities, state.today, sessionTitle);
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 px-5 py-6">
       <Watermark src="/photos/gong-finish.jpg" position="53% 50%" zoom={1.4} origin="55% 134%" />
@@ -102,9 +104,9 @@ function WeekPageView() {
         </p>
       </header>
       <WeekReviewCard review={review} next={isSunday ? next : undefined} title={isSunday ? "Your week" : "Last week"} />
-      <Week plan={thisWeek} title="This week" today={state.today} away={state.away} done={doneThisWeek(thisWeek, state.activities, state.today, weekReview(thisWeek, state.activities, state.history).other)}
+      <Week plan={thisWeek} title="This week" today={state.today} away={state.away} done={doneThisWeek(thisWeek, state.activities, state.today, weekReview(thisWeek, state.activities, state.history).other, status.doneBy)}
         missed={missedSessions(thisWeek, state.activities, state.today, sessionTitle).filter((s) => s.ride && s.indoor)}
-        covered={weekStatus(thisWeek, state.activities, state.today, sessionTitle).covered}
+        covered={status.covered}
       />
       <Week plan={next} title="Next week" today={state.today} away={state.away} />
       <SendExternal intervals={hasIntervalsKey()} />
