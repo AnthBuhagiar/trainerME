@@ -74,7 +74,8 @@ export function writeJson(rel: string, value: unknown): void {
 
 function writeFileAtomic(target: string, value: unknown): void {
   fs.mkdirSync(path.dirname(target), { recursive: true });
-  const tmp = `${target}.tmp`;
+  // A name of its own, so two saves of the same file at once can't take each other's temporary file.
+  const tmp = `${target}.${process.pid}.${crypto.randomUUID()}.tmp`;
   fs.writeFileSync(tmp, JSON.stringify(value, null, 2));
   fs.renameSync(tmp, target);
 }
