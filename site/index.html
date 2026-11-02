@@ -223,6 +223,38 @@ td.us{color:var(--fg)}
 @media (max-width:860px){.life{grid-template-columns:1fr 1fr}}
 @media (max-width:520px){.life{grid-template-columns:1fr}}
 
+/* price comparison */
+.cmp{display:flex;flex-direction:column;gap:18px}
+.cmp-head{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between}
+.cmp-toggle{display:inline-flex;border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
+.cmp-toggle button{appearance:none;border:0;background:none;color:var(--mute);font:600 .88rem/1 var(--body);padding:9px 14px;border-radius:7px;cursor:pointer}
+.cmp-toggle button[aria-pressed="true"]{background:var(--fg);color:var(--ink)}
+.key{display:inline-block;width:12px;height:12px;border-radius:3px;margin:0 6px -1px 0}
+.key.them{background:var(--mute)}.key.hp{background:var(--hp)}
+.legend .key.hp{margin-left:10px}
+.cmp-rows{display:flex;flex-direction:column}
+.cmp-row{display:grid;grid-template-columns:200px 1fr 92px;gap:18px;align-items:center;padding:14px 0;border-top:1px solid var(--line)}
+.cmp-row>*{min-width:0}
+.cmp-name{display:flex;flex-direction:column;gap:2px}
+.cmp-name b{font-weight:600}
+.cmp-name span{font-size:.82rem;color:var(--mute)}
+.cmp-bars{display:flex;flex-direction:column;gap:6px}
+.cmp-bar{display:flex;align-items:center;gap:10px}
+.cmp-bar i{display:block;flex:none;height:14px;border-radius:0 4px 4px 0;transition:width .5s ease;min-width:4px}
+.cmp-bar.them i{background:var(--mute)}
+.cmp-bar.hp i{background:var(--hp)}
+.cmp-bar span{flex:none;font:600 .82rem var(--mono);white-space:nowrap;color:var(--soft)}
+.cmp-bar.hp span{color:var(--hp)}
+.cmp-bar em{font-style:normal}
+.cmp-pct{text-align:right;display:flex;flex-direction:column;gap:2px}
+.cmp-pct b{font:800 italic 1.7rem/1 var(--display);font-stretch:112%}
+.cmp-pct span{font:500 .7rem var(--mono);color:var(--mute);letter-spacing:.06em;text-transform:uppercase}
+.cmp-save{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px;border-top:1px solid var(--line);padding-top:16px}
+.cmp-save .k{color:var(--soft)}
+.cmp-save b{font:800 italic 2rem/1 var(--display);font-stretch:112%;color:var(--hp)}
+@media (max-width:640px){.cmp-row{grid-template-columns:1fr auto;gap:10px 14px}.cmp-bars{grid-column:1/-1;grid-row:2}.cmp-pct{grid-row:1;grid-column:2}}
+@media (prefers-reduced-motion:reduce){.cmp-bar i{transition:none}}
+
 /* pricing */
 .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .plan{border:1px solid var(--line);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:10px;background:var(--panel)}
@@ -605,9 +637,69 @@ main,footer{position:relative;z-index:1}
     </div>
 
     <div class="stats">
-      <div class="stat"><b>Under <em>half</em></b><span>the monthly price of the leading adaptive planner, even in our dearest countries</span></div>
+      <div class="stat"><b>Under <em>half</em></b><span>the monthly price of the leading adaptive planner, even in our dearest countries. <a href="#compare" data-scroll>See the comparison</a></span></div>
       <div class="stat"><b class="num">33</b><span>currencies priced locally; everywhere else pays in US dollars</span></div>
       <div class="stat"><b>Free</b><span>for every beta rider until billing opens</span></div>
+    </div>
+
+
+    <div class="stack" id="compare">
+      <div class="eyebrow">Price comparison</div>
+      <h2>Hour Power costs a fraction of the alternatives.</h2>
+      <p>Each row compares a competitor with Hour Power in the same currency. Hour Power is 5.99 a month or 59 a year in both US dollars and euros.</p>
+      <div class="panel cmp">
+        <div class="cmp-head">
+          <div class="cmp-toggle" role="group" aria-label="Billing period">
+            <button type="button" id="cmp-m" aria-pressed="true">Monthly</button>
+            <button type="button" id="cmp-y" aria-pressed="false">Yearly</button>
+          </div>
+          <div class="legend"><span class="key them"></span>Competitor <span class="key hp"></span>Hour Power</div>
+        </div>
+        <div class="cmp-rows">
+<div class="cmp-row" data-m="29.99" data-y="299.99">
+  <div class="cmp-name"><b>Zwift Plus</b><span>Indoor platform with coaching</span></div>
+  <div class="cmp-bars">
+    <div class="cmp-bar them"><i></i><span class="num"><em class="cy">US$</em><em class="v"></em></span></div>
+    <div class="cmp-bar hp"><i></i><span class="num"><em class="cy">US$</em><em class="v"></em></span></div>
+  </div>
+  <div class="cmp-pct num"><b></b><span>of the price</span></div>
+</div>
+<div class="cmp-row" data-m="21.99" data-y="209.99">
+  <div class="cmp-name"><b>TrainerRoad</b><span>Adaptive training plans</span></div>
+  <div class="cmp-bars">
+    <div class="cmp-bar them"><i></i><span class="num"><em class="cy">US$</em><em class="v"></em></span></div>
+    <div class="cmp-bar hp"><i></i><span class="num"><em class="cy">US$</em><em class="v"></em></span></div>
+  </div>
+  <div class="cmp-pct num"><b></b><span>of the price</span></div>
+</div>
+<div class="cmp-row" data-m="19.99" data-y="199.99">
+  <div class="cmp-name"><b>Zwift</b><span>Indoor platform</span></div>
+  <div class="cmp-bars">
+    <div class="cmp-bar them"><i></i><span class="num"><em class="cy">US$</em><em class="v"></em></span></div>
+    <div class="cmp-bar hp"><i></i><span class="num"><em class="cy">US$</em><em class="v"></em></span></div>
+  </div>
+  <div class="cmp-pct num"><b></b><span>of the price</span></div>
+</div>
+<div class="cmp-row" data-m="19.95" data-y="134.99">
+  <div class="cmp-name"><b>TrainingPeaks Premium</b><span>Training log and analysis</span></div>
+  <div class="cmp-bars">
+    <div class="cmp-bar them"><i></i><span class="num"><em class="cy">US$</em><em class="v"></em></span></div>
+    <div class="cmp-bar hp"><i></i><span class="num"><em class="cy">US$</em><em class="v"></em></span></div>
+  </div>
+  <div class="cmp-pct num"><b></b><span>of the price</span></div>
+</div>
+<div class="cmp-row" data-m="16.99" data-y="119.99">
+  <div class="cmp-name"><b>JOIN</b><span>Adaptive training plans</span></div>
+  <div class="cmp-bars">
+    <div class="cmp-bar them"><i></i><span class="num"><em class="cy">€</em><em class="v"></em></span></div>
+    <div class="cmp-bar hp"><i></i><span class="num"><em class="cy">€</em><em class="v"></em></span></div>
+  </div>
+  <div class="cmp-pct num"><b></b><span>of the price</span></div>
+</div>
+        </div>
+        <div class="cmp-save" aria-live="polite"><span class="k" id="cmp-save-k">Against TrainerRoad, on monthly plans, a rider saves</span><b class="num" id="cmp-save"></b></div>
+      </div>
+      <p class="ex" style="line-height:1.6">PRICES FROM EACH COMPANY'S US OR EURO PRICING, CHECKED 3 NOV 2026. PRICES CHANGE, AND WHAT EACH PLAN INCLUDES DIFFERS. PRODUCT NAMES BELONG TO THEIR OWNERS.</p>
     </div>
 
     <div class="stack">
@@ -769,6 +861,30 @@ main,footer{position:relative;z-index:1}
   }
   window.addEventListener("hashchange",show);
   show();
+})();
+
+(function(){
+  var HP={m:5.99,y:59}, rows=document.querySelectorAll(".cmp-row"), mb=document.getElementById("cmp-m"), yb=document.getElementById("cmp-y");
+  function fmt(v){return v%1?v.toFixed(2):String(v);}
+  function draw(per){
+    var max=0; rows.forEach(function(r){max=Math.max(max,+r.dataset[per]);});
+    rows.forEach(function(r){
+      var them=+r.dataset[per], hp=HP[per], bars=r.querySelectorAll(".cmp-bar");
+      bars[0].querySelector("i").style.width=(them/max*66)+"%";
+      bars[1].querySelector("i").style.width=(hp/max*66)+"%";
+      bars[0].querySelector(".v").textContent=fmt(them);
+      bars[1].querySelector(".v").textContent=fmt(hp);
+      r.querySelector(".cmp-pct b").textContent=Math.round(hp/them*100)+"%";
+    });
+    var save=per==="m"?(21.99-5.99)*12:(209.99-59);
+    document.getElementById("cmp-save").textContent="US$"+fmt(Math.round(save*100)/100)+" a year";
+    document.getElementById("cmp-save-k").textContent="Against TrainerRoad, on "+(per==="m"?"monthly":"yearly")+" plans, a rider saves";
+    mb.setAttribute("aria-pressed",per==="m");yb.setAttribute("aria-pressed",per==="y");
+  }
+  mb.addEventListener("click",function(){draw("m");});
+  yb.addEventListener("click",function(){draw("y");});
+  draw("m");
+  document.querySelectorAll("a[data-scroll]").forEach(function(a){a.addEventListener("click",function(e){e.preventDefault();var t=document.querySelector(a.getAttribute("href"));if(t)t.scrollIntoView({behavior:"smooth",block:"start"});});});
 })();
 </script>
 
