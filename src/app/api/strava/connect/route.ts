@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { TERMS_COOKIE } from "@/lib/legal/terms";
 import { normalizeCode, ownerOfCode, REFERRAL_COOKIE } from "@/lib/referral/referral";
-import { appUrl, authorizeUrl, hasCredentials } from "@/lib/strava/client";
+import { appUrl, authorizeUrl, hasCredentials, STATE_COOKIE } from "@/lib/strava/client";
 
 export const runtime = "nodejs";
 
@@ -19,7 +19,10 @@ export function GET(req: NextRequest) {
   if (ref && (!code || ownerOfCode(code) === null)) {
     return NextResponse.redirect(`${appUrl()}/login?error=code&ref=${encodeURIComponent(ref.slice(0, 8))}`);
   }
-  const res = NextResponse.redirect(authorizeUrl());
+  // A random value only this browser holds: the callback refuses a sign-in it didn't start.
+  const state = crypto.randomUUID();
+  const res = NextResponse.redirect(authorizeUrl(state));
+  res.cookies.set(STATE_COOKIE, state, { httpOnly: true, secure: appUrl().startsWith("https://"), sameSite: "lax", path: "/", maxAge: 30 * 60 });
   if (code) {
     res.cookies.set(REFERRAL_COOKIE, code, { httpOnly: true, secure: appUrl().startsWith("https://"), sameSite: "lax", path: "/", maxAge: 30 * 60 });
   }

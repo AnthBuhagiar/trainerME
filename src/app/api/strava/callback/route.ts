@@ -5,7 +5,7 @@ import { runAsAthlete } from "@/lib/data/store";
 import { acceptTerms } from "@/lib/legal/acceptance";
 import { TERMS_COOKIE, TERMS_VERSION } from "@/lib/legal/terms";
 import { ensureReferralCode, recordReferrer, REFERRAL_COOKIE } from "@/lib/referral/referral";
-import { appUrl, exchangeCode, REQUIRED_SCOPES, saveTokens } from "@/lib/strava/client";
+import { appUrl, exchangeCode, REQUIRED_SCOPES, saveTokens, STATE_COOKIE } from "@/lib/strava/client";
 
 export const runtime = "nodejs";
 
@@ -14,6 +14,11 @@ export async function GET(req: NextRequest) {
   const params = req.nextUrl.searchParams;
   const code = params.get("code");
   const granted = (params.get("scope") ?? "").split(",");
+  // Only finish a sign-in this browser started (stops a link signing someone into another account).
+  const state = req.cookies.get(STATE_COOKIE)?.value;
+  if (!state || params.get("state") !== state) {
+    return NextResponse.redirect(authEnabled() ? `${appUrl()}/login?error=expired` : `${appUrl()}/?strava=expired`);
+  }
   if (params.get("error") || !code) {
     return NextResponse.redirect(authEnabled() ? `${appUrl()}/login?error=declined` : `${appUrl()}/?strava=declined`);
   }
@@ -47,6 +52,7 @@ export async function GET(req: NextRequest) {
   const res = NextResponse.redirect(`${appUrl()}/?strava=connected`);
   res.cookies.delete(TERMS_COOKIE);
   res.cookies.delete(REFERRAL_COOKIE);
+  res.cookies.delete(STATE_COOKIE);
   res.cookies.set(SESSION_COOKIE, await createSession(athleteId), {
     httpOnly: true,
     secure: appUrl().startsWith("https://"),

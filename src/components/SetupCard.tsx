@@ -6,6 +6,7 @@ interface Props {
 
 const NOTICES: Record<string, string> = {
   declined: "Strava access wasn’t approved. Tap Connect Strava to try again.",
+  expired: "That Strava connection didn’t start here or took too long. Tap Connect Strava again.",
   "no-credentials": "Strava keys not found yet. Add the two secrets (step 1), then restart the codespace.",
   "missing-scope": "Please tick every permission on Strava’s screen so Hour Power can read your rides.",
 };

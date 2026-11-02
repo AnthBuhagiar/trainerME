@@ -40,6 +40,7 @@ function json(body: unknown, status = 200) {
 describe("Strava sync", () => {
   let streamCalls = 0;
   let rateLimitAfter = Infinity;
+  let listed = [activity(1, 1), activity(2, 2, "WeightTraining"), activity(3, 3)];
 
   beforeEach(() => {
     fs.rmSync(dir, { recursive: true, force: true });
@@ -47,11 +48,12 @@ describe("Strava sync", () => {
     store.writeJson("strava-tokens.json", { access_token: "a", refresh_token: "r", expires_at: Date.now() / 1000 + 3600 });
     streamCalls = 0;
     rateLimitAfter = Infinity;
+    listed = [activity(1, 1), activity(2, 2, "WeightTraining"), activity(3, 3)];
     vi.stubGlobal("fetch", async (url: string) => {
       const u = new URL(url);
       if (u.pathname.endsWith("/athlete")) return json({ weight: 77, ftp: 208 });
       if (u.pathname.endsWith("/athlete/activities")) {
-        return json(u.searchParams.get("page") === "1" ? [activity(1, 1), activity(2, 2, "WeightTraining"), activity(3, 3)] : []);
+        return json(u.searchParams.get("page") === "1" ? listed : []);
       }
       if (u.pathname.includes("/streams")) {
         if (++streamCalls > rateLimitAfter) return json({ message: "Rate Limit Exceeded" }, 429);
@@ -98,5 +100,18 @@ describe("Strava sync", () => {
     expect(streamCalls).toBe(1);
     expect(store.loadRides().find((r) => r.id === "1")?.streams?.avgWatts).toBe(210);
     expect(store.loadRides().find((r) => r.id === "3")?.streams?.avgWatts).toBe(210);
+  });
+
+  test("a ride deleted on Strava leaves Hour Power; older history and Intervals.icu rides stay", async () => {
+    await syncStrava();
+    const raw = store.loadRawActivities();
+    store.saveRawActivities([
+      { ...raw[0], id: "old", start_local: "2026-08-01T07:00:00" }, // long before the re-read week
+      { ...raw[0], id: "i9", source: "intervals", start_local: "2026-10-03T09:00:00" },
+      ...raw,
+    ]);
+    listed = [activity(1, 1), activity(2, 2, "WeightTraining")]; // ride 3 deleted on Strava
+    await syncStrava();
+    expect(store.loadRawActivities().map((a) => a.id).sort()).toEqual(["1", "2", "i9", "old"]);
   });
 });

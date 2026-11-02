@@ -87,14 +87,22 @@ async function syncActivities(): Promise<number> {
   const after = latest ? Math.floor(Date.parse(`${latest}Z`) / 1000) - 7 * 86_400 : 0;
   let added = 0;
   let newest: StravaActivity | undefined;
+  const listed = new Set<string>();
   for (let page = 1; ; page++) {
     const batch = await stravaGet<StravaActivity[]>("/athlete/activities", { per_page: PAGE_SIZE, page, after });
     for (const a of batch) {
       if (!newest || a.start_date_local > newest.start_date_local) newest = a;
+      listed.add(String(a.id));
       if (!byId.has(String(a.id))) added++;
       byId.set(String(a.id), { ...byId.get(String(a.id)), ...toRaw(a) });
     }
     if (batch.length < PAGE_SIZE) break;
+  }
+  // Rides deleted on Strava (a duplicate upload, say) go here too. Strava filters by UTC start and
+  // start_local is local time, so keep a day's margin at the edge of the re-read week.
+  if (after) {
+    const from = new Date((after + 86_400) * 1000).toISOString().slice(0, 19);
+    for (const [id, a] of byId) if (a.source !== "intervals" && a.start_local >= from && !listed.has(id)) byId.delete(id);
   }
   const merged = [...byId.values()].sort((a, b) => a.start_local.localeCompare(b.start_local));
   saveRawActivities(merged);

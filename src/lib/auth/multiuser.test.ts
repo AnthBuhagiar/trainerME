@@ -47,11 +47,13 @@ describe("several athletes on one server", () => {
 
   test("the first athlete owns the server and gets the data from before", () => {
     fs.writeFileSync(path.join(dir, "goals.json"), "[]");
+    fs.writeFileSync(path.join(dir, "referral-codes.json"), '{"codes":{}}');
     expect(owner.claimOwner(1)).toBe(1);
     expect(owner.claimOwner(2)).toBe(1);
     expect(owner.moveSingleRiderData(1)).toBe(1);
     expect(fs.existsSync(path.join(dir, "athletes", "1", "goals.json"))).toBe(true);
     expect(fs.existsSync(path.join(dir, "owner.json"))).toBe(true);
+    expect(fs.existsSync(path.join(dir, "referral-codes.json"))).toBe(true); // server-wide: stays put
     expect(owner.athleteIds().sort()).toEqual([1, 2]);
   });
 
