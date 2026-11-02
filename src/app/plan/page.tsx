@@ -6,12 +6,18 @@ import { kindOn } from "@/lib/plan/away";
 import { loadState, nextWeekStart } from "@/lib/plan/current";
 import type { PhaseName } from "@/lib/plan/periodise";
 import type { WeekPlan } from "@/lib/plan/week";
-import { length } from "@/lib/ui/format";
+import { ActivityIcon } from "@/components/ActivityIcon";
+import { sessionTitle } from "@/components/SessionCard";
+import { sessionIcon } from "@/lib/plan/weekStrip";
+import { dayLabel, length } from "@/lib/ui/format";
 
 export const dynamic = "force-dynamic";
 
 const fmt = new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", timeZone: "UTC" });
 const day = (iso: string) => fmt.format(new Date(`${iso}T00:00:00Z`));
+
+/** Weeks this far ahead (0 = this week) show their days; later ones just the sessions, as days can still change. */
+const DAYS_AHEAD = 2;
 
 const PHASE_COLOUR: Record<PhaseName, string> = {
   base: "bg-muted",
@@ -56,36 +62,70 @@ function PlanPageView() {
   for (let m = state.thisWeekStart; m <= summary.goal.date; m = nextWeekStart(m)) weeks.push(state.week(m));
 
   const row = (w: WeekPlan, i: number) => {
-            const line = weekLine(w);
-            const current = w.weekStart === state.thisWeekStart;
-            const eventWeek = i === weeks.length - 1;
-            const detail = [
-              line.key.join(" + ") || null,
-              line.long ? `long ride ${length(line.long.minutes)}${line.long.fuel ? ` at ${line.long.fuel.gramsPerHour} g/h` : ""}` : null,
-              line.strength ? `${line.strength}× ${w.phase === "taper" ? "mobility" : "strength"}` : null,
-              awayDays(w.weekStart) ? `away ${awayDays(w.weekStart)} ${awayDays(w.weekStart) === 1 ? "day" : "days"}` : null,
-            ].filter(Boolean);
-            return (
-              <li key={w.weekStart} className="flex gap-3 px-4 py-3">
-                <span className={`w-1 shrink-0 rounded-full ${PHASE_COLOUR[w.phase]} ${w.recovery ? "opacity-40" : ""}`} />
-                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-[15px] font-semibold">
-                      {day(w.weekStart)}
-                      {current && <span className="text-signal-ink"> · this week</span>}
-                    </span>
-                    <span className="display whitespace-nowrap text-[15px]">{length(line.total)}</span>
-                  </div>
-                  <span className="label">{eventWeek ? "Event week" : w.label}</span>
-                  <span className="text-[13px] leading-snug text-muted">{detail.join(" · ")}</span>
-                  {eventWeek && (
-                    <span className="text-[13px] font-semibold text-signal-ink">
-                      {summary.goal.name} · {day(summary.goal.date)}
-                    </span>
+    const line = weekLine(w);
+    const current = w.weekStart === state.thisWeekStart;
+    const eventWeek = i === weeks.length - 1;
+    const withDays = i <= DAYS_AHEAD;
+    const detail = [
+      line.key.join(" + ") || null,
+      line.long ? `long ride ${length(line.long.minutes)}${line.long.fuel ? ` at ${line.long.fuel.gramsPerHour} g/h` : ""}` : null,
+      line.strength ? `${line.strength}× ${w.phase === "taper" ? "mobility" : "strength"}` : null,
+      awayDays(w.weekStart) ? `away ${awayDays(w.weekStart)} ${awayDays(w.weekStart) === 1 ? "day" : "days"}` : null,
+    ].filter(Boolean);
+    return (
+      <li key={w.weekStart}>
+        <details className="group">
+          <summary className="flex cursor-pointer list-none gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+            <span className={`w-1 shrink-0 rounded-full ${PHASE_COLOUR[w.phase]} ${w.recovery ? "opacity-40" : ""}`} />
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-[15px] font-semibold">
+                  {day(w.weekStart)}
+                  {current && <span className="text-signal-ink"> · this week</span>}
+                </span>
+                <span className="flex items-baseline gap-2">
+                  <span className="display whitespace-nowrap text-[15px]">{length(line.total)}</span>
+                  <span aria-hidden="true" className="text-[13px] text-muted transition-transform group-open:rotate-180">▾</span>
+                </span>
+              </div>
+              <span className="label">{eventWeek ? "Event week" : w.label}</span>
+              <span className="text-[13px] leading-snug text-muted">{detail.join(" · ")}</span>
+              {eventWeek && (
+                <span className="text-[13px] font-semibold text-signal-ink">
+                  {summary.goal.name} · {day(summary.goal.date)}
+                </span>
+              )}
+            </div>
+          </summary>
+          <ul className="flex flex-col gap-1 px-4 pb-3 pl-8">
+            {w.sessions.length === 0 && <li className="text-[14px] text-muted">No sessions planned.</li>}
+            {w.sessions.map((s) => {
+              const body = (
+                <>
+                  <ActivityIcon icon={sessionIcon(s)} size={18} />
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    {withDays && <span className="label">{dayLabel(s.date, state.today)}</span>}
+                    <span className="text-[15px] font-semibold leading-snug">{sessionTitle(s)}</span>
+                  </span>
+                  <span className="display whitespace-nowrap text-[14px]">{length(s.minutes)}</span>
+                </>
+              );
+              return (
+                <li key={`${s.date}-${s.start}`}>
+                  {withDays ? (
+                    <Link href={`/session/${s.date}?start=${s.start}`} className="flex items-center gap-3 py-1.5">
+                      {body}
+                    </Link>
+                  ) : (
+                    <div className="flex items-center gap-3 py-1.5">{body}</div>
                   )}
-                </div>
-              </li>
-            );
+                </li>
+              );
+            })}
+          </ul>
+        </details>
+      </li>
+    );
   };
   const SHOWN = 6;
 
