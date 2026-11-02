@@ -32,7 +32,8 @@ export function athleteIds(): number[] {
   }
 }
 
-const KEEP_AT_TOP = new Set([FILE, "athletes"]);
+// Server-wide records stay at the top (referral-codes.json: every rider's code).
+const KEEP_AT_TOP = new Set([FILE, "athletes", "referral-codes.json"]);
 let migrated = false;
 
 /**

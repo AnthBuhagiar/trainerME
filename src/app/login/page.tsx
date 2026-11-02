@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 
 const NOTICES: Record<string, string> = {
   declined: "Strava sign-in wasn’t approved.",
+  expired: "That sign-in didn’t start here or took too long. Sign in again.",
   "missing-scope": "Hour Power needs to read your activities. Sign in again and leave the boxes ticked.",
   full: "Hour Power is full for now. Try again later.",
   code: "That recommender code isn’t one we know. Check it, or leave the box empty.",

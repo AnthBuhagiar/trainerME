@@ -62,7 +62,10 @@ export function hasCredentials(): boolean {
   return !!process.env.STRAVA_CLIENT_ID && !!process.env.STRAVA_CLIENT_SECRET;
 }
 
-export function authorizeUrl(): string {
+/** Cookie holding the random value sent to Strava with sign-in, checked when Strava sends the rider back. */
+export const STATE_COOKIE = "hp_oauth";
+
+export function authorizeUrl(state: string): string {
   const { clientId } = credentials();
   const params = new URLSearchParams({
     client_id: clientId,
@@ -70,6 +73,7 @@ export function authorizeUrl(): string {
     response_type: "code",
     approval_prompt: "auto",
     scope: STRAVA_SCOPES,
+    state,
   });
   return `${OAUTH}/authorize?${params}`;
 }
