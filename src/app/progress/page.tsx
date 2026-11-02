@@ -3,6 +3,7 @@ import { asAthlete } from "@/lib/auth/athlete";
 import { ChangeList } from "@/components/ChangeList";
 import { HourPowerChart } from "@/components/HourPowerChart";
 import { backtest } from "@/lib/engine/backtest";
+import { daysBetween } from "@/lib/engine/dates";
 import { loadState } from "@/lib/plan/current";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +25,7 @@ function ProgressPageView() {
   }
   const hp = current.hourPower;
   const test = model ? backtest(model) : null;
-  const sixWeeksAgo = [...history.points].reverse().find((p) => Date.parse(p.date) <= Date.parse(now) - 42 * 86_400_000);
+  const sixWeeksAgo = [...history.points].reverse().find((p) => daysBetween(p.date, now) >= 42);
   const target = summary?.targetHourPower;
   const stats: [string, string, string?][] = [
     ["Now", `${Math.round(hp)} W`, `${(hp / settings.weightKg).toFixed(2)} W/kg`],

@@ -7,7 +7,7 @@ import { loadState } from "@/lib/plan/current";
 
 export const dynamic = "force-dynamic";
 
-const fmt = new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric" });
+const fmt = new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 
 function AccuracyPageView() {
   const { model } = loadState();

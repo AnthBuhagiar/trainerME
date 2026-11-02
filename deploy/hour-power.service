@@ -8,6 +8,8 @@ User=hourpower
 WorkingDirectory=/opt/hour-power/current
 EnvironmentFile=/etc/hour-power.env
 Environment=NODE_ENV=production
+# Belt and braces: date maths is zone-proof (src/lib/engine/dates.ts), but keep the process on UTC so logs and any fallback are predictable. Riders' "today" comes from their own Strava time zone.
+Environment=TZ=UTC
 Environment=HOSTNAME=127.0.0.1
 Environment=TRAINERME_DATA_DIR=/opt/hour-power/data
 ExecStart=/usr/bin/node --max-old-space-size=256 server.js
