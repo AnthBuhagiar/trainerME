@@ -21,7 +21,7 @@ import { lastSyncedAt } from "@/lib/strava/sync";
 
 export const dynamic = "force-dynamic";
 
-const fmtDate = new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short" });
+const fmtDate = new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", timeZone: "UTC" });
 
 async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: string }> }) {
   const { strava: notice } = await searchParams;
@@ -124,8 +124,8 @@ async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: str
           )}
           <div className="text-[13px] text-muted">
             {summary.phase
-              ? `${summary.phase.label} until ${fmtDate.format(new Date(`${summary.phase.end}T00:00:00`))}`
-              : `Plan starts ${fmtDate.format(new Date(`${summary.phases[0].start}T00:00:00`))}`}{" "}
+              ? `${summary.phase.label} until ${fmtDate.format(new Date(`${summary.phase.end}T00:00:00Z`))}`
+              : `Plan starts ${fmtDate.format(new Date(`${summary.phases[0].start}T00:00:00Z`))}`}{" "}
             · see the plan →
           </div>
         </a>

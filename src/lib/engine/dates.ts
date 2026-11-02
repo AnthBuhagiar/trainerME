@@ -1,12 +1,25 @@
 const DAY_MS = 86_400_000;
 
-/** Whole-ish days from a to b (b - a), using the local date-time strings as-is. */
-export function daysBetween(a: string, b: string): number {
-  return (Date.parse(b) - Date.parse(a)) / DAY_MS;
+/**
+ * Milliseconds for a wall-clock string ("YYYY-MM-DD" or "YYYY-MM-DDTHH:MM:SS"),
+ * read as if it were UTC. Ride times and plan dates are the rider's local wall
+ * clock with no zone attached, so date maths must never pass through the
+ * server's own time zone: on a server set to Sydney, Date.parse would shift
+ * every result by the offset. Strings that already carry a zone are left alone.
+ */
+export function wallClockMs(iso: string): number {
+  if (iso.length === 10) return Date.parse(`${iso}T00:00:00Z`);
+  return Date.parse(/(Z|[+-]\d{2}:?\d{2})$/i.test(iso) ? iso : `${iso}Z`);
 }
 
+/** Whole-ish days from a to b (b - a), using the wall-clock strings as-is. */
+export function daysBetween(a: string, b: string): number {
+  return (wallClockMs(b) - wallClockMs(a)) / DAY_MS;
+}
+
+/** The wall-clock string `days` later, "YYYY-MM-DDTHH:MM:SS". */
 export function addDays(iso: string, days: number): string {
-  return new Date(Date.parse(iso) + days * DAY_MS).toISOString().slice(0, 19);
+  return new Date(wallClockMs(iso) + days * DAY_MS).toISOString().slice(0, 19);
 }
 
 export function dateOnly(iso: string): string {

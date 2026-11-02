@@ -2,7 +2,7 @@ import Link from "next/link";
 import { dateOnly } from "@/lib/engine/dates";
 import type { LedgerEntry } from "@/lib/engine/history";
 
-const fmt = new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short" });
+const fmt = new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", timeZone: "UTC" });
 
 export function signed(n: number): string {
   const r = Math.round(n * 10) / 10;
