@@ -11,6 +11,8 @@ export interface DoneItem {
   icon: StripIcon;
   /** e.g. a run that counted as that day's easy ride (P18). */
   note?: string;
+  /** The planned session this did, shown struck through above it. */
+  planned?: { title: string; minutes: number };
 }
 
 /** What was done this week, from Strava: each opens its details. */
@@ -27,6 +29,11 @@ export function DoneList({ items, today, title }: { items: DoneItem[]; today: st
                 <ActivityIcon icon={o.icon} size={20} />
               </span>
               <span className="min-w-0 flex-1">
+                {o.planned && (
+                  <span className="block truncate text-[13px] text-muted line-through">
+                    {o.planned.title} · {length(o.planned.minutes)}
+                  </span>
+                )}
                 <span className="block truncate font-semibold">{o.name}</span>
                 <span className="block text-[13px] text-muted">
                   {dayLabel(o.date, today)}
