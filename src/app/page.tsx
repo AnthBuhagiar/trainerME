@@ -8,7 +8,6 @@ import { SessionCard, sessionTitle } from "@/components/SessionCard";
 import { WeekStrip } from "@/components/WeekStrip";
 import { weekStrip } from "@/lib/plan/weekStrip";
 import { SetupCard } from "@/components/SetupCard";
-import { dayLabel } from "@/lib/ui/format";
 import { SyncPanel } from "@/components/SyncPanel";
 import { TargetsPrompt } from "@/components/TargetsPrompt";
 import { UpdateButton } from "@/components/UpdateButton";
@@ -39,7 +38,6 @@ async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: str
   const recapWeekStart = reviewWeekStart(today, thisWeekStart);
   const recap = budget.slots.length && (endOfWeek || today === thisWeekStart) ? weekReview(week(recapWeekStart), activities, history) : null;
   const strip = budget.slots.length ? weekStrip(week(thisWeekStart), activities, today, sessionTitle) : null;
-  const movedAway = upcoming.find((s) => s.movedFrom === today);
   const dayOff = checkIns[today] === "off";
 
   const { goal: target } = ringGoal(summary?.targetHourPower, current?.hourPower ?? 0);
@@ -102,17 +100,6 @@ async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: str
           {todays.map((s) => (
             <SessionCard key={s.start} session={s} today={today} showDay={false} />
           ))}
-          {!todays.length && (
-            <p className="px-1 text-[15px] text-muted">
-              {dayOff
-                ? movedAway
-                  ? `Day off. ${sessionTitle(movedAway)} moved to ${dayLabel(movedAway.date, today)}.`
-                  : "Day off. Today's session is off the plan this week."
-                : movedAway
-                  ? `Strength moved to ${dayLabel(movedAway.date, today)}: you did it yesterday. Rest today.`
-                  : "Rest day."}
-            </p>
-          )}
         </section>
       )}
 
