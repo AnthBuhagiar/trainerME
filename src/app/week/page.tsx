@@ -49,7 +49,6 @@ function Week({
         </h2>
         <span className="display text-[16px]">{length(total)}{sessions.length < plan.sessions.length ? " left" : ""}</span>
       </div>
-      {plan.adaptation && <p className="px-1 text-[14px] font-semibold text-signal-ink">{plan.adaptation}</p>}
       {awayDates.length > 0 && (
         <p className="px-1 text-[14px] text-muted">
           Away {awayDates.map((d) => dayLabel(d, today)).join(", ")}: nothing planned.
