@@ -23,8 +23,8 @@ Intensities are shares of the rider's **training hour power** (their accepted be
 |---|---|---|
 | **P1 · Two quality sessions** | At most two interval sessions a week. Everything else is easy riding, the long ride and strength. | E1, E9 (Neal; Stöggl) |
 | **P2 · Mostly easy** | At least **70%** of weekly riding time easy in base, **75%** in build, event-specific and taper, and no more than **15%** at threshold or above. Enforced whatever days the rider trains on: a week that comes out too hard is eased in a fixed order until it complies. First the second interval session becomes the phase's easier option, then steady riding; then the long ride loses its efforts. | E1, E9 |
-| **P3 · Pyramidal, then polarised** | **Base:** threshold key session, plus sweet spot or tempo. **Build:** short VO2 intervals key, threshold second. **Event-specific:** climbing pace, with a VO2 top-up. **Taper:** short, sharp work only. | E3, E9 (Filipas) |
-| **P4 · Short intervals first** | The main VO2 format is 30/15s, alternating with longer 4-minute efforts. | E2, E9 (Rønnestad) |
+| **P3 · Pyramidal, then polarised** | **Base:** threshold key session, plus sweet spot or tempo. **Build:** VO2 intervals key, threshold second. **Event-specific:** climbing pace, with a VO2 top-up. **Taper:** short, sharp work only. | E1, E3, E9 (Rosenblat; Filipas) |
+| **P4 · Two VO2 formats, rotated** | VO2 work alternates between 30/15s and longer 4–5-minute efforts. Both work; reviews find no clear winner between interval lengths. | E2, E9 |
 | **P5 · Rotate to keep improving** | Interval types rotate every **3 loading weeks**, so gains don't plateau. | E9 (Lindsay; Stepto) |
 | **P6 · Progress gradually** | Within each rotation block, efforts get about 10% longer or gain a rep each week, up to four steps. Sessions always fit the rider's usual slot. | E3, E8 |
 | **P7 · Recovery weeks** | Every 4th loading week runs at about 70% of volume, with no hard sessions. | E8 |

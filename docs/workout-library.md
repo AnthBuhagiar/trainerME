@@ -47,7 +47,7 @@ Aerobic strength at 76–87% of hour power, cheap to recover from. **Progression
 | 2 | **2 × 20 min tempo**<br>`tempo-2x20` | 2 × 20 min at 76–87% / 5 min at 50–65% | 60 (45–80) | 40 min | base | second | E1, E3 | Practice |
 
 Sources:
-- Standard coaching practice for time-crunched riders (E3); no direct trial in low-volume amateurs; the pyramidal base of Filipas et al. 2022
+- Standard coaching practice for time-crunched riders (E3); no direct trial in low-volume amateurs; pyramidal base: matches or beats polarised for recreational athletes (Rosenblat et al. 2025)
 
 ## Sweet spot
 
@@ -92,7 +92,7 @@ Sources:
 
 ## VO2 · short intervals (30/15s)
 
-Time at a high share of VO2max from short work and shorter rest. The main VO2 format (P4). **Progression:** 2 × 10 → 3 × 10 → 3 × 13 (the Rønnestad session).
+Time at a high share of VO2max from short work and shorter rest. One of the two VO2 formats, rotated with long intervals (P4). **Progression:** 2 × 10 → 3 × 10 → 3 × 13 (the Rønnestad session).
 
 | Lvl | Workout | Main set | Min (range) | Quality | Phases | Roles | Evidence | Confidence |
 |---|---|---|---|---|---|---|---|---|
@@ -101,9 +101,9 @@ Time at a high share of VO2max from short work and shorter rest. The main VO2 fo
 | 3 | ✓ **30/15s · 3 × 13**<br>`vo2-30-15` | 3 sets of (13 × 30 s at 120–135% / 15 s at 45–55%), 3 min easy between | 58 (40–60) | 19.5 min | build, specific | key, second | E1, E2 | Moderate |
 
 Sources:
-- Rønnestad et al. 2015 (and 2020, elite): 3 × 13 × 30 s on / 15 s off, twice a week for 10 weeks, beat effort-matched 4 × 5 min (entry dose)
-- Rønnestad et al. 2015 (and 2020, elite): 3 × 13 × 30 s on / 15 s off, twice a week for 10 weeks, beat effort-matched 4 × 5 min (one step short)
-- Rønnestad et al. 2015 (and 2020, elite): 3 × 13 × 30 s on / 15 s off, twice a week for 10 weeks, beat effort-matched 4 × 5 min
+- Rønnestad et al. 2015 (and 2020, elite): 3 × 13 × 30 s on / 15 s off, twice a week for 10 weeks, beat effort-matched 4 × 5 min in one lab's trials; reviews find no clear winner between interval lengths (E2) (entry dose)
+- Rønnestad et al. 2015 (and 2020, elite): 3 × 13 × 30 s on / 15 s off, twice a week for 10 weeks, beat effort-matched 4 × 5 min in one lab's trials; reviews find no clear winner between interval lengths (E2) (one step short)
+- Rønnestad et al. 2015 (and 2020, elite): 3 × 13 × 30 s on / 15 s off, twice a week for 10 weeks, beat effort-matched 4 × 5 min in one lab's trials; reviews find no clear winner between interval lengths (E2)
 
 ## VO2 · long intervals
 
@@ -161,7 +161,7 @@ Keep intensity while volume drops before the event (E4). **Progression:** Opener
 
 Sources:
 - Bosquet et al. 2007 meta-analysis: keep intensity, cut volume 41–60% over about two weeks
-- Bosquet et al. 2007 meta-analysis: keep intensity, cut volume 41–60% over about two weeks; Rønnestad et al. 2015 (and 2020, elite): 3 × 13 × 30 s on / 15 s off, twice a week for 10 weeks, beat effort-matched 4 × 5 min
+- Bosquet et al. 2007 meta-analysis: keep intensity, cut volume 41–60% over about two weeks; Rønnestad et al. 2015 (and 2020, elite): 3 × 13 × 30 s on / 15 s off, twice a week for 10 weeks, beat effort-matched 4 × 5 min in one lab's trials; reviews find no clear winner between interval lengths (E2)
 
 ## Strength (P9, E5)
 
@@ -174,6 +174,6 @@ Sources:
 | **Mobility and core**<br>`strength-mobility` | taper | 2 | Hip and hamstring mobility 10 min, then dead bug, bird dog and side plank · 3 rounds | Hip and hamstring mobility, Dead bug, Bird dog, Side plank | No heavy leg work in the last 10 days before the event. | Practice |
 
 Sources:
-- Rønnestad, Hansen & Raastad (2010, 2017) and Rønnestad & Mujika 2014: four lower-body lifts, 3 × 4–10RM, twice a week, heavy load rising every few weeks
+- Rønnestad, Hansen & Raastad 2010; Rønnestad, Hansen & Nygaard 2017; Rønnestad & Mujika 2014: four lower-body lifts, 3 × 4–10RM, twice a week, heavy load rising every few weeks
 - Rønnestad & Mujika 2014: maintaining strength in season with less volume at a heavy load
 - Practice: strength volume drops in the taper (E4, E5)
