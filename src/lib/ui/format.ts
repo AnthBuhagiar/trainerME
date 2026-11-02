@@ -1,10 +1,5 @@
 import { WEEKDAYS } from "@/lib/plan/timeBudget";
 
-export function clock12(hhmm: string): string {
-  const [h, m] = hhmm.split(":").map(Number);
-  return `${((h + 11) % 12) + 1}${m ? `:${String(m).padStart(2, "0")}` : ""} ${h < 12 ? "am" : "pm"}`;
-}
-
 export function length(minutes: number): string {
   if (minutes < 90) return `${minutes} min`;
   const m = minutes % 60;
