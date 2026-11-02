@@ -104,7 +104,6 @@ async function SessionPageView({
 
       {session.ride && hourPower > 0 && !planned.completedIn && <SendExternal intervals={hasIntervalsKey()} session={{ date, start: planned.start, minutes }} />}
 
-      {planned.adjusted && <p className="text-[14px] font-semibold text-signal-ink">{planned.adjusted}</p>}
       <p className="text-[13px] text-muted">{plain(planned.why)}</p>
     </main>
   );

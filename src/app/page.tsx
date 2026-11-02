@@ -27,13 +27,12 @@ const fmtDate = new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short
 async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: string }> }) {
   const { strava: notice } = await searchParams;
   const tokens = loadTokens();
-  const { adaptation, activities, targets, checkIns, today, settings, rides, history, current, summary, thisWeekStart, week, budget } = loadState();
+  const { activities, targets, checkIns, today, settings, rides, history, current, summary, thisWeekStart, week, budget } = loadState();
   const missing = rides.filter((r) => !r.streams).length;
   const upcoming = budget.slots.length
     ? [...week(thisWeekStart).sessions, ...week(nextWeekStart(thisWeekStart)).sessions].filter((s) => s.date >= today)
     : [];
   const todays = upcoming.filter((s) => s.date === today);
-  const thisWeekNote = budget.slots.length ? week(thisWeekStart).adaptation : undefined;
   // Weeks run Sunday to Saturday. Saturday: recap the week ending tonight, with a look at next week.
   // Sunday: last week's recap.
   const endOfWeek = isLastDayOfWeek(today);
@@ -114,15 +113,6 @@ async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: str
                   : "Rest day."}
             </p>
           )}
-        </section>
-      )}
-
-      {(thisWeekNote ?? adaptation.note) && (
-        <section className="rounded-2xl border border-line bg-card px-4 py-3">
-          <div className="label" style={{ color: "var(--signal-ink)" }}>
-            Plan adjusted
-          </div>
-          <p className="text-[15px] leading-snug">{thisWeekNote ?? adaptation.note}</p>
         </section>
       )}
 
