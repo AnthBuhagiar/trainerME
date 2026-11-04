@@ -2,6 +2,7 @@ import { athleteRoute } from "@/lib/auth/athlete";
 import { NextResponse } from "next/server";
 import { keepRide } from "@/lib/player/keepRide";
 import { markRidden } from "@/lib/plan/completions";
+import { setRiderTimeZone } from "@/lib/plan/timeZone";
 import { canUpload, stravaUpload } from "@/lib/strava/client";
 import { buildTcx, type RideSample } from "@/lib/strava/tcx";
 
@@ -13,6 +14,8 @@ interface Body {
   samples: RideSample[];
   /** The planned session this ride was (it may have been ridden on another day). */
   planned?: { date?: unknown; start?: unknown };
+  /** The phone's time zone, so the ride is kept at the time it was ridden. */
+  timeZone?: unknown;
 }
 
 /** Keep a ride recorded in the player in Hour Power, then upload it to Strava. */
@@ -22,6 +25,7 @@ async function post(request: Request) {
   // First, so the ride counts in Hour Power even when Strava says no.
   let kept = false;
   try {
+    setRiderTimeZone(body.timeZone);
     const ride = keepRide(body.name, body.startMs, body.samples);
     kept = true;
     const { date, start } = body.planned ?? {};

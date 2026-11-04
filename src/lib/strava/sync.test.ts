@@ -24,6 +24,7 @@ function activity(id: number, day: number, sport = "Ride") {
     total_elevation_gain: 300,
     suffer_score: 50,
     timezone: "(GMT+10:00) Australia/Sydney",
+    start_latlng: sport === "Ride" ? [-34.4, 150.9] : [],
   };
 }
 
@@ -75,7 +76,13 @@ describe("Strava sync", () => {
     expect(store.loadSettings().weightKg).toBe(77);
   });
 
-  test("stops cleanly at the rate limit and resumes next time", async () => {
+  test("an indoor file's time zone doesn't move the rider", async () => {
+    listed = [{ ...activity(1, 1, "VirtualRide"), timezone: "(GMT+00:00) Africa/Abidjan", start_latlng: [] }];
+    await syncStrava();
+    expect(store.loadSettings().timeZone).toBeUndefined();
+  });
+
+    test("stops cleanly at the rate limit and resumes next time", async () => {
     rateLimitAfter = 1;
     const first = await syncStrava();
     expect(first).toMatchObject({ streamsFetched: 1, ridesMissingStreams: 1, rateLimited: true });

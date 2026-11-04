@@ -1,4 +1,5 @@
 import { Watermark } from "@/components/Watermark";
+import { TimeZoneSync } from "@/components/TimeZoneSync";
 import { asAthlete } from "@/lib/auth/athlete";
 import { ChangeList } from "@/components/ChangeList";
 import { CheckIn } from "@/components/CheckIn";
@@ -45,6 +46,7 @@ async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: str
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-4 px-5 py-6">
       <Watermark src="/photos/bridge.jpg" position="44% 50%" zoom={1.3} origin="45% 100%" tint="signal" />
+      <TimeZoneSync current={settings.timeZone} />
       <header className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-0.5">
           <div className="label">{new Intl.DateTimeFormat("en-AU", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${today}T00:00:00Z`))}</div>
