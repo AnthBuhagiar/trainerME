@@ -43,7 +43,7 @@ export function useRideUpload({
       const res = await fetch("/api/rides/upload", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name, startMs: r.startedAt, samples: r.samples, planned }),
+        body: JSON.stringify({ name, startMs: r.startedAt, samples: r.samples, planned, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
       });
       const body = await res.json();
       if (body.activityId) setSaved({ url: `https://www.strava.com/activities/${body.activityId}`, message: "Saved to Strava." });

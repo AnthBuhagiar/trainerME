@@ -49,3 +49,17 @@ export function applyCompletions(week: WeekPlan, completions: Completions): Week
     }),
   };
 }
+
+/** Rides re-timed (old local start → new): move the sessions they did with them. */
+export function retimeRidden(moved: Map<string, string>): void {
+  const all = loadCompletions();
+  let changed = false;
+  for (const c of Object.values(all)) {
+    const to = c.ride && moved.get(c.ride);
+    if (to) {
+      c.ride = to;
+      changed = true;
+    }
+  }
+  if (changed) writeJson(FILE, all);
+}

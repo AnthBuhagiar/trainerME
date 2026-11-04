@@ -12,6 +12,7 @@ import {
 import { StravaRateLimitError, stravaGet } from "@/lib/strava/client";
 import { summariseStreams, type RawStreams } from "@/lib/strava/process";
 import { zoneFromStrava } from "@/lib/engine/dates";
+import { setRiderTimeZone } from "@/lib/plan/timeZone";
 
 /**
  * Pull the athlete's activities and ride streams into data/.
@@ -35,6 +36,8 @@ interface StravaActivity {
   suffer_score?: number | null;
   /** e.g. "(GMT+10:00) Australia/Sydney" */
   timezone?: string;
+  /** Where it started; empty for indoor rides and uploaded files. */
+  start_latlng?: number[] | null;
 }
 
 interface StravaAthlete {
@@ -92,7 +95,8 @@ async function syncActivities(): Promise<number> {
   for (let page = 1; ; page++) {
     const batch = await stravaGet<StravaActivity[]>("/athlete/activities", { per_page: PAGE_SIZE, page, after });
     for (const a of batch) {
-      if (!newest || a.start_date_local > newest.start_date_local) newest = a;
+      // Only a ride with GPS says where the rider is: an uploaded indoor file's zone can be anything.
+      if (a.start_latlng?.length === 2 && (!newest || a.start_date_local > newest.start_date_local)) newest = a;
       listed.add(String(a.id));
       if (!byId.has(String(a.id))) added++;
       byId.set(String(a.id), { ...byId.get(String(a.id)), ...toRaw(a) });
@@ -108,11 +112,7 @@ async function syncActivities(): Promise<number> {
   const merged = [...byId.values()].sort((a, b) => a.start_local.localeCompare(b.start_local));
   saveRawActivities(merged);
   // The rider's time zone, from where they last rode: decides what "today" is.
-  if (newest?.timezone) {
-    const zone = zoneFromStrava(newest.timezone);
-    const settings = loadSettings();
-    if (zone && zone !== settings.timeZone) saveSettings({ ...settings, timeZone: zone });
-  }
+  if (newest?.timezone) setRiderTimeZone(zoneFromStrava(newest.timezone));
   return added;
 }
 

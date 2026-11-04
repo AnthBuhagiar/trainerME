@@ -1,5 +1,6 @@
 import { loadRawActivities, loadSettings, readJson, saveRawActivities, saveRideSummary, writeJson, type RawActivity } from "@/lib/data/store";
 import { todayLocal } from "@/lib/engine/dates";
+import { retimeRidden } from "@/lib/plan/completions";
 import { summariseStreams } from "@/lib/strava/process";
 import type { RideSample } from "@/lib/strava/tcx";
 
@@ -39,4 +40,26 @@ const samplesFile = (id: string) => `samples/${id}.json`;
 /** The seconds of a ride ridden in the player, if kept. */
 export function keptSamples(id: string): RideSample[] | null {
   return /^hp-\d+$/.test(id) ? readJson<RideSample[] | null>(samplesFile(id), null) : null;
+}
+
+/**
+ * Re-time the rides kept by Hour Power for this zone (their ids hold the start
+ * in UTC), and the sessions they did along with them, after the rider's zone
+ * was missing or wrong when they were saved.
+ */
+export function relocalizeKeptRides(zone: string): number {
+  const raw = loadRawActivities();
+  const moved = new Map<string, string>();
+  const next = raw.map((a) => {
+    const ms = /^hp-(\d+)$/.exec(a.id)?.[1];
+    if (a.source !== "hourpower" || !ms) return a;
+    const local = todayLocal(zone, new Date(Number(ms)));
+    if (local === a.start_local) return a;
+    moved.set(a.start_local, local);
+    return { ...a, start_local: local };
+  });
+  if (!moved.size) return 0;
+  saveRawActivities(next.sort((a, b) => a.start_local.localeCompare(b.start_local)));
+  retimeRidden(moved);
+  return moved.size;
 }
