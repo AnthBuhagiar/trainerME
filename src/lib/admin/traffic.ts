@@ -74,35 +74,19 @@ export function sectionOf(host: string): Section {
   return "Other";
 }
 
-const QUERY = `
-query Traffic($zone: string!, $from: Date!, $to: Date!) {
-  viewer {
-    zones(filter: { zoneTag: $zone }) {
-      daily: httpRequestsAdaptiveGroups(limit: 2000, filter: { date_geq: $from, date_leq: $to, requestSource: "eyeball", edgeResponseContentTypeName: "html" }) {
-        count
-        sum { visits }
-        dimensions { date clientRequestHTTPHost }
-      }
-      countries: httpRequestsAdaptiveGroups(limit: 2000, filter: { date_geq: $from, date_leq: $to, requestSource: "eyeball", edgeResponseContentTypeName: "html" }) {
-        count
-        sum { visits }
-        dimensions { clientCountryName clientRequestHTTPHost }
-      }
-      paths: httpRequestsAdaptiveGroups(limit: 60, orderBy: [count_DESC], filter: { date_geq: $from, date_leq: $to, requestSource: "eyeball", edgeResponseContentTypeName: "html" }) {
-        count
-        dimensions { clientRequestPath clientRequestHTTPHost }
-      }
-      referrers: httpRequestsAdaptiveGroups(limit: 60, orderBy: [sum_visits_DESC], filter: { date_geq: $from, date_leq: $to, requestSource: "eyeball", edgeResponseContentTypeName: "html" }) {
-        sum { visits }
-        dimensions { clientRefererHost clientRequestHTTPHost }
-      }
-      devices: httpRequestsAdaptiveGroups(limit: 50, filter: { date_geq: $from, date_leq: $to, requestSource: "eyeball", edgeResponseContentTypeName: "html" }) {
-        count
-        dimensions { clientDeviceType clientRequestHTTPHost }
-      }
-    }
-  }
-}`;
+// Each part is its own request: a plan without a field (free zones can't group by
+// referrer, for one) loses only that part, not the whole traffic section.
+const FILTER = `filter: { date_geq: $from, date_leq: $to, requestSource: "eyeball", edgeResponseContentTypeName: "html" }`;
+const PARTS = {
+  daily: `limit: 2000, ${FILTER}) { count sum { visits } dimensions { date clientRequestHTTPHost } }`,
+  countries: `limit: 2000, ${FILTER}) { count sum { visits } dimensions { clientCountryName clientRequestHTTPHost } }`,
+  paths: `limit: 60, orderBy: [count_DESC], ${FILTER}) { count dimensions { clientRequestPath clientRequestHTTPHost } }`,
+  referrers: `limit: 60, orderBy: [sum_visits_DESC], ${FILTER}) { sum { visits } dimensions { clientRefererHost clientRequestHTTPHost } }`,
+  devices: `limit: 50, ${FILTER}) { count dimensions { clientDeviceType clientRequestHTTPHost } }`,
+} as const;
+type Part = keyof typeof PARTS;
+const queryFor = (part: Part) =>
+  `query Traffic($zone: string!, $from: Date!, $to: Date!) { viewer { zones(filter: { zoneTag: $zone }) { ${part}: httpRequestsAdaptiveGroups(${PARTS[part]} } } }`;
 
 interface Group {
   count?: number;
@@ -131,16 +115,27 @@ export async function fetchTraffic(now = new Date(), fetchImpl: typeof fetch = f
   const to = now.toISOString().slice(0, 10);
   const from = new Date(now.getTime() - TRAFFIC_DAYS * 86_400_000).toISOString().slice(0, 10);
   try {
-    const res = await fetchImpl(ENDPOINT, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ query: QUERY, variables: { zone, from, to } }),
-      signal: AbortSignal.timeout(15_000),
-    });
-    const body = (await res.json()) as { data?: { viewer?: { zones?: Record<string, Group[]>[] } }; errors?: { message: string }[] | null };
-    if (body.errors?.length) return empty(true, body.errors.map((e) => e.message).join("; "));
-    const z = body.data?.viewer?.zones?.[0];
-    if (!z) return empty(true, "Cloudflare returned no data for this zone.");
+    const errors: string[] = [];
+    const z = {} as Record<Part, Group[]>;
+    await Promise.all(
+      (Object.keys(PARTS) as Part[]).map(async (part) => {
+        z[part] = [];
+        try {
+          const res = await fetchImpl(ENDPOINT, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ query: queryFor(part), variables: { zone, from, to } }),
+            signal: AbortSignal.timeout(15_000),
+          });
+          const body = (await res.json()) as { data?: { viewer?: { zones?: Record<string, Group[]>[] } }; errors?: { message: string }[] | null };
+          if (body.errors?.length) errors.push(`${part}: ${body.errors.map((e) => e.message).join("; ")}`);
+          z[part] = body.data?.viewer?.zones?.[0]?.[part] ?? [];
+        } catch (err) {
+          errors.push(`${part}: ${err instanceof Error ? err.message : "couldn't reach Cloudflare"}`);
+        }
+      }),
+    );
+    if (errors.length === Object.keys(PARTS).length) return empty(true, errors.join(" | "));
     const sec = (g: Group) => sectionOf(g.dimensions.clientRequestHTTPHost ?? "");
 
     const daily = merge(
@@ -169,7 +164,7 @@ export async function fetchTraffic(now = new Date(), fetchImpl: typeof fetch = f
       (r) => `${r.device}|${r.section}`,
       (a, b) => ({ ...a, pageViews: a.pageViews + b.pageViews }),
     );
-    const value: Traffic = { configured: true, from, to, hosts: { app: appHost(), website: websiteHost() }, daily, countries, paths, referrers, devices };
+    const value: Traffic = { configured: true, ...(errors.length ? { error: errors.join(" | ") } : {}), from, to, hosts: { app: appHost(), website: websiteHost() }, daily, countries, paths, referrers, devices };
     cache = { at: now.getTime(), value };
     return value;
   } catch (err) {
