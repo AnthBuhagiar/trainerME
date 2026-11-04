@@ -1,4 +1,5 @@
 import { asAthlete } from "@/lib/auth/athlete";
+import { canSeeAdmin } from "@/lib/admin/access";
 import { AutoUploadToggle } from "@/components/AutoUploadToggle";
 import { DaysEditor } from "@/components/DaysEditor";
 import { choicesFromBudget } from "@/lib/plan/availability";
@@ -17,6 +18,7 @@ function SettingsPageView() {
   const { settings, chosenDays, learnedBudget } = loadState();
   const athlete = multiUser() ? currentAthlete() : null;
   const referral = athlete ? referralSummary(athlete) : null;
+  const admin = multiUser() && canSeeAdmin(athlete);
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 px-5 py-6">
       <h1 className="display text-[24px]">Settings and data</h1>
@@ -76,6 +78,12 @@ function SettingsPageView() {
         <span className="label mt-1">Restore from a backup</span>
         <RestoreBackup />
       </section>
+
+      {admin && (
+        <a href="/admin" className="flex h-12 items-center justify-center rounded-2xl border border-line text-[15px] font-semibold">
+          Admin dashboard
+        </a>
+      )}
 
       {authEnabled() && (
         <>
