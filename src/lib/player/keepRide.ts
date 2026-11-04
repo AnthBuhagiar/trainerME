@@ -8,7 +8,7 @@ import type { RideSample } from "@/lib/strava/tcx";
  * the Strava upload. When Strava's copy syncs in later, the two are one ride
  * (dedupeActivities) and Strava's is shown.
  */
-export function keepRide(name: string, startMs: number, samples: RideSample[]): string {
+export function keepRide(name: string, startMs: number, samples: RideSample[]): RawActivity {
   const id = `hp-${startMs}`;
   const seconds = samples.length ? samples[samples.length - 1].t + 1 : 0;
   const activity: RawActivity = {
@@ -29,5 +29,5 @@ export function keepRide(name: string, startMs: number, samples: RideSample[]): 
     }),
   );
   saveRawActivities([...loadRawActivities().filter((a) => a.id !== id), activity].sort((a, b) => a.start_local.localeCompare(b.start_local)));
-  return id;
+  return activity;
 }

@@ -13,7 +13,22 @@ export interface Saved {
 }
 
 /** Sending a finished ride to Strava (by itself if auto-upload is on), or as a file to download. */
-export function useRideUpload({ name, storageKey, ride, done, autoUpload }: { name: string; storageKey: string; ride: RefObject<RideState>; done: boolean; autoUpload: boolean }) {
+export function useRideUpload({
+  name,
+  storageKey,
+  planned,
+  ride,
+  done,
+  autoUpload,
+}: {
+  name: string;
+  storageKey: string;
+  /** The planned session being ridden, so it counts as done even when ridden on another day. */
+  planned?: { date: string; start: string };
+  ride: RefObject<RideState>;
+  done: boolean;
+  autoUpload: boolean;
+}) {
   const [saved, setSaved] = useState<Saved | null>(null);
   const [saving, setSaving] = useState(false);
   const sent = useRef(false);
@@ -27,7 +42,7 @@ export function useRideUpload({ name, storageKey, ride, done, autoUpload }: { na
       const res = await fetch("/api/rides/upload", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name, startMs: r.startedAt, samples: r.samples }),
+        body: JSON.stringify({ name, startMs: r.startedAt, samples: r.samples, planned }),
       });
       const body = await res.json();
       if (body.activityId) setSaved({ url: `https://www.strava.com/activities/${body.activityId}`, message: "Saved to Strava." });

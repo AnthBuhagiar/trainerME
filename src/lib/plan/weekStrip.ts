@@ -76,13 +76,30 @@ export function weekStatus(plan: WeekPlan, activities: Activity[], today: string
     }
     return !!a;
   };
+  // Ridden in the player: the session knows its ride, whichever day it was on (Strava's copy starts at the
+  // same time). Claimed first, so the ride can't also count for a session planned on the day it was ridden.
+  const riddenBy = new Map<PlannedSession, Activity>();
+  for (const s of plan.sessions) {
+    const at = s.completedRide && Date.parse(`${s.completedRide}Z`);
+    const a = at && inWeek.find((x) => !elsewhere.has(x) && sameKind(s, x) && Math.abs(Date.parse(`${x.startLocal}Z`) - at) <= 120_000);
+    if (a) {
+      riddenBy.set(s, a);
+      elsewhere.add(a);
+    }
+  }
   const days = Array.from({ length: 7 }, (_, i): StripDay => {
     const date = addDays(plan.weekStart, i);
     const done = activities.filter((a) => day(a.startLocal) === date).sort((a, b) => a.startLocal.localeCompare(b.startLocal));
     const used = new Set<Activity>();
     const items: StripItem[] = done.map((a) => ({ icon: activityIcon(a), state: "done", title: a.name, minutes: Math.round(a.movingTime / 60), href: `/activity/${a.id}` }));
     for (const s of plan.sessions.filter((x) => x.date === date)) {
-      const match = done.find((a) => !used.has(a) && sameKind(s, a));
+      const match = done.find((a) => !used.has(a) && !elsewhere.has(a) && sameKind(s, a));
+      const ridden = riddenBy.get(s);
+      if (ridden) {
+        covered.add(s);
+        doneBy.set(ridden, s);
+        continue;
+      }
       if (s.completedIn) {
         // Done in another app: its synced ride (if any) already shows; otherwise show the session as done.
         covered.add(s);

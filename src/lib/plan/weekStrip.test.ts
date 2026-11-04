@@ -70,6 +70,20 @@ describe("week strip", () => {
     expect(doneBy.has(run)).toBe(false); // unplanned
   });
 
+  test("a session ridden in the player counts on any day, whatever the ride is called", () => {
+    // Tuesday's key session ridden on Wednesday, length changed so the name differs; Thursday has its own ride.
+    const tue = { ...plan.sessions[1], completedIn: "Hour Power", completedRide: "2026-10-28T18:30:00" };
+    const wed = s("2026-10-28", "ride", { ride: { workout: { intensity: "easy" } } as never });
+    const marked: WeekPlan = { ...plan, sessions: [plan.sessions[0], tue, wed, ...plan.sessions.slice(2)] };
+    const ride = a("2026-10-28", "VirtualRide", { name: "2 × 15 min threshold", startLocal: "2026-10-28T18:30:04", isTrainer: true });
+    const { days, covered, doneBy } = weekStatus(marked, [ride], "2026-10-28", () => "something else");
+    expect(doneBy.get(ride)).toBe(tue);
+    expect(covered.has(tue)).toBe(true);
+    expect(covered.has(wed)).toBe(false); // the ride did Tuesday's session, not today's as well
+    expect(days[2].items).toEqual([]); // Tuesday: done, so not missed
+    expect(days[3].items.map((x) => x.state)).toEqual(["done", "planned"]);
+  });
+
   test("done in another app shows as done, not missed", () => {
     const marked = { ...plan, sessions: plan.sessions.map((x) => (x.date === "2026-10-27" ? { ...x, completedIn: "MyWhoosh" } : x)) };
     const { days, covered } = weekStatus(marked, [], "2026-10-28", () => "Threshold");

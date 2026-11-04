@@ -23,6 +23,8 @@ interface Props {
   steps: PlayerStep[];
   /** Change the workout's length before starting. */
   length?: { value: number; planned: number; min: number; max: number; baseHref: string };
+  /** The planned session (its day and slot), recorded as done when the ride is saved. */
+  planned?: { date: string; start: string };
 }
 
 const clock = (s: number) => {
@@ -37,7 +39,7 @@ const clock = (s: number) => {
  * A workout on the trainer: the clock, the recording and ERG targets. Bluetooth,
  * the mini player and uploading live in their own hooks (lib/player/use*.ts).
  */
-export function RidePlayer({ name, autoUpload, steps, storageKey, length: lengthPick }: Props) {
+export function RidePlayer({ name, autoUpload, steps, storageKey, length: lengthPick, planned }: Props) {
   const [supported, setSupported] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [resumed, setResumed] = useState(false);
@@ -67,7 +69,7 @@ export function RidePlayer({ name, autoUpload, steps, storageKey, length: length
     onTick: () => setNow(Date.now()),
     onError: setError,
   });
-  const { saved, saving, save, download } = useRideUpload({ name, storageKey, ride: rideRef, done, autoUpload });
+  const { saved, saving, save, download } = useRideUpload({ name, storageKey, planned, ride: rideRef, done, autoUpload });
 
   useEffect(() => setSupported(typeof navigator !== "undefined" && !!navigator.bluetooth), []);
 

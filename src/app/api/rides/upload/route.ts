@@ -1,6 +1,7 @@
 import { athleteRoute } from "@/lib/auth/athlete";
 import { NextResponse } from "next/server";
 import { keepRide } from "@/lib/player/keepRide";
+import { markRidden } from "@/lib/plan/completions";
 import { canUpload, stravaUpload } from "@/lib/strava/client";
 import { buildTcx, type RideSample } from "@/lib/strava/tcx";
 
@@ -10,6 +11,8 @@ interface Body {
   name: string;
   startMs: number;
   samples: RideSample[];
+  /** The planned session this ride was (it may have been ridden on another day). */
+  planned?: { date?: unknown; start?: unknown };
 }
 
 /** Keep a ride recorded in the player in Hour Power, then upload it to Strava. */
@@ -19,8 +22,12 @@ async function post(request: Request) {
   // First, so the ride counts in Hour Power even when Strava says no.
   let kept = false;
   try {
-    keepRide(body.name, body.startMs, body.samples);
+    const ride = keepRide(body.name, body.startMs, body.samples);
     kept = true;
+    const { date, start } = body.planned ?? {};
+    if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date) && typeof start === "string" && /^\d{2}:\d{2}$/.test(start)) {
+      markRidden(date, start, ride.start_local); // done, whatever the ride ends up called
+    }
   } catch {
     // Never let this stop the upload.
   }
