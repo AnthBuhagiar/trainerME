@@ -141,15 +141,20 @@ describe("traffic", () => {
       referrers: [g(4, { clientRefererHost: "www.instagram.com", clientRequestHTTPHost: "www.hourpowerapp.cc" }), g(4, { clientRefererHost: "www.hourpowerapp.cc", clientRequestHTTPHost: "hourpowerapp.cc" })],
       devices: [g(6, { clientDeviceType: "mobile", clientRequestHTTPHost: "hourpowerapp.cc" })],
     };
-    const fake = (async () => new Response(JSON.stringify({ data: { viewer: { zones: [data] } } }))) as typeof fetch;
+    // Each part is asked for on its own; answer with just that part (referrers refused, as on a free zone).
+    const fake = (async (_url: string, init: RequestInit) => {
+      const part = (Object.keys(data) as (keyof typeof data)[]).find((k) => String(init.body).includes(`${k}: httpRequests`))!;
+      if (part === "referrers") return new Response(JSON.stringify({ data: null, errors: [{ message: "does not have access to the field 'clientRefererHost'" }] }));
+      return new Response(JSON.stringify({ data: { viewer: { zones: [{ [part]: data[part] }] } } }));
+    }) as unknown as typeof fetch;
     const t = await traffic.fetchTraffic(new Date("2026-10-30T00:00:00Z"), fake);
-    expect(t.error).toBeUndefined();
+    expect(t.error).toMatch(/referrers/);
     expect(t.daily).toEqual([
       { date: "2026-10-29", section: "App", pageViews: 10, visits: 5 },
       { date: "2026-10-29", section: "Website", pageViews: 4, visits: 2 },
     ]);
     expect(t.countries.map((c) => [c.country, c.section])).toEqual([["AU", "App"], ["NZ", "Website"]]);
     expect(t.paths.map((p) => p.path)).toEqual(["/"]);
-    expect(t.referrers.map((r) => r.referrer)).toEqual(["www.instagram.com"]);
+    expect(t.referrers).toEqual([]);
   });
 });
