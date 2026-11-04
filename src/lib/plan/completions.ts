@@ -12,7 +12,10 @@ import type { WeekPlan } from "@/lib/plan/week";
 export const ANOTHER_APP = "another app";
 
 const FILE = "completions.json";
-type Completions = Record<string, { app: string; at: string }>;
+type Completions = Record<string, { app: string; at: string; ride?: string }>;
+
+/** Ridden in the app's own player. */
+export const HOUR_POWER = "Hour Power";
 
 export const completionKey = (date: string, start: string) => `${date} ${start}`;
 
@@ -22,6 +25,11 @@ export function loadCompletions(): Completions {
 
 export function markDoneElsewhere(date: string, start: string, app = ANOTHER_APP, now = new Date()): void {
   writeJson(FILE, { ...loadCompletions(), [completionKey(date, start)]: { app, at: now.toISOString() } });
+}
+
+/** A planned session ridden in the player (on its day or another): `ride` is the ride's local start. */
+export function markRidden(date: string, start: string, ride: string, now = new Date()): void {
+  writeJson(FILE, { ...loadCompletions(), [completionKey(date, start)]: { app: HOUR_POWER, at: now.toISOString(), ride } });
 }
 
 export function unmarkDoneElsewhere(date: string, start: string): void {
@@ -37,7 +45,7 @@ export function applyCompletions(week: WeekPlan, completions: Completions): Week
     ...week,
     sessions: week.sessions.map((s) => {
       const c = completions[completionKey(s.date, s.start)];
-      return c ? { ...s, completedIn: c.app } : s;
+      return c ? { ...s, completedIn: c.app, ...(c.ride ? { completedRide: c.ride } : {}) } : s;
     }),
   };
 }

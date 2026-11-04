@@ -42,6 +42,8 @@ export interface PlannedSession {
   movedFrom?: string;
   /** Marked by the rider as done in another app (Zwift, MyWhoosh…). */
   completedIn?: string;
+  /** Ridden in Hour Power's player: when that ride started (local time), so it's matched to this session on any day. */
+  completedRide?: string;
 }
 
 export interface WeekPlan {

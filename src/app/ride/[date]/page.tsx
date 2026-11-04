@@ -30,6 +30,7 @@ async function RidePageView({
       <h1 className="display text-[22px] leading-tight">{sessionTitle(session)}</h1>
       <RidePlayer
         storageKey={`${date}-${planned.start}`}
+        planned={{ date, start: planned.start }}
         name={sessionTitle(session)}
         autoUpload={autoUploadOn(found.state.settings) && canUpload()}
         steps={playerSteps(session.ride!.workout, hourPower)}
