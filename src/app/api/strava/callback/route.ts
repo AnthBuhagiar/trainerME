@@ -5,7 +5,7 @@ import { runAsAthlete } from "@/lib/data/store";
 import { acceptTerms } from "@/lib/legal/acceptance";
 import { TERMS_COOKIE, TERMS_VERSION } from "@/lib/legal/terms";
 import { ensureReferralCode, recordReferrer, REFERRAL_COOKIE } from "@/lib/referral/referral";
-import { appUrl, exchangeCode, REQUIRED_SCOPES, saveTokens, STATE_COOKIE } from "@/lib/strava/client";
+import { appUrl, exchangeCode, NEXT_COOKIE, REQUIRED_SCOPES, safeNext, saveTokens, STATE_COOKIE } from "@/lib/strava/client";
 
 export const runtime = "nodejs";
 
@@ -27,10 +27,18 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(authEnabled() ? `${appUrl()}/login?error=missing-scope` : `${appUrl()}/?strava=missing-scope`);
   }
   const tokens = await exchangeCode(code, granted.join(","));
+  // Back where the rider was (a finished ride waiting to upload), else Today.
+  const next = safeNext(req.cookies.get(NEXT_COOKIE)?.value);
+  const done = (fallback: string) => {
+    const r = NextResponse.redirect(next ? `${appUrl()}${next}` : fallback);
+    r.cookies.delete(NEXT_COOKIE);
+    r.cookies.delete(STATE_COOKIE);
+    return r;
+  };
   const athleteId = tokens.athlete?.id;
   if (!authEnabled()) {
     saveTokens(tokens);
-    return NextResponse.redirect(`${appUrl()}/?strava=connected`);
+    return done(`${appUrl()}/?strava=connected`);
   }
   // Hosted: any Strava athlete can sign in and gets their own folder (up to MAX_ATHLETES, if set).
   if (!athleteId) return NextResponse.redirect(`${appUrl()}/login?error=declined`);
@@ -49,7 +57,7 @@ export async function GET(req: NextRequest) {
   // A recommender's code counts only for a rider joining now, not one signing in again.
   const ref = req.cookies.get(REFERRAL_COOKIE)?.value;
   if (ref && !known.includes(athleteId)) recordReferrer(athleteId, ref);
-  const res = NextResponse.redirect(`${appUrl()}/?strava=connected`);
+  const res = done(`${appUrl()}/?strava=connected`);
   res.cookies.delete(TERMS_COOKIE);
   res.cookies.delete(REFERRAL_COOKIE);
   res.cookies.delete(STATE_COOKIE);

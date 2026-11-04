@@ -62,6 +62,14 @@ export function hasCredentials(): boolean {
   return !!process.env.STRAVA_CLIENT_ID && !!process.env.STRAVA_CLIENT_SECRET;
 }
 
+/** Where to land after connecting (e.g. back on a finished ride), kept in a cookie across the Strava trip. */
+export const NEXT_COOKIE = "hp_next";
+
+/** Only a path on this app ("/ride/…"), never another site. */
+export function safeNext(next: string | null | undefined): string | null {
+  return next && /^\/(?![/\\])[^\s]*$/.test(next) ? next : null;
+}
+
 /** Cookie holding the random value sent to Strava with sign-in, checked when Strava sends the rider back. */
 export const STATE_COOKIE = "hp_oauth";
 

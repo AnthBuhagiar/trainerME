@@ -1,4 +1,5 @@
 import {
+  fromStrava,
   needsRideSummary,
   loadRawActivities,
   loadSettings,
@@ -82,7 +83,7 @@ async function syncProfile(): Promise<void> {
 async function syncActivities(): Promise<number> {
   const existing = loadRawActivities();
   const byId = new Map(existing.map((a) => [a.id, a]));
-  const latest = existing.filter((a) => a.source !== "intervals").reduce((max, a) => (a.start_local > max ? a.start_local : max), "");
+  const latest = existing.filter(fromStrava).reduce((max, a) => (a.start_local > max ? a.start_local : max), "");
   // Re-read the last week each time so edits (names, trainer flag) are picked up.
   const after = latest ? Math.floor(Date.parse(`${latest}Z`) / 1000) - 7 * 86_400 : 0;
   let added = 0;
@@ -102,7 +103,7 @@ async function syncActivities(): Promise<number> {
   // start_local is local time, so keep a day's margin at the edge of the re-read week.
   if (after) {
     const from = new Date((after + 86_400) * 1000).toISOString().slice(0, 19);
-    for (const [id, a] of byId) if (a.source !== "intervals" && a.start_local >= from && !listed.has(id)) byId.delete(id);
+    for (const [id, a] of byId) if (fromStrava(a) && a.start_local >= from && !listed.has(id)) byId.delete(id);
   }
   const merged = [...byId.values()].sort((a, b) => a.start_local.localeCompare(b.start_local));
   saveRawActivities(merged);
@@ -145,7 +146,7 @@ export async function syncStrava(streamBudget = DEFAULT_STREAM_BUDGET): Promise<
     newActivities = await syncActivities();
     // Newest rides first: they matter most for today's estimate.
     const pending = loadRawActivities()
-      .filter((a) => a.source !== "intervals" && a.sport_type.includes("Ride") && needsRideSummary(a))
+      .filter((a) => fromStrava(a) && a.sport_type.includes("Ride") && needsRideSummary(a))
       .reverse();
     for (const ride of pending.slice(0, streamBudget)) {
       saveRideSummary(summariseStreams(ride.id, await fetchStreams(ride.id)));
@@ -161,7 +162,7 @@ export async function syncStrava(streamBudget = DEFAULT_STREAM_BUDGET): Promise<
     newActivities,
     totalActivities: all.length,
     streamsFetched,
-    ridesMissingStreams: all.filter((a) => a.source !== "intervals" && a.sport_type.includes("Ride") && needsRideSummary(a)).length,
+    ridesMissingStreams: all.filter((a) => fromStrava(a) && a.sport_type.includes("Ride") && needsRideSummary(a)).length,
     rateLimited,
   };
 }

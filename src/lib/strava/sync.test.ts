@@ -108,10 +108,11 @@ describe("Strava sync", () => {
     store.saveRawActivities([
       { ...raw[0], id: "old", start_local: "2026-08-01T07:00:00" }, // long before the re-read week
       { ...raw[0], id: "i9", source: "intervals", start_local: "2026-10-03T09:00:00" },
+      { ...raw[0], id: "hp-1", source: "hourpower", start_local: "2026-10-03T18:00:00" }, // ridden in the player
       ...raw,
     ]);
     listed = [activity(1, 1), activity(2, 2, "WeightTraining")]; // ride 3 deleted on Strava
     await syncStrava();
-    expect(store.loadRawActivities().map((a) => a.id).sort()).toEqual(["1", "2", "i9", "old"]);
+    expect(store.loadRawActivities().map((a) => a.id).sort()).toEqual(["1", "2", "hp-1", "i9", "old"]);
   });
 });

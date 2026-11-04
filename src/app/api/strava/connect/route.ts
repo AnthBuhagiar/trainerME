@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { TERMS_COOKIE } from "@/lib/legal/terms";
 import { normalizeCode, ownerOfCode, REFERRAL_COOKIE } from "@/lib/referral/referral";
-import { appUrl, authorizeUrl, hasCredentials, STATE_COOKIE } from "@/lib/strava/client";
+import { appUrl, authorizeUrl, hasCredentials, NEXT_COOKIE, safeNext, STATE_COOKIE } from "@/lib/strava/client";
 
 export const runtime = "nodejs";
 
@@ -26,6 +26,8 @@ export function GET(req: NextRequest) {
   if (code) {
     res.cookies.set(REFERRAL_COOKIE, code, { httpOnly: true, secure: appUrl().startsWith("https://"), sameSite: "lax", path: "/", maxAge: 30 * 60 });
   }
+  const next = safeNext(req.nextUrl.searchParams.get("next"));
+  if (next) res.cookies.set(NEXT_COOKIE, next, { httpOnly: true, secure: appUrl().startsWith("https://"), sameSite: "lax", path: "/", maxAge: 30 * 60 });
   const agreed = req.nextUrl.searchParams.get("agree");
   if (agreed) {
     res.cookies.set(TERMS_COOKIE, agreed, { httpOnly: true, secure: appUrl().startsWith("https://"), sameSite: "lax", path: "/", maxAge: 30 * 60 });
