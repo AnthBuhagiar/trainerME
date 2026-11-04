@@ -47,57 +47,75 @@ export function powerStatus(power: number | undefined, target: number): { text: 
   return { text: diff < 0 ? `${-diff} W low` : `${diff} W high`, colour: ORANGE };
 }
 
+/** The largest font size (up to `max`) at which `text` fits in `width`. */
+export function fitSize(measure: (px: number) => number, width: number, max: number): number {
+  const w = measure(max);
+  return w <= width ? max : Math.max(12, Math.floor((max * width) / w));
+}
+
+const PAD = 18;
+const GAP = 12;
+const BAR = 10;
+const CELL_W = (W - 2 * PAD - GAP) / 2;
+const CELL_H = (H - BAR - 2 * PAD - GAP) / 2;
+
+/**
+ * Four numbers, two by two, each as big as its box allows: the step's
+ * countdown, the target, your power and your heart rate.
+ */
 export function drawMini(ctx: CanvasRenderingContext2D, s: MiniState, font: string) {
   const display = (px: number) => `700 ${px}px ${font}`;
-  ctx.fillStyle = "#12161C";
+  ctx.fillStyle = "#0B0E12";
   ctx.fillRect(0, 0, W, H);
 
-  ctx.textBaseline = "alphabetic";
-  ctx.fillStyle = MUTED;
-  ctx.font = display(26);
-  ctx.textAlign = "left";
-  ctx.fillText(s.label.toUpperCase().slice(0, 26), 28, 48);
-  ctx.textAlign = "right";
-  if (s.left !== undefined) ctx.fillText(`${clock(s.left)} to go`, W - 28, 48);
-
-  // Step countdown, left; target and power, right.
-  ctx.textAlign = "left";
-  ctx.fillStyle = s.work ? ORANGE : "#F3F5F7";
-  ctx.font = display(118);
-  ctx.fillText(clock(s.remaining), 24, 190);
-
-  ctx.textAlign = "right";
-  ctx.fillStyle = MUTED;
-  ctx.font = display(22);
-  ctx.fillText("TARGET", W - 28, 92);
-  ctx.fillStyle = "#F3F5F7";
-  ctx.font = display(84);
-  ctx.fillText(`${s.target}`, W - 28, 170);
-
   const status = powerStatus(s.power, s.target);
-  ctx.textAlign = "left";
-  ctx.fillStyle = "#F3F5F7";
-  ctx.font = display(64);
-  ctx.fillText(s.power !== undefined ? `${s.power} W` : "– W", 28, 272);
-  ctx.fillStyle = status.colour;
-  ctx.font = display(28);
-  ctx.fillText(status.text, 28, 308);
+  const cells: { label: string; value: string; unit?: string; colour: string }[] = [
+    { label: s.label, value: clock(s.remaining), colour: s.work ? ORANGE : "#F3F5F7" },
+    { label: "Target", value: `${s.target}`, unit: "W", colour: "#F3F5F7" },
+    { label: "Power", value: s.power !== undefined ? `${s.power}` : "–", unit: "W", colour: s.power !== undefined ? status.colour : MUTED },
+    { label: "Heart rate", value: s.hr !== undefined ? `${s.hr}` : "–", unit: "bpm", colour: "#F3F5F7" },
+  ];
+  cells.forEach((c, i) => {
+    const x = PAD + (i % 2) * (CELL_W + GAP);
+    const y = PAD + Math.floor(i / 2) * (CELL_H + GAP);
+    ctx.fillStyle = "#1A1F26";
+    ctx.beginPath();
+    ctx.roundRect(x, y, CELL_W, CELL_H, 18);
+    ctx.fill();
 
-  ctx.textAlign = "right";
-  ctx.fillStyle = MUTED;
-  ctx.font = display(34);
-  ctx.fillText(`${s.hr ?? "–"} bpm`, W - 28, 262);
-  ctx.fillText(`${s.cadence !== undefined ? Math.round(s.cadence) : "–"} rpm`, W - 28, 304);
+    const inner = CELL_W - 32;
+    ctx.textBaseline = "alphabetic";
+    ctx.textAlign = "left";
+    ctx.fillStyle = MUTED;
+    ctx.font = display(fitSize((px) => ((ctx.font = display(px)), ctx.measureText(c.label.toUpperCase()).width), inner, 20));
+    ctx.fillText(c.label.toUpperCase(), x + 16, y + 30);
+
+    // The number fills the rest of the box; its unit sits after it, small.
+    const unit = c.unit ? ` ${c.unit}` : "";
+    const unitPx = 22;
+    ctx.font = display(unitPx);
+    const unitW = unit ? ctx.measureText(unit).width : 0;
+    const px = fitSize((size) => ((ctx.font = display(size)), ctx.measureText(c.value).width), inner - unitW, CELL_H - 44);
+    ctx.font = display(px);
+    const valueW = ctx.measureText(c.value).width;
+    ctx.fillStyle = c.colour;
+    ctx.fillText(c.value, x + 16, y + CELL_H - 14);
+    if (unit) {
+      ctx.fillStyle = MUTED;
+      ctx.font = display(unitPx);
+      ctx.fillText(unit, x + 16 + valueW, y + CELL_H - 14);
+    }
+  });
 
   // Progress through the workout.
   ctx.fillStyle = "#2A323D";
-  ctx.fillRect(0, H - 14, W, 14);
+  ctx.fillRect(0, H - BAR, W, BAR);
   ctx.fillStyle = ORANGE;
-  ctx.fillRect(0, H - 14, W * Math.max(0, Math.min(1, s.progress)), 14);
+  ctx.fillRect(0, H - BAR, W * Math.max(0, Math.min(1, s.progress)), BAR);
 
   if (!s.running) {
-    ctx.fillStyle = "rgba(18,22,28,0.72)";
-    ctx.fillRect(0, 0, W, H - 14);
+    ctx.fillStyle = "rgba(11,14,18,0.72)";
+    ctx.fillRect(0, 0, W, H - BAR);
     ctx.fillStyle = "#F3F5F7";
     ctx.textAlign = "center";
     ctx.font = display(64);
@@ -130,7 +148,10 @@ export class MiniPlayer {
     this.video.muted = true;
     this.video.playsInline = true;
     // On the page but out of sight: some browsers only pop out a video that is in the document.
-    Object.assign(this.video.style, { position: "fixed", width: "1px", height: "1px", opacity: "0", pointerEvents: "none", bottom: "0", left: "0" });
+    // Same 16:9 shape as the picture, so no browser squeezes it into the element's shape.
+    this.video.width = W;
+    this.video.height = H;
+    Object.assign(this.video.style, { position: "fixed", width: "16px", height: "9px", objectFit: "contain", opacity: "0", pointerEvents: "none", bottom: "0", left: "0" });
     this.video.srcObject = this.canvas.captureStream!(2);
     this.video.addEventListener("leavepictureinpicture", () => this.onClose?.());
     document.body.appendChild(this.video);
