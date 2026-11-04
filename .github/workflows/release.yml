@@ -30,9 +30,18 @@ jobs:
       - name: Publish as the latest release
         env:
           GH_TOKEN: ${{ github.token }}
+        # Swap the file inside the existing release rather than deleting it first, so servers always
+        # have a release to download, and retry: GitHub's API sometimes answers 502 for a moment.
         run: |
-          gh release delete latest --yes --cleanup-tag 2>/dev/null || true
-          gh release create latest release/hour-power.tar.gz \
-            --title "Hour Power $(cat release/hour-power/VERSION)" \
-            --notes "Built from ${GITHUB_SHA}. Servers pick this up automatically." \
-            --target "${GITHUB_SHA}" --latest
+          retry() { for i in 1 2 3 4 5; do "$@" && return 0; echo "Attempt $i failed; retrying"; sleep $((i * 15)); done; return 1; }
+          file=release/hour-power.tar.gz
+          title="Hour Power $(cat release/hour-power/VERSION)"
+          notes="Built from ${GITHUB_SHA}. Servers pick this up automatically."
+          publish() {
+            gh release upload latest "$file" --clobber ||
+              gh release create latest "$file" --title "$title" --notes "$notes" --target "$GITHUB_SHA" --latest
+          }
+          retry publish
+          retry gh release edit latest --title "$title" --notes "$notes"
+          # Point the tag at this build (servers read the version from the file, so this is for people).
+          retry gh api -X PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/latest" -f sha="$GITHUB_SHA" -F force=true || true
