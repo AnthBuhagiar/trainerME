@@ -20,3 +20,11 @@ describe("today, in the rider's time zone", () => {
     expect(zoneFromStrava(undefined)).toBeUndefined();
   });
 });
+
+describe("local time to UTC", () => {
+  test("uses the zone's offset on that date, daylight saving included", async () => {
+    const { localToUtc } = await import("@/lib/engine/dates");
+    expect(new Date(localToUtc("2026-11-04T19:30:00", "Australia/Sydney")).toISOString()).toBe("2026-11-04T08:30:00.000Z"); // AEDT, +11
+    expect(new Date(localToUtc("2026-07-04T19:30:00", "Australia/Sydney")).toISOString()).toBe("2026-07-04T09:30:00.000Z"); // AEST, +10
+  });
+});

@@ -1,4 +1,4 @@
-import { loadRawActivities, loadSettings, saveRawActivities, saveRideSummary, type RawActivity } from "@/lib/data/store";
+import { loadRawActivities, loadSettings, readJson, saveRawActivities, saveRideSummary, writeJson, type RawActivity } from "@/lib/data/store";
 import { todayLocal } from "@/lib/engine/dates";
 import { summariseStreams } from "@/lib/strava/process";
 import type { RideSample } from "@/lib/strava/tcx";
@@ -28,6 +28,15 @@ export function keepRide(name: string, startMs: number, samples: RideSample[]): 
       cadence: samples.map((s) => s.cadence ?? null),
     }),
   );
+  // Every second, for downloading the ride later (a .fit for Garmin Connect).
+  writeJson(samplesFile(id), samples);
   saveRawActivities([...loadRawActivities().filter((a) => a.id !== id), activity].sort((a, b) => a.start_local.localeCompare(b.start_local)));
   return activity;
+}
+
+const samplesFile = (id: string) => `samples/${id}.json`;
+
+/** The seconds of a ride ridden in the player, if kept. */
+export function keptSamples(id: string): RideSample[] | null {
+  return /^hp-\d+$/.test(id) ? readJson<RideSample[] | null>(samplesFile(id), null) : null;
 }

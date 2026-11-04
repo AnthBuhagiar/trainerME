@@ -55,3 +55,10 @@ export function zoneFromStrava(value: string | undefined): string | undefined {
     return undefined;
   }
 }
+
+/** A local date-time ("2026-11-04T19:30:00") in `timeZone`, as UTC epoch ms. */
+export function localToUtc(local: string, timeZone?: string): number {
+  const asUtc = Date.parse(`${local}Z`);
+  const offset = (ms: number) => Date.parse(`${todayLocal(timeZone, new Date(ms))}Z`) - ms;
+  return asUtc - offset(asUtc - offset(asUtc));
+}

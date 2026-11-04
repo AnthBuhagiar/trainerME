@@ -6,7 +6,7 @@ import type { RawActivity } from "@/lib/data/store";
 
 process.env.TRAINERME_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "hourpower-keep-"));
 const store = await import("@/lib/data/store");
-const { keepRide } = await import("@/lib/player/keepRide");
+const { keepRide, keptSamples } = await import("@/lib/player/keepRide");
 
 const start = Date.parse("2026-11-03T08:30:00Z"); // 7:30 pm in Sydney
 const samples = Array.from({ length: 1800 }, (_, t) => ({ t, power: 200, cadence: 90, hr: 140 }));
@@ -24,6 +24,7 @@ describe("rides ridden in the player", () => {
     expect(rides).toHaveLength(1);
     expect(rides[0]).toMatchObject({ name: "2 × 15 min threshold", startLocal: "2026-11-03T19:30:00", indoor: true, movingTime: 1800 });
     expect(rides[0].streams?.avgWatts).toBe(200);
+    expect(keptSamples(rides[0].id)).toHaveLength(1800); // every second, for a .fit download later
   });
 
   test("become one ride with Strava's copy once it syncs, showing Strava's", () => {
