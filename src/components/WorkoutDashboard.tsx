@@ -21,6 +21,10 @@ interface Props {
   onSkip: () => void;
   onOffset: (delta: number) => void;
   onMinimise: () => void;
+  /** The rider's ERG switch, and what the trainer is doing when it isn't plain ERG. */
+  ergOn?: boolean;
+  onErg?: () => void;
+  ergNote?: string | null;
   onConnect: () => void;
   /** No heart rate yet: the Heart rate tile connects the strap. */
   onConnectHr?: () => void;
@@ -64,6 +68,16 @@ export function WorkoutDashboard(p: Props) {
           Step {p.index + 1} of {p.steps.length}
         </span>
         <div className="flex gap-2">
+          {p.onErg && (
+            <button
+              onClick={p.onErg}
+              aria-pressed={p.ergOn}
+              className="rounded-full px-3 py-1 text-[13px] font-semibold"
+              style={p.ergOn ? { background: "#FF6A1A", color: "#0B0E12" } : { background: "#1E242C" }}
+            >
+              ERG {p.ergOn ? "on" : "off"}
+            </button>
+          )}
           {p.onMini && (
             <button onClick={p.onMini} className="rounded-full px-3 py-1 text-[13px] font-semibold" style={{ background: p.miniOpen ? "#2A323D" : "#1E242C" }}>
               {p.miniOpen ? "Mini player on" : "Mini player"}
@@ -75,6 +89,11 @@ export function WorkoutDashboard(p: Props) {
         </div>
       </div>
 
+      {p.ergNote && (
+        <p className="rounded-2xl px-4 py-2 text-[14px] font-semibold" style={{ background: "#1E242C", color: "#F3F5F7" }} aria-live="polite">
+          {p.ergNote}
+        </p>
+      )}
       <div className="grid flex-1 gap-3 landscape:grid-cols-2">
         {/* Section and countdown */}
         <section className="flex flex-col justify-center gap-1 rounded-3xl p-4" style={{ background: "#1A1F26" }}>

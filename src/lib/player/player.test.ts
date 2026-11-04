@@ -44,3 +44,19 @@ describe("player steps", () => {
     expect(stepAt(steps, 3600)).toBeNull();
   });
 });
+
+describe("FTMS control", () => {
+  test("riding on the gears is a flat-road simulation", async () => {
+    const { rideOnGears } = await import("@/lib/player/ftms");
+    expect([...rideOnGears()]).toEqual([0x11, 0, 0, 0, 0, 40, 51]);
+  });
+  test("reads the trainer's replies and power range", async () => {
+    const { parseControlResponse, parsePowerRange } = await import("@/lib/player/ftms");
+    const view = (...b: number[]) => new DataView(new Uint8Array(b).buffer);
+    expect(parseControlResponse(view(0x80, 0x05, 0x01))).toEqual({ op: 5, result: "ok" });
+    expect(parseControlResponse(view(0x80, 0x11, 0x02))).toEqual({ op: 0x11, result: "not-supported" });
+    expect(parseControlResponse(view(0x80, 0x05, 0x05))?.result).toBe("not-permitted");
+    expect(parseControlResponse(view(0x07))).toBeNull();
+    expect(parsePowerRange(view(0, 0, 0xd0, 0x07, 1, 0))).toEqual({ min: 0, max: 2000 });
+  });
+});

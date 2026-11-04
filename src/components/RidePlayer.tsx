@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { setTargetPower, startOrResume, stopOrPause } from "@/lib/player/ftms";
+import { rideOnGears, setTargetPower, startOrResume, stopOrPause } from "@/lib/player/ftms";
+import { ergNote, ergStep, SPRINT_MAX_S, type ErgMemory, type ErgReason } from "@/lib/player/erg";
 import type { MiniState } from "@/lib/player/miniPlayer";
 import { adjustOffset, clearRide, elapsedAt, emptyRide, end, isRunning, loadRide, pause, record, saveRide, skip, start, type RideState } from "@/lib/player/session";
 import { stepAt, type PlayerStep } from "@/lib/player/steps";
@@ -64,7 +65,7 @@ export function RidePlayer({ name, autoUpload, steps, storageKey, length: length
   const done = ride.ended;
   const askToEnd = timeUp && !done && !free;
 
-  const { trainer, hrName, live, paired, write, lastTarget, connectTrainer, connectHr, reconnectIfDropped } = useSensors({
+  const { trainer, hrName, live, paired, write, lastCommand, gearsSupported, powerRange, connectTrainer, connectHr, reconnectIfDropped } = useSensors({
     isRunning: () => isRunning(rideRef.current),
     onTick: () => setNow(Date.now()),
     onError: setError,
@@ -103,7 +104,7 @@ export function RidePlayer({ name, autoUpload, steps, storageKey, length: length
     const back = () => {
       if (document.visibilityState !== "visible") return;
       setNow(Date.now());
-      lastTarget.current = null; // re-send the target for wherever the workout is now
+      lastCommand.current = null; // re-send the target for wherever the workout is now
       reconnectIfDropped();
     };
     document.addEventListener("visibilitychange", back);
@@ -111,7 +112,7 @@ export function RidePlayer({ name, autoUpload, steps, storageKey, length: length
       clearInterval(id);
       document.removeEventListener("visibilitychange", back);
     };
-  }, [running, reconnectIfDropped, lastTarget]);
+  }, [running, reconnectIfDropped, lastCommand]);
 
   // On screen: power averaged over 3 s. Recorded: every reading as it came.
   const shown = { ...live, power: live.power3s ?? live.power };
@@ -134,12 +135,36 @@ export function RidePlayer({ name, autoUpload, steps, storageKey, length: length
     return () => window.removeEventListener("beforeunload", warn);
   }, [saved]);
 
-  // ERG: send the target whenever it changes.
+  // The trainer, each second: ERG with a soft start, sprints on the gears, low-cadence rescue (lib/player/erg.ts).
+  const [ergOn, setErgOn] = useState(true);
+  const ergMemory = useRef<ErgMemory>({});
+  const [ergReason, setErgReason] = useState<ErgReason>("erg");
+  const sprint = !free && !!current && current.work && current.seconds <= SPRINT_MAX_S;
   useEffect(() => {
-    if (!running || !trainer || done || target === lastTarget.current) return;
-    lastTarget.current = target;
-    write(setTargetPower(target));
-  }, [running, trainer, target, done, write, lastTarget]);
+    if (!trainer || done) return;
+    const { command, memory } = ergStep({ now, running, ergOn, target, sprint, cadence: live.cadence, power: live.power3s ?? live.power }, ergMemory.current);
+    ergMemory.current = memory;
+    setErgReason(command.reason);
+    const range = powerRange.current;
+    const clamp = (w: number) => (range ? Math.min(range.max, Math.max(range.min, w)) : w);
+    let bytes: Uint8Array | null;
+    let key: string;
+    if (command.mode === "erg") {
+      key = `erg:${clamp(command.watts!)}`;
+      bytes = setTargetPower(clamp(command.watts!));
+    } else if (gearsSupported.current) {
+      key = "gears";
+      bytes = rideOnGears();
+    } else {
+      // No gears mode on this trainer: stay in ERG, gentler where that's the point.
+      const w = command.reason === "low-cadence" ? Math.round(target * 0.5) : command.reason === "sprint" ? target : null;
+      key = w === null ? "none" : `erg:${clamp(w)}`;
+      bytes = w === null ? null : setTargetPower(clamp(w));
+    }
+    if (key === lastCommand.current) return;
+    lastCommand.current = key;
+    if (bytes) write(bytes);
+  }, [now, running, trainer, done, ergOn, target, sprint, live.cadence, live.power, live.power3s, write, lastCommand, gearsSupported, powerRange]);
 
   // Keep the screen awake while riding.
   useEffect(() => {
@@ -158,7 +183,7 @@ export function RidePlayer({ name, autoUpload, steps, storageKey, length: length
       setRide((r) => pause(r, t));
       write(stopOrPause(true));
     } else {
-      lastTarget.current = null; // re-send the target on resume
+      lastCommand.current = null; // re-send the target on resume
       setRide((r) => start(r, t));
       setNow(t);
       write(startOrResume());
@@ -185,7 +210,7 @@ export function RidePlayer({ name, autoUpload, steps, storageKey, length: length
 
   function freeRide() {
     const watts = Math.max(50, target || 150);
-    lastTarget.current = null;
+    lastCommand.current = null;
     setRide((r) => ({ ...r, freeWatts: watts }));
     setMinimised(false);
   }
@@ -243,6 +268,9 @@ export function RidePlayer({ name, autoUpload, steps, storageKey, length: length
           onEnd={endAndUpload}
           onMinimise={() => setMinimised(true)}
           onConnectHr={hrName ? undefined : connectHr}
+          ergOn={ergOn}
+          onErg={() => setErgOn((v) => !v)}
+          ergNote={trainer ? ergNote(ergReason) : null}
         />
       )}
       {showDashboard && (
@@ -265,6 +293,9 @@ export function RidePlayer({ name, autoUpload, steps, storageKey, length: length
           onMinimise={() => setMinimised(true)}
           onConnect={() => connectTrainer()}
           onConnectHr={hrName ? undefined : connectHr}
+          ergOn={ergOn}
+          onErg={() => setErgOn((v) => !v)}
+          ergNote={trainer ? ergNote(ergReason) : null}
           onMini={mini.supported ? mini.show : undefined}
           miniOpen={mini.open}
         />

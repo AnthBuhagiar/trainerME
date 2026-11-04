@@ -7,8 +7,11 @@ import {
   HEART_RATE_MEASUREMENT,
   HEART_RATE_SERVICE,
   INDOOR_BIKE_DATA,
+  SUPPORTED_POWER_RANGE,
   parseHeartRate,
+  parseControlResponse,
   parseIndoorBikeData,
+  parsePowerRange,
   requestControl,
   startOrResume,
 } from "@/lib/player/ftms";
@@ -38,8 +41,12 @@ export function useSensors({ isRunning, onTick, onError }: { isRunning: () => bo
   const control = useRef<BluetoothRemoteGATTCharacteristic | null>(null);
   const device = useRef<BluetoothDevice | null>(null);
   const queue = useRef<Promise<unknown>>(Promise.resolve());
-  /** The last ERG target sent; null makes the next one go out even if it's the same. */
-  const lastTarget = useRef<number | null>(null);
+  /** The last trainer command sent (erg:205, gears); null makes the next one go out even if it's the same. */
+  const lastCommand = useRef<string | null>(null);
+  /** Can the trainer ride "on the gears" (FTMS simulation)? Assumed until it says no. */
+  const gearsSupported = useRef(true);
+  /** The trainer's power limits, when it says. */
+  const powerRange = useRef<{ min: number; max: number } | null>(null);
   // Callbacks from the player change every render; the Bluetooth listeners keep the latest.
   const cb = useRef({ isRunning, onTick, onError });
   cb.current = { isRunning, onTick, onError };
@@ -68,12 +75,29 @@ export function useSensors({ isRunning, onTick, onError }: { isRunning: () => bo
       });
       await data.startNotifications();
       const cp = await service.getCharacteristic(CONTROL_POINT);
+      cp.addEventListener("characteristicvaluechanged", (e) => {
+        const reply = parseControlResponse((e.target as BluetoothRemoteGATTCharacteristic).value!);
+        if (!reply || reply.result === "ok") return;
+        if (reply.result === "not-permitted") {
+          // Another app took the trainer, or it forgot us: ask again and resend.
+          write(requestControl());
+          lastCommand.current = null;
+        } else if (reply.op === 0x11) {
+          gearsSupported.current = false; // no simulation mode: sprints and rescues stay in ERG at a gentler target
+          lastCommand.current = null;
+        }
+      });
       await cp.startNotifications(); // control point replies come as indications
+      try {
+        powerRange.current = parsePowerRange(await (await service.getCharacteristic(SUPPORTED_POWER_RANGE)).readValue());
+      } catch {
+        powerRange.current = null; // optional: not every trainer has it
+      }
       control.current = cp;
       device.current = d;
       write(requestControl());
       if (cb.current.isRunning()) write(startOrResume());
-      lastTarget.current = null; // re-send the current target
+      lastCommand.current = null; // re-send the current target
       setTrainer(d.name ?? "Smart trainer");
       cb.current.onError(null);
     },
@@ -183,5 +207,5 @@ export function useSensors({ isRunning, onTick, onError }: { isRunning: () => bo
     if (device.current && !device.current.gatt?.connected) void reconnect();
   }, [reconnect]);
 
-  return { trainer, hrName, live, paired, write, lastTarget, connectTrainer, connectHr, reconnectIfDropped };
+  return { trainer, hrName, live, paired, write, lastCommand, gearsSupported, powerRange, connectTrainer, connectHr, reconnectIfDropped };
 }
