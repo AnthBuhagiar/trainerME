@@ -26,3 +26,14 @@ describe("remembered sensors", () => {
     expect(loadSensors(s)).toEqual({});
   });
 });
+
+describe("sensors connected in Settings", () => {
+  test("are handed to the ride, even where the browser can't list remembered devices", async () => {
+    const { handOver, rememberedDevice } = await import("@/lib/player/devices");
+    const strap = { id: "strap-1", name: "Polar H10" } as BluetoothDevice;
+    expect(await rememberedDevice("hr")).toBeNull();
+    handOver("hr", strap);
+    expect(await rememberedDevice("hr")).toBe(strap);
+    expect(await rememberedDevice("trainer")).toBeNull();
+  });
+});

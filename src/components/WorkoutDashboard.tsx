@@ -22,6 +22,8 @@ interface Props {
   onOffset: (delta: number) => void;
   onMinimise: () => void;
   onConnect: () => void;
+  /** No heart rate yet: the Heart rate tile connects the strap. */
+  onConnectHr?: () => void;
   /** Pop the workout out as a floating tile; only where the browser supports it. */
   onMini?: () => void;
   miniOpen?: boolean;
@@ -118,7 +120,15 @@ export function WorkoutDashboard(p: Props) {
             ["Heart rate", p.live.hr ?? null, "bpm"],
             ["Step avg", p.stepAvg, "W"],
             ["Next", next ? scaled(next.watts) : null, next ? `W · ${clock(next.seconds)}` : "finish"],
-          ].map(([label, value, unit]) => (
+          ].map(([label, value, unit]) =>
+            label === "Heart rate" && p.onConnectHr && value === null ? (
+              <button key="hr" onClick={p.onConnectHr} className="rounded-3xl px-4 py-3 text-left landscape:py-2" style={{ background: "#1A1F26" }}>
+                <div className="label" style={MUTED}>
+                  Heart rate
+                </div>
+                <div className="text-[18px] font-semibold leading-tight text-signal">Tap to connect</div>
+              </button>
+            ) : (
             <div key={label as string} className="rounded-3xl px-4 py-3 landscape:py-2" style={{ background: "#1A1F26" }}>
               <div className="label" style={MUTED}>
                 {label}
@@ -128,7 +138,8 @@ export function WorkoutDashboard(p: Props) {
                 {unit}
               </div>
             </div>
-          ))}
+            ),
+          )}
         </section>
       </div>
 

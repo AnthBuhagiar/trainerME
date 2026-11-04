@@ -66,12 +66,24 @@ export function forgetSensor(kind: SensorKind, store: Store | null = local()): S
   return next;
 }
 
+/**
+ * Sensors connected on another screen of the app this visit (Settings). Their
+ * device objects can reconnect without the chooser on every browser, so the
+ * ride picks them up even where getDevices isn't available (Chrome on Android).
+ */
+const handedOver = new Map<SensorKind, BluetoothDevice>();
+export function handOver(kind: SensorKind, d: BluetoothDevice) {
+  handedOver.set(kind, d);
+}
+
 /** Can this browser hand back a device paired earlier without asking again? */
 export const canRemember = () => typeof navigator !== "undefined" && typeof navigator.bluetooth?.getDevices === "function";
 
 /** The remembered device itself, if the browser still holds permission for it. */
 export async function rememberedDevice(kind: SensorKind): Promise<BluetoothDevice | null> {
   const saved = loadSensors()[kind];
+  const held = handedOver.get(kind);
+  if (held && (!saved || held.id === saved.id)) return held;
   if (!saved || !canRemember()) return null;
   try {
     const devices = await navigator.bluetooth!.getDevices!();
@@ -91,6 +103,7 @@ export async function chooseDevice(kind: SensorKind, fresh = false): Promise<Blu
   const filters = saved ? [{ services: [service], name: saved.name }] : [{ services: [service] }];
   const d = await navigator.bluetooth!.requestDevice({ filters });
   rememberSensor(kind, d);
+  handOver(kind, d);
   return d;
 }
 

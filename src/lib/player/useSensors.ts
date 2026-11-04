@@ -122,13 +122,33 @@ export function useSensors({ isRunning, onTick, onError }: { isRunning: () => bo
       setLive((l) => ({ ...l, hr }));
     });
     await c.startNotifications();
-    d.addEventListener("gattserverdisconnected", () => setHrName(null));
     setHrName(d.name ?? "Heart rate");
   }, []);
 
+  /** A strap that drops out (out of range, sweat on the contacts): get it back without the chooser. */
+  const watchHr = useCallback(
+    (d: BluetoothDevice) => {
+      d.addEventListener("gattserverdisconnected", async () => {
+        setHrName(null);
+        setLive((l) => ({ ...l, hr: undefined })); // no stale number while it's gone
+        for (let attempt = 0; attempt < 5; attempt++) {
+          await new Promise((r) => setTimeout(r, 2000));
+          try {
+            await setupHr(d);
+            return;
+          } catch {
+            // still out of reach
+          }
+        }
+      });
+      return setupHr(d);
+    },
+    [setupHr],
+  );
+
   async function connectHr() {
     try {
-      await setupHr(await chooseDevice("hr"));
+      await watchHr(await chooseDevice("hr"));
     } catch (e) {
       if ((e as Error).name !== "NotFoundError") cb.current.onError(`Couldn't connect heart rate: ${(e as Error).message}`);
     }
@@ -144,12 +164,12 @@ export function useSensors({ isRunning, onTick, onError }: { isRunning: () => bo
       const [t, h] = await Promise.all([s.trainer ? connectRemembered("trainer") : null, s.hr ? connectRemembered("hr") : null]);
       if (cancelled) return;
       if (t) await watchTrainer(t).catch(() => {});
-      if (h) await setupHr(h).catch(() => {});
+      if (h) await watchHr(h).catch(() => {});
     })();
     return () => {
       cancelled = true;
     };
-  }, [watchTrainer, setupHr]);
+  }, [watchTrainer, watchHr]);
 
   /** The trainer dropped while the app was in the background: try to get it back. */
   const reconnectIfDropped = useCallback(() => {

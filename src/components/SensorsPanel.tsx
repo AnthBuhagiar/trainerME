@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { chooseDevice, canRemember, connectRemembered, forgetDevice, LABEL, loadSensors, type SavedSensors, type SensorKind } from "@/lib/player/devices";
+import { chooseDevice, canRemember, connectRemembered, forgetDevice, handOver, LABEL, loadSensors, type SavedSensors, type SensorKind } from "@/lib/player/devices";
 import { FTMS_SERVICE, HEART_RATE_MEASUREMENT, HEART_RATE_SERVICE, INDOOR_BIKE_DATA, parseHeartRate, parseIndoorBikeData } from "@/lib/player/ftms";
 
 type Status = { state: "idle" | "looking" | "on" | "off"; reading?: string };
@@ -44,6 +44,7 @@ export function SensorsPanel() {
 
   async function show(kind: SensorKind, d: BluetoothDevice) {
     open.current.push(d);
+    handOver(kind, d); // the ride reconnects it without asking again
     set(kind, { state: "on" });
     await listen(kind, d, (reading) => set(kind, { state: "on", reading }));
   }
