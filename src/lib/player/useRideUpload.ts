@@ -7,7 +7,8 @@ import { buildTcx } from "@/lib/strava/tcx";
 export interface Saved {
   url?: string;
   message: string;
-  reconnect?: boolean;
+  /** Where "Reconnect Strava" goes: Strava, then back to this ride to finish the upload. */
+  reconnect?: string;
   ok?: boolean;
 }
 
@@ -31,7 +32,10 @@ export function useRideUpload({ name, storageKey, ride, done, autoUpload }: { na
       const body = await res.json();
       if (body.activityId) setSaved({ url: `https://www.strava.com/activities/${body.activityId}`, message: "Saved to Strava." });
       else if (res.ok) setSaved({ ok: true, message: "Uploaded. Strava is still processing it; it will appear shortly." });
-      else setSaved({ message: body.error ?? "Upload failed.", reconnect: body.reconnect });
+      else {
+        const back = `/api/strava/connect?next=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+        setSaved({ message: `${body.kept ? "Saved in Hour Power. " : ""}${body.error ?? "Strava upload failed."}`, reconnect: body.reconnect ? back : undefined });
+      }
       if (res.ok) clearRide(storageKey);
     } catch {
       setSaved({ message: "Couldn’t reach the app. Download the file instead and upload it on strava.com." });

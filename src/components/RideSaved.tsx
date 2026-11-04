@@ -19,7 +19,7 @@ export function RideSaved({ saved, saving, onSave, onDownload }: { saved: Saved 
             </a>
           )}
           {saved.reconnect && (
-            <a href="/api/strava/connect" className="font-semibold text-signal-ink">
+            <a href={saved.reconnect} className="font-semibold text-signal-ink">
               Reconnect Strava
             </a>
           )}

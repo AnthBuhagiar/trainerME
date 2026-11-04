@@ -19,4 +19,10 @@ describe("Strava sign-in callback", () => {
       expect(res.headers.get("location")).toBe("https://example.test/login?error=expired");
     }
   });
+
+  test("only goes back to a path on this app", async () => {
+    const { safeNext } = await import("@/lib/strava/client");
+    expect(safeNext("/ride/2026-11-03?start=19:30")).toBe("/ride/2026-11-03?start=19:30");
+    for (const bad of ["//evil.example", "https://evil.example", "/\\evil.example", "", null]) expect(safeNext(bad)).toBeNull();
+  });
 });

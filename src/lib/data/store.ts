@@ -84,8 +84,8 @@ function writeFileAtomic(target: string, value: unknown): void {
 
 export interface RawActivity {
   id: string;
-  /** Where it came from; Strava when missing (older files). */
-  source?: "strava" | "intervals";
+  /** Where it came from; Strava when missing (older files). "hourpower": ridden in the app's player. */
+  source?: "strava" | "intervals" | "hourpower";
   name: string;
   sport_type: string;
   start_local: string;
@@ -155,6 +155,9 @@ export function isIndoor(a: Activity): boolean {
   return a.isTrainer || a.sportType === "VirtualRide" || (a.elevationGain === 0 && a.sportType === "Ride");
 }
 
+/** Came from Strava (older files have no source). */
+export const fromStrava = (a: RawActivity) => (a.source ?? "strava") === "strava";
+
 /**
  * The same ride can arrive from Strava and from Intervals.icu (e.g. a Garmin upload synced to both).
  * Treat activities of the same kind starting within 2 minutes with similar length as one, keeping
@@ -163,7 +166,7 @@ export function isIndoor(a: Activity): boolean {
 export function dedupeActivities(raw: RawActivity[], hasStreams: (id: string) => boolean = hasRideSummary): RawActivity[] {
   const sorted = [...raw].sort((a, b) => a.start_local.localeCompare(b.start_local));
   const kept: RawActivity[] = [];
-  const rank = (a: RawActivity) => (hasStreams(a.id) ? 2 : 0) + (a.source !== "intervals" ? 1 : 0);
+  const rank = (a: RawActivity) => (hasStreams(a.id) ? 2 : 0) + (fromStrava(a) ? 1 : 0);
   for (const a of sorted) {
     // Sorted by start, so only the last few kept activities can be within 2 minutes.
     const start = Date.parse(`${a.start_local}Z`);

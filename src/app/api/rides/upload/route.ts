@@ -1,5 +1,6 @@
 import { athleteRoute } from "@/lib/auth/athlete";
 import { NextResponse } from "next/server";
+import { keepRide } from "@/lib/player/keepRide";
 import { canUpload, stravaUpload } from "@/lib/strava/client";
 import { buildTcx, type RideSample } from "@/lib/strava/tcx";
 
@@ -11,12 +12,20 @@ interface Body {
   samples: RideSample[];
 }
 
-/** Upload a ride recorded in the player to Strava. */
+/** Keep a ride recorded in the player in Hour Power, then upload it to Strava. */
 async function post(request: Request) {
   const body = (await request.json()) as Body;
   if (!body.samples?.length || !Number.isFinite(body.startMs)) return NextResponse.json({ error: "Nothing recorded yet." }, { status: 400 });
+  // First, so the ride counts in Hour Power even when Strava says no.
+  let kept = false;
+  try {
+    keepRide(body.name, body.startMs, body.samples);
+    kept = true;
+  } catch {
+    // Never let this stop the upload.
+  }
   if (!canUpload()) {
-    return NextResponse.json({ error: "Reconnect Strava and tick “Upload your activities” so Hour Power can save rides.", reconnect: true }, { status: 403 });
+    return NextResponse.json({ kept, error: "Strava needs permission to upload: reconnect and tick “Upload your activities”.", reconnect: true }, { status: 403 });
   }
   try {
     const result = await stravaUpload(buildTcx(body.startMs, body.samples, "Ridden with Hour Power"), {
@@ -24,9 +33,10 @@ async function post(request: Request) {
       description: "Ridden with Hour Power",
       externalId: `hourpower-${body.startMs}`,
     });
-    return NextResponse.json(result, { status: result.error ? 422 : 200 });
+    return NextResponse.json({ kept, ...result }, { status: result.error ? 422 : 200 });
   } catch (e) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 502 });
+    const message = (e as Error).message;
+    return NextResponse.json({ kept, error: message, reconnect: /reconnect/i.test(message) }, { status: 502 });
   }
 }
 
