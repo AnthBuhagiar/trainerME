@@ -13,9 +13,13 @@ import {
   startOrResume,
 } from "@/lib/player/ftms";
 import { chooseDevice, connectRemembered, loadSensors } from "@/lib/player/devices";
+import { threeSecondPower, type Readings } from "@/lib/player/smoothing";
 
 export interface Live {
+  /** The trainer's latest reading (recorded as is). */
   power?: number;
+  /** Average over the last 3 s: the number shown. */
+  power3s?: number;
   cadence?: number;
   hr?: number;
 }
@@ -29,6 +33,7 @@ export function useSensors({ isRunning, onTick, onError }: { isRunning: () => bo
   const [trainer, setTrainer] = useState<string | null>(null);
   const [hrName, setHrName] = useState<string | null>(null);
   const [live, setLive] = useState<Live>({});
+  const readings = useRef<Readings>([]);
   const [paired, setPaired] = useState<{ trainer?: string; hr?: string }>({});
   const control = useRef<BluetoothRemoteGATTCharacteristic | null>(null);
   const device = useRef<BluetoothDevice | null>(null);
@@ -54,7 +59,9 @@ export function useSensors({ isRunning, onTick, onError }: { isRunning: () => bo
       data.addEventListener("characteristicvaluechanged", (e) => {
         const v = (e.target as BluetoothRemoteGATTCharacteristic).value!;
         const b = parseIndoorBikeData(v);
-        setLive((l) => ({ ...l, power: b.power ?? l.power, cadence: b.cadence ?? l.cadence, hr: b.heartRate ?? l.hr }));
+        let power3s: number | undefined;
+        if (b.power !== undefined) ({ readings: readings.current, power: power3s } = threeSecondPower(readings.current, Date.now(), b.power));
+        setLive((l) => ({ ...l, power: b.power ?? l.power, power3s: power3s ?? l.power3s, cadence: b.cadence ?? l.cadence, hr: b.heartRate ?? l.hr }));
         // The trainer reports about once a second: tick the clock too, so the workout keeps time even when
         // the phone slows the app's own timers in the background.
         cb.current.onTick();
