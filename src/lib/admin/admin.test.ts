@@ -15,6 +15,7 @@ const { buildAdminStats } = await import("@/lib/admin/stats");
 const { compareWeeks, reasonFor } = await import("@/lib/admin/planUsage");
 const { tokenMatches } = await import("@/lib/admin/auth");
 const traffic = await import("@/lib/admin/traffic");
+const { canSeeAdmin } = await import("@/lib/admin/access");
 
 afterAll(() => {
   delete process.env.SESSION_SECRET;
@@ -112,6 +113,13 @@ describe("plan changes", () => {
 });
 
 describe("access", () => {
+  test("only the server's owner sees the admin page", () => {
+    // Rider 11 owns this server (claimed in the first test).
+    expect(canSeeAdmin(11)).toBe(true);
+    expect(canSeeAdmin(22)).toBe(false);
+    expect(canSeeAdmin(null)).toBe(false);
+  });
+
   test("needs a long token, sent as a bearer token", () => {
     const token = "x".repeat(40);
     expect(tokenMatches(`Bearer ${token}`, token)).toBe(true);
