@@ -7,6 +7,7 @@
 export const FTMS_SERVICE = 0x1826;
 export const INDOOR_BIKE_DATA = 0x2ad2;
 export const CONTROL_POINT = 0x2ad9;
+export const SUPPORTED_POWER_RANGE = 0x2ad8;
 export const HEART_RATE_SERVICE = 0x180d;
 export const HEART_RATE_MEASUREMENT = 0x2a37;
 
@@ -19,6 +20,36 @@ export const stopOrPause = (pause = false) => new Uint8Array([0x08, pause ? 0x02
 export function setTargetPower(watts: number): Uint8Array {
   const w = Math.max(0, Math.min(2000, Math.round(watts)));
   return new Uint8Array([0x05, w & 0xff, (w >> 8) & 0xff]);
+}
+
+/**
+ * Off ERG: flat-road simulation (no wind, 0 % grade, typical rolling and air
+ * resistance), so the gears set the resistance like riding on the flat.
+ */
+export function rideOnGears(): Uint8Array {
+  const crr = 40; // 0.0040, in 0.0001
+  const cw = 51; // 0.51 kg/m, in 0.01
+  return new Uint8Array([0x11, 0, 0, 0, 0, crr, cw]);
+}
+
+/** A control point reply: which command it answers and how it went. */
+export interface ControlResponse {
+  op: number;
+  result: "ok" | "not-supported" | "invalid" | "failed" | "not-permitted";
+}
+const RESULTS: Record<number, ControlResponse["result"]> = { 1: "ok", 2: "not-supported", 3: "invalid", 4: "failed", 5: "not-permitted" };
+
+export function parseControlResponse(view: DataView): ControlResponse | null {
+  if (view.byteLength < 3 || view.getUint8(0) !== 0x80) return null;
+  return { op: view.getUint8(1), result: RESULTS[view.getUint8(2)] ?? "failed" };
+}
+
+/** The trainer's power limits (Supported Power Range): targets are kept inside them. */
+export function parsePowerRange(view: DataView): { min: number; max: number } | null {
+  if (view.byteLength < 4) return null;
+  const min = view.getInt16(0, true);
+  const max = view.getInt16(2, true);
+  return max > min && max > 0 ? { min: Math.max(0, min), max } : null;
 }
 
 export interface BikeData {

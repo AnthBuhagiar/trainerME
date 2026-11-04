@@ -13,6 +13,10 @@ interface Props {
   onToggle: () => void;
   onEnd: () => void;
   onMinimise: () => void;
+  /** The rider's ERG switch, and what the trainer is doing when it isn't plain ERG. */
+  ergOn?: boolean;
+  onErg?: () => void;
+  ergNote?: string | null;
   /** No heart rate yet: the Heart tile connects the strap. */
   onConnectHr?: () => void;
 }
@@ -33,10 +37,27 @@ export function FreeRide(p: Props) {
         <span className="label" style={MUTED}>
           Free ride
         </span>
-        <button onClick={p.onMinimise} className="rounded-full px-3 py-1 text-[13px] font-semibold" style={{ background: "#1E242C" }}>
-          Minimise
-        </button>
+        <div className="flex gap-2">
+          {p.onErg && (
+            <button
+              onClick={p.onErg}
+              aria-pressed={p.ergOn}
+              className="rounded-full px-3 py-1 text-[13px] font-semibold"
+              style={p.ergOn ? { background: "#FF6A1A", color: "#0B0E12" } : { background: "#1E242C" }}
+            >
+              ERG {p.ergOn ? "on" : "off"}
+            </button>
+          )}
+          <button onClick={p.onMinimise} className="rounded-full px-3 py-1 text-[13px] font-semibold" style={{ background: "#1E242C" }}>
+            Minimise
+          </button>
+        </div>
       </div>
+      {p.ergNote && (
+        <p className="rounded-2xl px-4 py-2 text-[14px] font-semibold" style={{ background: "#1E242C", color: "#F3F5F7" }} aria-live="polite">
+          {p.ergNote}
+        </p>
+      )}
 
       <section className="flex flex-col items-center gap-2 rounded-3xl p-5" style={CARD}>
         <div className="label" style={MUTED}>
