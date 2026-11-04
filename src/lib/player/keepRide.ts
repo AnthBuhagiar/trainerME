@@ -1,6 +1,8 @@
 import { loadRawActivities, loadSettings, readJson, saveRawActivities, saveRideSummary, writeJson, type RawActivity } from "@/lib/data/store";
 import { todayLocal } from "@/lib/engine/dates";
 import { retimeRidden } from "@/lib/plan/completions";
+import { physicsFor } from "@/lib/goals/summary";
+import { virtualSpeed } from "@/lib/player/virtualSpeed";
 import { summariseStreams } from "@/lib/strava/process";
 import type { RideSample } from "@/lib/strava/tcx";
 
@@ -12,6 +14,8 @@ import type { RideSample } from "@/lib/strava/tcx";
 export function keepRide(name: string, startMs: number, samples: RideSample[]): RawActivity {
   const id = `hp-${startMs}`;
   const seconds = samples.length ? samples[samples.length - 1].t + 1 : 0;
+  const moving = virtualSpeed(samples, physicsFor(loadSettings()));
+  const distance = Math.round(moving.length ? moving[moving.length - 1].distance : 0);
   const activity: RawActivity = {
     id,
     source: "hourpower",
@@ -19,7 +23,7 @@ export function keepRide(name: string, startMs: number, samples: RideSample[]): 
     sport_type: "VirtualRide",
     start_local: todayLocal(loadSettings().timeZone ?? process.env.APP_TIMEZONE, new Date(startMs)),
     is_trainer: true,
-    summary: { distance: 0, moving_time: seconds, elapsed_time: seconds, elevation_gain: 0 },
+    summary: { distance, moving_time: seconds, elapsed_time: seconds, elevation_gain: 0 }, // distance: on a flat road at that power
   };
   saveRideSummary(
     summariseStreams(id, {

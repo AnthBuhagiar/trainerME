@@ -117,6 +117,8 @@ export function buildFit(startMs: number, points: FitPoint[], sport: FitSport, u
   const hr = present(points.map((p) => p.hr));
   const cadence = present(points.map((p) => p.cadence));
   const distance = max(present(points.map((p) => p.distance)));
+  const avgSpeed = distance !== undefined && seconds > 0 ? (distance / seconds) * 1000 : undefined;
+  const maxSpeed = max(present(points.map((p) => p.speed)));
   const [sportCode, subSport] = SPORT[sport];
 
   // file_id: an activity, made by a development (unregistered) app.
@@ -144,17 +146,28 @@ export function buildFit(startMs: number, points: FitPoint[], sport: FitSport, u
   for (const p of points) w.message(20, recordFields, columns.map(([, get]) => get(p)));
   // event: timer stop
   w.message(21, [[253, "u32"], [0, "enum"], [1, "enum"]], [end, 0, 4]);
-  const totals = [seconds * 1000, seconds * 1000, distance === undefined ? undefined : distance * 100, avg(power), max(power), avg(hr), max(hr), avg(cadence)];
+  const totals = [
+    seconds * 1000,
+    seconds * 1000,
+    distance === undefined ? undefined : distance * 100,
+    avg(power),
+    max(power),
+    avg(hr),
+    max(hr),
+    avg(cadence),
+    avgSpeed,
+    maxSpeed === undefined ? undefined : maxSpeed * 1000,
+  ];
   // lap
   w.message(
     19,
-    [[253, "u32"], [2, "u32"], [0, "enum"], [1, "enum"], [7, "u32"], [8, "u32"], [9, "u32"], [19, "u16"], [20, "u16"], [15, "u8"], [16, "u8"], [17, "u8"], [25, "enum"]],
+    [[253, "u32"], [2, "u32"], [0, "enum"], [1, "enum"], [7, "u32"], [8, "u32"], [9, "u32"], [19, "u16"], [20, "u16"], [15, "u8"], [16, "u8"], [17, "u8"], [13, "u16"], [14, "u16"], [25, "enum"]],
     [end, start, 9, 1, ...totals, sportCode],
   );
   // session
   w.message(
     18,
-    [[253, "u32"], [2, "u32"], [0, "enum"], [1, "enum"], [7, "u32"], [8, "u32"], [9, "u32"], [20, "u16"], [21, "u16"], [16, "u8"], [17, "u8"], [18, "u8"], [5, "enum"], [6, "enum"], [25, "u16"], [26, "u16"]],
+    [[253, "u32"], [2, "u32"], [0, "enum"], [1, "enum"], [7, "u32"], [8, "u32"], [9, "u32"], [20, "u16"], [21, "u16"], [16, "u8"], [17, "u8"], [18, "u8"], [14, "u16"], [15, "u16"], [5, "enum"], [6, "enum"], [25, "u16"], [26, "u16"]],
     [end, start, 8, 1, ...totals, sportCode, subSport, 0, 1],
   );
   // activity

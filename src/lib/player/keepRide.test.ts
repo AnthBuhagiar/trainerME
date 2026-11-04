@@ -24,6 +24,8 @@ describe("rides ridden in the player", () => {
     expect(rides).toHaveLength(1);
     expect(rides[0]).toMatchObject({ name: "2 × 15 min threshold", startLocal: "2026-11-03T19:30:00", indoor: true, movingTime: 1800 });
     expect(rides[0].streams?.avgWatts).toBe(200);
+    expect(rides[0].distance / 1000).toBeGreaterThan(14); // half an hour at 200 W on the flat: ~16 km
+    expect(rides[0].distance / 1000).toBeLessThan(18);
     expect(keptSamples(rides[0].id)).toHaveLength(1800); // every second, for a .fit download later
   });
 
