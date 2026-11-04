@@ -113,6 +113,9 @@ export function RidePlayer({ name, autoUpload, steps, storageKey, length: length
     };
   }, [running, reconnectIfDropped, lastTarget]);
 
+  // On screen: power averaged over 3 s. Recorded: every reading as it came.
+  const shown = { ...live, power: live.power3s ?? live.power };
+
   // Record one sample a second while riding.
   const liveRef = useRef(live);
   liveRef.current = live;
@@ -199,9 +202,9 @@ export function RidePlayer({ name, autoUpload, steps, storageKey, length: length
   }
 
   const miniState: MiniState | null = free
-    ? { label: "Free ride", remaining: elapsed, target, power: live.power, hr: live.hr, cadence: live.cadence, work: false, running, progress: 1 }
+    ? { label: "Free ride", remaining: elapsed, target, power: shown.power, hr: live.hr, cadence: live.cadence, work: false, running, progress: 1 }
     : at && current
-      ? { label: current.label, remaining: at.remaining, left: total - elapsed, target, power: live.power, hr: live.hr, cadence: live.cadence, work: current.work, running, progress: total ? elapsed / total : 0 }
+      ? { label: current.label, remaining: at.remaining, left: total - elapsed, target, power: shown.power, hr: live.hr, cadence: live.cadence, work: current.work, running, progress: total ? elapsed / total : 0 }
       : null;
   const mini = useMiniPlayer({ state: miniState, name, running, done, onToggle: toggle, onSkip: skipStep, onError: setError });
 
@@ -232,7 +235,7 @@ export function RidePlayer({ name, autoUpload, steps, storageKey, length: length
         <FreeRide
           watts={ride.freeWatts!}
           elapsed={elapsed}
-          live={live}
+          live={shown}
           running={running}
           trainer={!!trainer}
           onWatts={(w) => setRide((r) => ({ ...r, freeWatts: w }))}
@@ -251,7 +254,7 @@ export function RidePlayer({ name, autoUpload, steps, storageKey, length: length
           total={total}
           target={target}
           offset={offset}
-          live={live}
+          live={shown}
           stepAvg={stepAvg}
           running={running}
           trainer={!!trainer}
@@ -309,7 +312,7 @@ export function RidePlayer({ name, autoUpload, steps, storageKey, length: length
             </div>
             <dl className="grid grid-cols-3 gap-3 text-center">
               {[
-                ["Power", live.power, "W"],
+                ["Power", shown.power, "W"],
                 ["Cadence", live.cadence !== undefined ? Math.round(live.cadence) : undefined, "rpm"],
                 ["Heart", live.hr, "bpm"],
               ].map(([label, value, unit]) => (
