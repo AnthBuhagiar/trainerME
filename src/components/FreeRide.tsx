@@ -13,6 +13,8 @@ interface Props {
   onToggle: () => void;
   onEnd: () => void;
   onMinimise: () => void;
+  /** No heart rate yet: the Heart tile connects the strap. */
+  onConnectHr?: () => void;
 }
 
 const MUTED = { color: "#9AA6B2" };
@@ -65,7 +67,15 @@ export function FreeRide(p: Props) {
           ["Power", p.live.power, "W"],
           ["Cadence", p.live.cadence !== undefined ? Math.round(p.live.cadence) : undefined, "rpm"],
           ["Heart", p.live.hr, "bpm"],
-        ].map(([label, value, unit]) => (
+        ].map(([label, value, unit]) =>
+          label === "Heart" && p.onConnectHr && value === undefined ? (
+            <button key="hr" onClick={p.onConnectHr} className="rounded-3xl px-3 py-3 text-center" style={CARD}>
+              <div className="label" style={MUTED}>
+                Heart
+              </div>
+              <div className="pt-1 text-[15px] font-semibold leading-tight text-signal">Tap to connect</div>
+            </button>
+          ) : (
           <div key={label as string} className="rounded-3xl px-3 py-3 text-center" style={CARD}>
             <div className="label" style={MUTED}>
               {label}
@@ -75,7 +85,8 @@ export function FreeRide(p: Props) {
               {unit}
             </div>
           </div>
-        ))}
+          ),
+        )}
       </section>
 
       <div className="flex items-baseline justify-between px-1">

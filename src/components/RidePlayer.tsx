@@ -237,6 +237,7 @@ export function RidePlayer({ name, autoUpload, steps, storageKey, length: length
           onToggle={toggle}
           onEnd={endAndUpload}
           onMinimise={() => setMinimised(true)}
+          onConnectHr={hrName ? undefined : connectHr}
         />
       )}
       {showDashboard && (
@@ -258,6 +259,7 @@ export function RidePlayer({ name, autoUpload, steps, storageKey, length: length
           onOffset={(d) => setRide((r) => ({ ...r, offset: adjustOffset(r.offset, d) }))}
           onMinimise={() => setMinimised(true)}
           onConnect={() => connectTrainer()}
+          onConnectHr={hrName ? undefined : connectHr}
           onMini={mini.supported ? mini.show : undefined}
           miniOpen={mini.open}
         />
