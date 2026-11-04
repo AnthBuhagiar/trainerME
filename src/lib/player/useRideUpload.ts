@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { clearRide, type RideState } from "@/lib/player/session";
+import { buildFit } from "@/lib/export/fit";
 import { buildTcx } from "@/lib/strava/tcx";
 
 export interface Saved {
@@ -59,13 +60,17 @@ export function useRideUpload({
     }
   }
 
-  function download() {
+  /** The ride as a file: .fit for Garmin Connect, or .tcx. */
+  function download(kind: "fit" | "tcx" = "tcx") {
     const r = ride.current;
     if (!r.startedAt) return;
-    const blob = new Blob([buildTcx(r.startedAt, r.samples, "Ridden with Hour Power")], { type: "application/xml" });
+    const blob =
+      kind === "fit"
+        ? new Blob([buildFit(r.startedAt, r.samples, "indoor-cycling", -new Date(r.startedAt).getTimezoneOffset() * 60) as BlobPart], { type: "application/vnd.ant.fit" })
+        : new Blob([buildTcx(r.startedAt, r.samples, "Ridden with Hour Power")], { type: "application/xml" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `hour-power-${new Date(r.startedAt).toISOString().slice(0, 10)}.tcx`;
+    a.download = `hour-power-${new Date(r.startedAt).toISOString().slice(0, 10)}.${kind}`;
     a.click();
     URL.revokeObjectURL(a.href);
   }

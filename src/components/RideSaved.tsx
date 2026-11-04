@@ -1,7 +1,7 @@
 import type { Saved } from "@/lib/player/useRideUpload";
 
 /** After the ride: save it to Strava (or try again), or download the file. */
-export function RideSaved({ saved, saving, onSave, onDownload }: { saved: Saved | null; saving: boolean; onSave: () => void; onDownload: () => void }) {
+export function RideSaved({ saved, saving, onSave, onDownload }: { saved: Saved | null; saving: boolean; onSave: () => void; onDownload: (kind: "fit" | "tcx") => void }) {
   return (
     <div className="flex flex-col gap-2">
       {!saved?.url && !saved?.ok && !saving && (
@@ -25,8 +25,11 @@ export function RideSaved({ saved, saving, onSave, onDownload }: { saved: Saved 
           )}
         </p>
       )}
-      <button onClick={onDownload} className="h-12 text-[15px] font-semibold text-muted">
-        Download ride file (.tcx)
+      <button onClick={() => onDownload("fit")} className="h-12 rounded-2xl border border-line bg-card text-[15px] font-semibold">
+        Download .fit for Garmin Connect
+      </button>
+      <button onClick={() => onDownload("tcx")} className="h-10 text-[14px] font-semibold text-muted">
+        Download .tcx
       </button>
     </div>
   );

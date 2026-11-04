@@ -126,6 +126,16 @@ function ActivityPageView({ id }: { id: string }) {
         </p>
       )}
 
+      {(/^\d+$/.test(activity.id) || /^hp-\d+$/.test(activity.id)) && (
+        <a
+          href={`/api/activities/${activity.id}/fit`}
+          download
+          className="flex h-12 items-center justify-center rounded-2xl border border-line bg-card text-[15px] font-semibold"
+        >
+          Download .fit for Garmin Connect
+        </a>
+      )}
+
       {/^\d+$/.test(activity.id) && (
         <a href={`https://www.strava.com/activities/${activity.id}`} target="_blank" rel="noreferrer" className="text-[15px] font-semibold text-signal-ink">
           View on Strava
