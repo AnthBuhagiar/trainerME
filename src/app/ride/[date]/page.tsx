@@ -3,6 +3,7 @@ import { asAthlete } from "@/lib/auth/athlete";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { RidePlayer } from "@/components/RidePlayer";
+import { physicsFor } from "@/lib/goals/summary";
 import { sessionTitle } from "@/components/SessionCard";
 import { playerSteps } from "@/lib/player/steps";
 import { lengthLimits, resolveSession } from "@/lib/plan/session";
@@ -31,6 +32,7 @@ async function RidePageView({
       <RidePlayer
         storageKey={`${date}-${planned.start}`}
         planned={{ date, start: planned.start }}
+        physics={physicsFor(found.state.settings)}
         name={sessionTitle(session)}
         autoUpload={autoUploadOn(found.state.settings) && canUpload()}
         steps={playerSteps(session.ride!.workout, hourPower)}

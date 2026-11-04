@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { clearRide, type RideState } from "@/lib/player/session";
+import type { RiderPhysics } from "@/lib/goals/eventTime";
 import { buildFit } from "@/lib/export/fit";
+import { virtualSpeed } from "@/lib/player/virtualSpeed";
 import { buildTcx } from "@/lib/strava/tcx";
 
 export interface Saved {
@@ -21,7 +23,10 @@ export function useRideUpload({
   ride,
   done,
   autoUpload,
+  physics,
 }: {
+  /** For the ride's flat-road speed and distance in downloaded files. */
+  physics?: RiderPhysics;
   name: string;
   storageKey: string;
   /** The planned session being ridden, so it counts as done even when ridden on another day. */
@@ -64,10 +69,12 @@ export function useRideUpload({
   function download(kind: "fit" | "tcx" = "tcx") {
     const r = ride.current;
     if (!r.startedAt) return;
+    const moving = physics ? virtualSpeed(r.samples, physics) : null;
+    const points = r.samples.map((s, i) => ({ ...s, ...(moving ? { speed: moving[i].speed, distance: moving[i].distance } : {}) }));
     const blob =
       kind === "fit"
-        ? new Blob([buildFit(r.startedAt, r.samples, "indoor-cycling", -new Date(r.startedAt).getTimezoneOffset() * 60) as BlobPart], { type: "application/vnd.ant.fit" })
-        : new Blob([buildTcx(r.startedAt, r.samples, "Ridden with Hour Power")], { type: "application/xml" });
+        ? new Blob([buildFit(r.startedAt, points, "indoor-cycling", -new Date(r.startedAt).getTimezoneOffset() * 60) as BlobPart], { type: "application/vnd.ant.fit" })
+        : new Blob([buildTcx(r.startedAt, r.samples, "Ridden with Hour Power", moving?.map((m) => m.distance))], { type: "application/xml" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = `hour-power-${new Date(r.startedAt).toISOString().slice(0, 10)}.${kind}`;

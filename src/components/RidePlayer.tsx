@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { rideOnGears, setTargetPower, startOrResume, stopOrPause } from "@/lib/player/ftms";
 import { ergNote, ergStep, SPRINT_MAX_S, type ErgMemory, type ErgReason } from "@/lib/player/erg";
+import type { RiderPhysics } from "@/lib/goals/eventTime";
 import type { MiniState } from "@/lib/player/miniPlayer";
 import { adjustOffset, clearRide, elapsedAt, emptyRide, end, isRunning, loadRide, pause, record, saveRide, skip, start, type RideState } from "@/lib/player/session";
 import { stepAt, type PlayerStep } from "@/lib/player/steps";
@@ -26,6 +27,8 @@ interface Props {
   length?: { value: number; planned: number; min: number; max: number; baseHref: string };
   /** The planned session (its day and slot), recorded as done when the ride is saved. */
   planned?: { date: string; start: string };
+  /** Rider, bike and air, for the ride's flat-road speed and distance. */
+  physics?: RiderPhysics;
 }
 
 const clock = (s: number) => {
@@ -40,7 +43,7 @@ const clock = (s: number) => {
  * A workout on the trainer: the clock, the recording and ERG targets. Bluetooth,
  * the mini player and uploading live in their own hooks (lib/player/use*.ts).
  */
-export function RidePlayer({ name, autoUpload, steps, storageKey, length: lengthPick, planned }: Props) {
+export function RidePlayer({ name, autoUpload, steps, storageKey, length: lengthPick, planned, physics }: Props) {
   const [supported, setSupported] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [resumed, setResumed] = useState(false);
@@ -70,7 +73,7 @@ export function RidePlayer({ name, autoUpload, steps, storageKey, length: length
     onTick: () => setNow(Date.now()),
     onError: setError,
   });
-  const { saved, saving, save, download } = useRideUpload({ name, storageKey, planned, ride: rideRef, done, autoUpload });
+  const { saved, saving, save, download } = useRideUpload({ name, storageKey, planned, ride: rideRef, done, autoUpload, physics });
 
   useEffect(() => setSupported(typeof navigator !== "undefined" && !!navigator.bluetooth), []);
 

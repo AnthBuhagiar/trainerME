@@ -1,6 +1,9 @@
 import { athleteRoute } from "@/lib/auth/athlete";
 import { NextResponse } from "next/server";
+import { loadSettings } from "@/lib/data/store";
+import { physicsFor } from "@/lib/goals/summary";
 import { keepRide } from "@/lib/player/keepRide";
+import { virtualSpeed } from "@/lib/player/virtualSpeed";
 import { markRidden } from "@/lib/plan/completions";
 import { setRiderTimeZone } from "@/lib/plan/timeZone";
 import { canUpload, stravaUpload } from "@/lib/strava/client";
@@ -39,7 +42,7 @@ async function post(request: Request) {
     return NextResponse.json({ kept, error: "Strava needs permission to upload: reconnect and tick “Upload your activities”.", reconnect: true }, { status: 403 });
   }
   try {
-    const result = await stravaUpload(buildTcx(body.startMs, body.samples, "Ridden with Hour Power"), {
+    const result = await stravaUpload(buildTcx(body.startMs, body.samples, "Ridden with Hour Power", virtualSpeed(body.samples, physicsFor(loadSettings())).map((m) => m.distance)), {
       name: body.name,
       description: "Ridden with Hour Power",
       externalId: `hourpower-${body.startMs}`,

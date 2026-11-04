@@ -3,7 +3,9 @@ import { athleteRoute } from "@/lib/auth/athlete";
 import { isIndoor, isRide, loadActivities, loadSettings } from "@/lib/data/store";
 import { localToUtc } from "@/lib/engine/dates";
 import { buildFit, type FitPoint, type FitSport } from "@/lib/export/fit";
+import { physicsFor } from "@/lib/goals/summary";
 import { keptSamples } from "@/lib/player/keepRide";
+import { virtualSpeed } from "@/lib/player/virtualSpeed";
 import { StravaRateLimitError, stravaGet } from "@/lib/strava/client";
 import type { Activity } from "@/lib/types";
 
@@ -17,9 +19,16 @@ function sportOf(a: Activity): FitSport {
 }
 
 /** Every second of the activity: kept by Hour Power for player rides, otherwise from Strava. */
+/** Indoors there's no distance: give it the flat-road speed of the power, as on the ride's own page. */
+function withVirtualSpeed(points: FitPoint[]): FitPoint[] {
+  if (points.some((p) => p.distance !== undefined)) return points;
+  const moving = virtualSpeed(points, physicsFor(loadSettings()));
+  return points.map((p, i) => ({ ...p, speed: moving[i].speed, distance: moving[i].distance }));
+}
+
 async function pointsFor(a: Activity): Promise<FitPoint[] | null> {
   const kept = keptSamples(a.id);
-  if (kept) return kept.map((s) => ({ t: s.t, power: s.power, hr: s.hr, cadence: s.cadence }));
+  if (kept) return withVirtualSpeed(kept.map((s) => ({ t: s.t, power: s.power, hr: s.hr, cadence: s.cadence })));
   if (!/^\d+$/.test(a.id)) return null; // Intervals.icu activities: not from Strava
   const s = await stravaGet<Streams>(`/activities/${a.id}/streams`, {
     keys: "time,watts,heartrate,cadence,distance,velocity_smooth,altitude,latlng",
@@ -29,7 +38,7 @@ async function pointsFor(a: Activity): Promise<FitPoint[] | null> {
   const time = col("time") ?? [];
   const latlng = s.latlng?.data as ([number, number] | null)[] | undefined;
   const v = (xs: (number | null)[] | undefined, i: number) => (xs?.[i] ?? undefined) as number | undefined;
-  return time.map((t, i) => ({
+  const points: FitPoint[] = time.map((t, i) => ({
     t: t ?? i,
     power: v(col("watts"), i),
     hr: v(col("heartrate"), i),
@@ -40,6 +49,7 @@ async function pointsFor(a: Activity): Promise<FitPoint[] | null> {
     lat: latlng?.[i]?.[0],
     lng: latlng?.[i]?.[1],
   }));
+  return isIndoor(a) ? withVirtualSpeed(points) : points;
 }
 
 /** The activity as a .fit file, for importing into Garmin Connect. */
