@@ -27,6 +27,8 @@ export const GARMIN = {
 };
 
 const TOKENS_FILE = "garmin-tokens.json";
+/** Give up on a Garmin call after this long, so a slow reply can't hang the page (proxies cut off at ~100 s). */
+const TIMEOUT_MS = 20_000;
 /** The permission a rider grants for workouts to be sent to their calendar. */
 export const WORKOUT_PERMISSION = "WORKOUT_IMPORT";
 
@@ -89,6 +91,7 @@ export function authorizeUrl(state: string, challenge: string): string {
 async function tokenRequest(body: Record<string, string>): Promise<GarminTokens> {
   const { clientId, clientSecret } = credentials();
   const res = await fetch(GARMIN.token, {
+    signal: AbortSignal.timeout(TIMEOUT_MS),
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({ client_id: clientId, client_secret: clientSecret, ...body }),
@@ -158,6 +161,17 @@ export function forgetGarmin(): void {
   for (const f of [TOKENS_FILE, SENT_FILE]) fs.rmSync(path.join(dataDir(), f), { force: true });
 }
 
+/** fetch, with a timeout and a plain message when Garmin can't be reached at all. */
+async function fetchGarmin(url: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, init);
+  } catch (e) {
+    const what = new URL(url).pathname;
+    if ((e as Error).name === "TimeoutError") throw new Error(`Garmin didn't answer in time (${what}). Try again in a minute.`);
+    throw new Error(`Couldn't reach Garmin (${what}): ${(e as Error).message}`);
+  }
+}
+
 async function accessToken(): Promise<string> {
   const tokens = loadGarminTokens();
   if (!tokens) throw new Error("Garmin isn't connected yet.");
@@ -168,7 +182,8 @@ async function accessToken(): Promise<string> {
 }
 
 export async function garminCall<T>(url: string, init: RequestInit = {}): Promise<T> {
-  const res = await fetch(url, {
+  const res = await fetchGarmin(url, {
+    signal: AbortSignal.timeout(TIMEOUT_MS),
     ...init,
     headers: { Authorization: `Bearer ${await accessToken()}`, "Content-Type": "application/json", ...(init.headers ?? {}) },
   });

@@ -52,7 +52,13 @@ export function SendExternal({ intervals, session, footer, garmin, returnTo }: P
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(session ?? {}),
       });
-      const body = await res.json();
+      const body = await res.json().catch(() => ({
+        // Not the app's own answer: the server crashed, or a proxy gave up waiting.
+        error:
+          res.status === 524 || res.status === 504
+            ? "Garmin took too long to answer. Try again in a minute."
+            : `Hour Power couldn’t finish sending (error ${res.status}). The server log says why.`,
+      }));
       setMessage(
         body.error ??
           (session
