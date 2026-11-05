@@ -9,6 +9,7 @@ import { budgetFromChoices, loadAvailability } from "@/lib/plan/availability";
 import { applyAway, awayWeeks, kindOn, loadAway } from "@/lib/plan/away";
 import { applyCheckIns, loadCheckIns } from "@/lib/plan/checkin";
 import { applyCompletions, loadCompletions } from "@/lib/plan/completions";
+import { applySwaps, loadSwaps } from "@/lib/plan/swaps";
 import { targetsState } from "@/lib/plan/targets";
 import { weekStartOf, phaseOn } from "@/lib/plan/periodise";
 import { spaceStrength } from "@/lib/plan/strengthSpacing";
@@ -62,10 +63,11 @@ export function loadState() {
   };
   // The week as planned, before adapting to what was actually ridden (used to measure what got done).
   const completions = loadCompletions();
+  const swaps = loadSwaps();
   // A day off never moves training onto a day the rider is away.
   const isAway = (date: string) => kindOn(away, date) === "away";
   const planned = (weekStart: string): WeekPlan =>
-    applyCompletions(applyCheckIns(applyAway(planWeek(budget, baseContext(weekStart)), away, today), checkIns, isAway), completions);
+    applyCompletions(applySwaps(applyCheckIns(applyAway(planWeek(budget, baseContext(weekStart)), away, today), checkIns, isAway), swaps), completions);
   const thisWeekStart = weekStartOf(today);
   const adaptation = adapt({ today, thisWeekStart, phases: summary?.phases ?? [], activities, history, planned });
 
@@ -74,7 +76,7 @@ export function loadState() {
 
   const week = (weekStart: string): WeekPlan => {
     const plan = applyCompletions(
-      applyCheckIns(applyAway(planWeek(budget, { ...baseContext(weekStart), ...adaptation.context(weekStart) }), away, today), checkIns, isAway),
+      applySwaps(applyCheckIns(applyAway(planWeek(budget, { ...baseContext(weekStart), ...adaptation.context(weekStart) }), away, today), checkIns, isAway), swaps),
       completions,
     );
     if (weekStart !== thisWeekStart) return plan;

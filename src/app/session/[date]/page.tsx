@@ -9,6 +9,9 @@ import { hasIntervalsKey } from "@/lib/intervals/client";
 import { workMinutes } from "@/lib/plan/library";
 import { lengthLimits, resolveSession } from "@/lib/plan/session";
 import { LengthPicker } from "@/components/LengthPicker";
+import { SwapPicker } from "@/components/SwapPicker";
+import { getWorkout, scaleWorkout } from "@/lib/plan/library";
+import { swapOptions } from "@/lib/plan/swaps";
 import { dayLabel, length, plain } from "@/lib/ui/format";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +29,17 @@ async function SessionPageView({
   if (!found) notFound();
   const { state, week, planned, session, hourPower } = found;
   const limits = lengthLimits(planned);
+  // Other workouts for this day (not once it's done or gone by).
+  const choices =
+    planned.ride && !planned.completedIn && date >= state.today
+      ? swapOptions(week, planned).map((o) => ({
+          id: o.workout.id,
+          name: o.workout.name,
+          minutes: scaleWorkout(o.workout, planned.minutes).minutes,
+          line: plain(o.workout.summary).split(/(?<=\.)\s/)[0].replace(/\s*\([^)]*\)/g, ""),
+          kind: o.kind,
+        }))
+      : [];
   // Share of the planned session kept: quality minutes for interval sessions, total time for steady rides.
   const kept =
     session.ride && planned.ride
@@ -89,6 +103,16 @@ async function SessionPageView({
             About {session.fuel.totalGrams} g in total. {session.fuel.note}
           </div>
         </section>
+      )}
+
+      {choices.length > 0 && (
+        <SwapPicker
+          date={date}
+          start={planned.start}
+          choices={choices}
+          current={planned.ride!.workout.id}
+          planned={planned.swappedFrom ? { name: getWorkout(planned.swappedFrom).name } : undefined}
+        />
       )}
 
       {planned.ride && limits && !planned.completedIn && (
