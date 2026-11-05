@@ -1,5 +1,7 @@
-import { GARMIN, garminCall, loadSent, saveSent, type SentWorkout } from "@/lib/garmin/client";
+import crypto from "node:crypto";
+import { GARMIN, garminCall, loadSent, saveSent, type GarminStatus, type SentWorkout } from "@/lib/garmin/client";
 import { toGarminWorkout } from "@/lib/garmin/workout";
+import { nextWeekStart, type loadState } from "@/lib/plan/current";
 import type { PlannedSession } from "@/lib/plan/week";
 
 export interface GarminSendResult {
@@ -8,6 +10,37 @@ export interface GarminSendResult {
 }
 
 const keyOf = (s: PlannedSession) => `${s.date} ${s.start}`;
+
+/** The workout exactly as Garmin would get it: any change to the ride or its targets changes this. */
+export function workoutFingerprint(s: PlannedSession, hourPower: number): string {
+  return crypto.createHash("sha1").update(`${s.date}|${JSON.stringify(toGarminWorkout(s, hourPower))}`).digest("hex").slice(0, 16);
+}
+
+/** What the Week page sends: the rest of this week and all of next week. */
+export function upcomingRides(state: ReturnType<typeof loadState>): { sessions: PlannedSession[]; oldest: string; newest: string } {
+  const next = nextWeekStart(state.thisWeekStart);
+  const sessions = [...state.week(state.thisWeekStart).sessions, ...state.week(next).sessions].filter((s) => s.date >= state.today);
+  const newest = new Date(Date.parse(`${next}T00:00:00Z`) + 6 * 86_400_000).toISOString().slice(0, 10);
+  return { sessions, oldest: state.today, newest };
+}
+
+/**
+ * Are these rides on Garmin as planned now? "sent" when every one was sent and
+ * hasn't changed since, "changed" when some were sent but the plan moved on (or
+ * a ride was added), "unsent" when none were.
+ */
+export function sendState(sessions: PlannedSession[], hourPower: number, sent = loadSent()): NonNullable<GarminStatus["sent"]> {
+  const rides = sessions.filter((s) => s.ride);
+  if (!rides.length || !hourPower) return "unsent";
+  const byKey = new Map(sent.map((w) => [w.key, w]));
+  const matches = rides.filter((s) => {
+    const w = byKey.get(keyOf(s));
+    // Sent before fingerprints were kept: can't tell, so trust it was as planned.
+    return w && (!w.fingerprint || w.fingerprint === workoutFingerprint(s, hourPower));
+  }).length;
+  if (matches === rides.length) return "sent";
+  return rides.some((s) => byKey.has(keyOf(s))) ? "changed" : "unsent";
+}
 
 /** Remove one workout Hour Power sent before. Already gone on Garmin (deleted by the rider) is fine. */
 async function remove(w: SentWorkout): Promise<void> {
@@ -37,7 +70,7 @@ export async function sendToGarmin(sessions: PlannedSession[], hourPower: number
   }
   for (const s of rides) {
     const created = await garminCall<{ workoutId: number }>(GARMIN.workout, { method: "POST", body: JSON.stringify(toGarminWorkout(s, hourPower)) });
-    const entry: SentWorkout = { key: keyOf(s), date: s.date, workoutId: created.workoutId };
+    const entry: SentWorkout = { key: keyOf(s), date: s.date, workoutId: created.workoutId, fingerprint: workoutFingerprint(s, hourPower) };
     sent.push(entry);
     saveSent(sent);
     const scheduleId = await garminCall<number | { scheduleId?: number; id?: number }>(GARMIN.schedule, {

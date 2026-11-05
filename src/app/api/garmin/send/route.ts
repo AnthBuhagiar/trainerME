@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { athleteRoute } from "@/lib/auth/athlete";
 import { garminConnected } from "@/lib/garmin/client";
-import { sendToGarmin } from "@/lib/garmin/send";
-import { loadState, nextWeekStart } from "@/lib/plan/current";
+import { sendToGarmin, upcomingRides } from "@/lib/garmin/send";
+import { loadState } from "@/lib/plan/current";
 import { resolveSession } from "@/lib/plan/session";
 
 export const runtime = "nodejs";
@@ -23,10 +23,8 @@ async function post(request: Request) {
     }
     const state = loadState();
     if (!state.current) return NextResponse.json({ error: "Sync Strava first so targets can be set from your hour power." }, { status: 400 });
-    const next = nextWeekStart(state.thisWeekStart);
-    const sessions = [...state.week(state.thisWeekStart).sessions, ...state.week(next).sessions].filter((s) => s.date >= state.today);
-    const newest = new Date(Date.parse(`${next}T00:00:00Z`) + 6 * 86_400_000).toISOString().slice(0, 10);
-    return NextResponse.json(await sendToGarmin(sessions, state.targets!.training, { oldest: state.today, newest }));
+    const { sessions, oldest, newest } = upcomingRides(state);
+    return NextResponse.json(await sendToGarmin(sessions, state.targets!.training, { oldest, newest }));
   } catch (e) {
     console.error("Garmin send failed:", e); // in the server log (journalctl -u hour-power)
     return NextResponse.json({ error: (e as Error).message }, { status: 502 });

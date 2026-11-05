@@ -142,10 +142,17 @@ export function garminConnected(): boolean {
 }
 
 /** For the send buttons: undefined hides Garmin (no developer keys on this server). */
-export function garminStatus(): { connected: boolean; canSend: boolean } | undefined {
+export interface GarminStatus {
+  connected: boolean;
+  canSend: boolean;
+  /** For the rides on this page: all on Garmin as planned, sent but changed since, or not sent. */
+  sent?: "sent" | "changed" | "unsent";
+}
+
+export function garminStatus(sent?: GarminStatus["sent"]): GarminStatus | undefined {
   if (!hasGarminCredentials()) return undefined;
   const tokens = loadGarminTokens();
-  return { connected: !!tokens, canSend: canSendWorkouts(tokens) };
+  return { connected: !!tokens, canSend: canSendWorkouts(tokens), sent: tokens ? sent : undefined };
 }
 
 /** Connected but the rider didn't tick the workouts permission on Garmin's page. */
@@ -225,6 +232,8 @@ export interface SentWorkout {
   date: string;
   workoutId: number;
   scheduleId?: number;
+  /** What was sent (see workoutFingerprint), to tell "sent" from "the plan changed since". */
+  fingerprint?: string;
 }
 
 export function loadSent(): SentWorkout[] {

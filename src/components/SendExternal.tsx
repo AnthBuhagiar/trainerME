@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import type { GarminStatus } from "@/lib/garmin/client";
 
 interface Props {
   /** Intervals.icu API key present on the server. */
@@ -10,7 +11,7 @@ interface Props {
   /** A last row, e.g. marking the workout done in that app. */
   footer?: ReactNode;
   /** Garmin Connect: shown when the server has Garmin developer keys. */
-  garmin?: { connected: boolean; canSend: boolean };
+  garmin?: GarminStatus;
   /** Where to come back to after connecting Garmin. */
   returnTo?: string;
 }
@@ -24,6 +25,9 @@ const row = "flex items-center justify-between gap-3 px-4 py-3";
 export function SendExternal({ intervals, session, footer, garmin, returnTo }: Props) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  /** Sent from this page just now (the server's view arrives with the next page load). */
+  const [sentNow, setSentNow] = useState(false);
+  const garminState = sentNow ? "sent" : garmin?.sent;
   const query = session ? `&date=${session.date}&start=${session.start}${session.minutes ? `&minutes=${session.minutes}` : ""}` : "";
   const what = session ? "this workout" : "this week and next";
 
@@ -59,6 +63,7 @@ export function SendExternal({ intervals, session, footer, garmin, returnTo }: P
             ? "Garmin took too long to answer. Try again in a minute."
             : `Hour Power couldn’t finish sending (error ${res.status}). The server log says why.`,
       }));
+      if (!body.error) setSentNow(true);
       setMessage(
         body.error ??
           (session
@@ -89,13 +94,39 @@ export function SendExternal({ intervals, session, footer, garmin, returnTo }: P
             <span className="text-[14px]">
               <span className="font-semibold">Garmin Connect</span>
               <span className="block text-[13px] text-muted">
-                {garmin.connected && !garmin.canSend ? "Connect again and allow workouts" : "Straight to your calendar, then your watch or Edge"}
+                {garmin.connected && !garmin.canSend
+                  ? "Connect again and allow workouts"
+                  : garminState === "sent"
+                    ? "On your Garmin calendar"
+                    : garminState === "changed"
+                      ? "Plan changed since you sent it"
+                      : "Straight to your calendar, then your watch or Edge"}
               </span>
             </span>
             {garmin.connected && garmin.canSend ? (
-              <button onClick={sendGarmin} disabled={busy} className="shrink-0 rounded-full bg-signal-ink px-4 py-2 text-[14px] font-semibold text-white disabled:opacity-60">
-                {busy ? "Sending…" : "Send"}
-              </button>
+              garminState === "sent" ? (
+                <button
+                  onClick={sendGarmin}
+                  disabled={busy}
+                  aria-label="Sent to Garmin. Tap to send again"
+                  className="flex shrink-0 items-center gap-1.5 rounded-full border border-done px-4 py-2 text-[14px] font-semibold text-done disabled:opacity-60"
+                >
+                  {busy ? (
+                    "Sending…"
+                  ) : (
+                    <>
+                      <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+                        <path d="M2.5 7.5 L5.5 10.5 L11.5 3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      Sent
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button onClick={sendGarmin} disabled={busy} className="shrink-0 rounded-full bg-signal-ink px-4 py-2 text-[14px] font-semibold text-white disabled:opacity-60">
+                  {busy ? "Sending…" : garminState === "changed" ? "Update" : "Send"}
+                </button>
+              )
             ) : (
               <a
                 href={`/api/garmin/connect${returnTo ? `?next=${encodeURIComponent(returnTo)}` : ""}`}
