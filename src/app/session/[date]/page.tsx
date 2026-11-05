@@ -74,7 +74,7 @@ async function SessionPageView({
               {date === state.today ? "Ride it on my trainer" : "Do this workout now"}
             </Link>
           )}
-          {session.indoor && <DoneElsewhere date={date} start={planned.start} doneIn={planned.completedIn} />}
+          {session.indoor && planned.completedIn && <DoneElsewhere date={date} start={planned.start} doneIn={planned.completedIn} />}
         </>
       )}
 
@@ -126,7 +126,13 @@ async function SessionPageView({
         </section>
       )}
 
-      {session.ride && hourPower > 0 && !planned.completedIn && <SendExternal intervals={hasIntervalsKey()} session={{ date, start: planned.start, minutes }} />}
+      {session.ride && hourPower > 0 && !planned.completedIn && (
+        <SendExternal
+          intervals={hasIntervalsKey()}
+          session={{ date, start: planned.start, minutes }}
+          footer={session.indoor ? <DoneElsewhere date={date} start={planned.start} row /> : undefined}
+        />
+      )}
 
       <p className="text-[13px] text-muted">{plain(planned.why)}</p>
     </main>
