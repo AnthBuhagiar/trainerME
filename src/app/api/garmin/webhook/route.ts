@@ -1,13 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { athleteIds } from "@/lib/auth/owner";
 import { multiUser, runAsAthlete } from "@/lib/data/store";
-import { forgetGarmin, loadGarminTokens, saveGarminTokens, stillConnected } from "@/lib/garmin/client";
+import { forgetGarmin, loadGarminTokens, permissionList, saveGarminTokens, stillConnected } from "@/lib/garmin/client";
 
 export const runtime = "nodejs";
 
 interface GarminPing {
   deregistrations?: { userId?: string }[];
-  userPermissionsChange?: { userId?: string; permissions?: string[] }[];
+  userPermissionsChange?: { userId?: string; permissions?: unknown }[];
 }
 
 /** Run `fn` as each athlete whose saved Garmin connection belongs to this Garmin user. */
@@ -31,8 +31,8 @@ export async function POST(req: NextRequest) {
     if (d.userId) await forGarminUser(d.userId, async () => (!(await stillConnected()) ? forgetGarmin() : undefined));
   }
   for (const p of ping?.userPermissionsChange ?? []) {
-    if (!p.userId || !Array.isArray(p.permissions)) continue;
-    const permissions = p.permissions.filter((x): x is string => typeof x === "string");
+    const permissions = permissionList(p.permissions);
+    if (!p.userId || !permissions) continue;
     // Only a hint for the app's buttons: Garmin itself enforces what Hour Power may do.
     await forGarminUser(p.userId, async () => {
       const t = loadGarminTokens();

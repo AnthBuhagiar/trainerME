@@ -77,6 +77,29 @@ describe("Garmin sign-in", () => {
     expect(garmin.canSendWorkouts({ ...base, permissions: ["ACTIVITY_EXPORT"] })).toBe(false);
     expect(garmin.canSendWorkouts(null)).toBe(false);
   });
+
+  test("Garmin's permissions in any shape never break the app", () => {
+    const base = { access_token: "a", refresh_token: "r", expires_at: 0 };
+    expect(garmin.permissionList({ permissions: ["WORKOUT_IMPORT", 3] })).toEqual(["WORKOUT_IMPORT"]);
+    expect(garmin.permissionList("WORKOUT_IMPORT")).toBeUndefined();
+    expect(garmin.permissionList(null)).toBeUndefined();
+    // Saved by the first version straight from Garmin's reply: an object, not a list.
+    for (const saved of [{ permissions: ["WORKOUT_IMPORT"] }, {}, "x", 7]) {
+      expect(garmin.canSendWorkouts({ ...base, permissions: saved as unknown as string[] })).toBe(true);
+    }
+    expect(garmin.canSendWorkouts({ ...base, permissions: { permissions: ["ACTIVITY_EXPORT"] } as unknown as string[] })).toBe(false);
+  });
+
+  test("connecting reads permissions sent as an object", async () => {
+    vi.stubGlobal("fetch", async (url: string) => {
+      if (url === garmin.GARMIN.token) return new Response(JSON.stringify({ access_token: "a", refresh_token: "r", expires_in: 86_400 }));
+      if (url === garmin.GARMIN.userId) return new Response(JSON.stringify({ userId: "g9" }));
+      return new Response(JSON.stringify({ permissions: ["ACTIVITY_EXPORT", "WORKOUT_IMPORT"] }));
+    });
+    const tokens = await garmin.exchangeCode("code", "verifier");
+    expect(tokens).toMatchObject({ userId: "g9", permissions: ["ACTIVITY_EXPORT", "WORKOUT_IMPORT"] });
+    vi.unstubAllGlobals();
+  });
 });
 
 describe("sending to Garmin", () => {
