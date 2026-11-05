@@ -110,9 +110,20 @@ export async function exchangeCode(code: string, verifier: string): Promise<Garm
   const auth = { Authorization: `Bearer ${tokens.access_token}` };
   const user = (await (await fetch(GARMIN.userId, { headers: auth })).json().catch(() => ({}))) as { userId?: string };
   const permissions = await fetch(GARMIN.permissions, { headers: auth })
-    .then((r) => (r.ok ? (r.json() as Promise<string[]>) : undefined))
+    .then((r) => (r.ok ? r.json() : undefined))
+    .then(permissionList)
     .catch(() => undefined);
   return { ...tokens, userId: user.userId, permissions };
+}
+
+/**
+ * Garmin's permission list as plain strings, whatever shape it arrives in: a
+ * list, or an object holding one ({"permissions": [...]}). Anything else reads
+ * as unknown, so the app doesn't guess and Garmin itself decides.
+ */
+export function permissionList(value: unknown): string[] | undefined {
+  const list = Array.isArray(value) ? value : value && typeof value === "object" ? (value as { permissions?: unknown }).permissions : undefined;
+  return Array.isArray(list) ? list.filter((x): x is string => typeof x === "string") : undefined;
 }
 
 export function loadGarminTokens(): GarminTokens | null {
@@ -136,7 +147,10 @@ export function garminStatus(): { connected: boolean; canSend: boolean } | undef
 
 /** Connected but the rider didn't tick the workouts permission on Garmin's page. */
 export function canSendWorkouts(tokens = loadGarminTokens()): boolean {
-  return !!tokens && (!tokens.permissions || tokens.permissions.includes(WORKOUT_PERMISSION));
+  if (!tokens) return false;
+  // Unknown (or saved in another shape by an earlier version): let Garmin decide when sending.
+  const permissions = permissionList(tokens.permissions);
+  return !permissions || permissions.includes(WORKOUT_PERMISSION);
 }
 
 /** Forget Garmin for this athlete (the tokens and the record of what was sent). */
