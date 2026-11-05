@@ -30,15 +30,18 @@ const ride = (date: string, id = "threshold-2x15", minutes = 60): PlannedSession
 const flat = (steps: (GarminStep | GarminRepeat)[]) => steps.flatMap((s) => (s.type === "WorkoutRepeatStep" ? [s, ...s.steps] : [s]));
 
 describe("Garmin workout", () => {
-  test("threshold session: watt ranges, repeats kept as repeats", () => {
+  test("threshold session: watt ranges, repeats written out as plain steps", () => {
     const w = toGarminWorkout(ride("2026-10-21"), 181);
     expect(w).toMatchObject({ sport: "CYCLING", workoutName: "2 × 15 min threshold", workoutProvider: "Hour Power" });
     const steps = w.segments[0].steps;
     expect(steps[0]).toMatchObject({ intensity: "WARMUP", durationValue: 17 * 60, targetType: "POWER", targetValueLow: 91, targetValueHigh: 118 });
-    expect(steps[1]).toMatchObject({ type: "WorkoutRepeatStep", repeatValue: 2 });
-    expect((steps[1] as GarminRepeat).steps.map((s) => [s.intensity, s.durationValue, s.targetValueLow, s.targetValueHigh])).toEqual([
-      ["INTERVAL", 900, 176, 185],
-      ["RECOVERY", 300, 91, 118],
+    // Garmin's V2 API refuses REPEAT_UNTIL_STEPS_CMPLTD: no repeat steps when the workout fits.
+    expect(steps.some((s) => s.type === "WorkoutRepeatStep")).toBe(false);
+    expect(steps.slice(1, 5).map((s) => [(s as GarminStep).intensity, (s as GarminStep).durationValue, (s as GarminStep).targetValueLow, (s as GarminStep).targetValueHigh, (s as GarminStep).description])).toEqual([
+      ["INTERVAL", 900, 176, 185, "Rep 1 of 2"],
+      ["RECOVERY", 300, 91, 118, "Easy"],
+      ["INTERVAL", 900, 176, 185, "Rep 2 of 2"],
+      ["RECOVERY", 300, 91, 118, "Easy"],
     ]);
     expect(steps.at(-1)).toMatchObject({ intensity: "COOLDOWN" });
     expect(w.estimatedDurationInSecs).toBe(17 * 60 + 2 * 20 * 60 + 8 * 60);
@@ -46,10 +49,21 @@ describe("Garmin workout", () => {
     expect(flat(steps).map((s) => s.stepOrder)).toEqual(flat(steps).map((_, i) => i + 1));
   });
 
-  test("multi-set sessions: one repeat per set with easy riding between", () => {
+  test("a workout over Garmin's step limit keeps the repeat form", () => {
     const steps = toGarminWorkout(ride("2026-10-21", "vo2-30-15"), 200).segments[0].steps;
     expect(steps.filter((s) => s.type === "WorkoutRepeatStep").map((s) => (s as GarminRepeat).repeatValue)).toEqual([13, 13, 13]);
     expect(steps.filter((s) => s.type === "WorkoutStep" && s.description === "Easy between sets")).toHaveLength(2);
+  });
+
+  test("every workout that fits is sent as plain steps", async () => {
+    const { LIBRARY } = await import("@/lib/plan/library");
+    const { MAX_STEPS } = await import("@/lib/garmin/workout");
+    for (const w of LIBRARY) {
+      const steps = toGarminWorkout(ride("2026-10-21", w.id, Math.max(w.minMinutes, 60)), 200).segments[0].steps;
+      const hasRepeat = steps.some((s) => s.type === "WorkoutRepeatStep");
+      expect(hasRepeat ? flat(steps).length > 0 : steps.length <= MAX_STEPS).toBe(true);
+      if (hasRepeat) expect(steps.length).toBeLessThanOrEqual(MAX_STEPS);
+    }
   });
 
   test("long rides put the efforts late", () => {

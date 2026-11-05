@@ -190,7 +190,11 @@ export async function garminCall<T>(url: string, init: RequestInit = {}): Promis
   if (res.status === 401) throw new Error("Garmin didn't accept Hour Power's access. Connect Garmin again in Settings.");
   if (res.status === 403) throw new Error("Garmin needs the workouts permission. Connect Garmin again and allow workouts.");
   if (res.status === 429) throw new Error("Garmin is busy. Try again in a few minutes.");
-  if (!res.ok) throw new Error(`Garmin request failed (${res.status}): ${(await res.text()).slice(0, 200)}`);
+  if (!res.ok) {
+    const text = await res.text();
+    console.error(`Garmin ${init.method ?? "GET"} ${new URL(url).pathname} → ${res.status}: ${text.slice(0, 2000)}`); // the whole reply, for the server log
+    throw new Error(`Garmin request failed (${res.status}): ${text.slice(0, 300)}`);
+  }
   const text = await res.text();
   return (text ? JSON.parse(text) : null) as T;
 }
