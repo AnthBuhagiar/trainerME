@@ -161,6 +161,10 @@ With a Garmin Connect Developer Program app, each rider connects their own Garmi
 
 Sending again replaces what Hour Power sent before for those days; workouts you made in Garmin Connect yourself are never touched. Disconnecting (or deleting your account) removes Hour Power's access on Garmin. Garmin's API addresses are in `src/lib/garmin/client.ts`; if a call starts failing, compare them with the current docs in the developer portal.
 
+## Garmin watch app (Hour Power Lite)
+
+A Connect IQ app for round Garmin watches, in `watch/`: hour power, today's session with watt targets, the morning check-in and the goal countdown, and riding the session on the wrist (power against target, time left, heart rate, cadence), saved to Garmin Connect. In Hour Power, **Settings and data, Garmin watch app** makes the watch key it needs. It works with a hosted copy only: the watch can't get past a codespace's GitHub sign-in. Building it and getting it onto a watch: `watch/README.md`.
+
 ## Send workouts to Intervals.icu
 
 Planned rides can go to your Garmin Connect calendar, then to your watch or head unit, which can run them on a smart trainer.

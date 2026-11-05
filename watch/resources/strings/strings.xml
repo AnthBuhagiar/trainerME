@@ -1,0 +1,7 @@
+<strings>
+    <string id="AppName">Hour Power</string>
+    <string id="ServerTitle">Server</string>
+    <string id="ServerPrompt">Your Hour Power address, as shown on Settings in the app</string>
+    <string id="KeyTitle">Watch key</string>
+    <string id="KeyPrompt">From Settings, Garmin watch app, in Hour Power</string>
+</strings>

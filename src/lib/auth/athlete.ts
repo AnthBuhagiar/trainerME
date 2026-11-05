@@ -6,6 +6,7 @@ import { SESSION_COOKIE, verifySession } from "@/lib/auth/session";
 import { multiUser, runAsAthlete } from "@/lib/data/store";
 import { hasAcceptedTerms } from "@/lib/legal/acceptance";
 import { recordSeen } from "@/lib/admin/seen";
+import { athleteForWatchKey, bearer } from "@/lib/watch/key";
 
 /** The athlete signed in on this request (hosted copies only). */
 export async function signedInAthlete(): Promise<number | null> {
@@ -48,5 +49,19 @@ export function athleteRoute<A extends unknown[]>(handler: (...args: A) => Respo
     if (!id) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
     if (!beforeTerms && !enter(id, hasAcceptedTerms)) return NextResponse.json({ error: "Accept the terms first." }, { status: 403 });
     return enter(id, () => handler(...args));
+  };
+}
+
+/**
+ * An API route for the Hour Power watch app: it sends a watch key
+ * ("Authorization: Bearer …", made on Settings) instead of a cookie.
+ */
+export function watchRoute(handler: (request: Request) => Response | Promise<Response>) {
+  return async (request: Request): Promise<Response> => {
+    const id = athleteForWatchKey(bearer(request));
+    if (id === null) return NextResponse.json({ error: "Watch key not recognised. Make one on Settings." }, { status: 401 });
+    if (!multiUser()) return handler(request);
+    if (!enter(id, hasAcceptedTerms)) return NextResponse.json({ error: "Accept the terms in the app first." }, { status: 403 });
+    return enter(id, () => handler(request));
   };
 }

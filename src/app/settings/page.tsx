@@ -12,6 +12,8 @@ import { authEnabled } from "@/lib/auth/session";
 import { loadState } from "@/lib/plan/current";
 import { appUrl, autoUploadOn, canUpload } from "@/lib/strava/client";
 import { garminStatus } from "@/lib/garmin/client";
+import { WatchPanel } from "@/components/WatchPanel";
+import { watchKeyCreated } from "@/lib/watch/key";
 
 /** What happened on the trip to Garmin, from /api/garmin/callback. */
 const GARMIN_MESSAGES: Record<string, string> = {
@@ -89,6 +91,11 @@ function SettingsPageView({ garminMessage }: { garminMessage?: string }) {
           )}
         </section>
       )}
+
+      <section id="watch" className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-5">
+        <h2 className="label">Garmin watch app</h2>
+        <WatchPanel server={appUrl()} created={watchKeyCreated()} />
+      </section>
 
       <section id="sensors" className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-5">
         <h2 className="label">Trainer and heart rate</h2>

@@ -1,0 +1,8 @@
+<settings>
+    <setting propertyKey="@Properties.serverUrl" title="@Strings.ServerTitle" prompt="@Strings.ServerPrompt">
+        <settingConfig type="alphaNumeric"/>
+    </setting>
+    <setting propertyKey="@Properties.watchKey" title="@Strings.KeyTitle" prompt="@Strings.KeyPrompt">
+        <settingConfig type="alphaNumeric"/>
+    </setting>
+</settings>

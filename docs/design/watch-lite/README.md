@@ -21,3 +21,5 @@ Type: Archivo (wide, 800) for numbers, Inter for labels. Screen is a 384 px roun
 
 The `.dc.html` files are the canvas sources (they need the canvas runtime to render live); `canvas.json` is the layout.
 The PNGs are static renders at 2×, accent set to orange.
+
+Built in `watch/` (November 2026). Differences from the mock-up: no ERG badge (the watch app doesn't control the trainer), the ride-done screen shows today's hour power with "updates once this ride syncs" rather than a new value (the estimate is worked out on the server from the synced ride), and the goal page shows finish time at today's hour power in place of a readiness percentage, which the app doesn't calculate.
