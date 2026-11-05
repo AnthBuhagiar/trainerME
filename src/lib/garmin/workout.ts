@@ -46,7 +46,19 @@ const DESCRIPTION_MAX = 500;
 
 const trim = (s: string, max: number) => (s.length > max ? `${s.slice(0, max - 1)}…` : s);
 
+/**
+ * Garmin rejected REPEAT_UNTIL_STEPS_CMPLTD on the V2 API (Nov 2026), so repeats
+ * are written out as plain steps ("Rep 1 of 2"), which the watch runs the same
+ * way. Only a workout too long for Garmin's step limit keeps the repeat form.
+ */
+export const MAX_STEPS = 50;
+
 export function toGarminWorkout(s: PlannedSession, hourPower: number): GarminWorkout {
+  const flat = build(s, hourPower, false);
+  return flat.segments[0].steps.length <= MAX_STEPS ? flat : build(s, hourPower, true);
+}
+
+function build(s: PlannedSession, hourPower: number, repeats: boolean): GarminWorkout {
   const w = s.ride!.workout;
   let order = 0;
   const step = (e: Effort, intensity: GarminStep["intensity"], description: string): GarminStep => {
@@ -65,14 +77,19 @@ export function toGarminWorkout(s: PlannedSession, hourPower: number): GarminWor
   };
 
   // Same order as the Intervals.icu text: durability rides put the efforts late.
-  const build = (): (GarminStep | GarminRepeat)[] => {
+  const buildSteps = (): (GarminStep | GarminRepeat)[] => {
     const steps: (GarminStep | GarminRepeat)[] = [step(w.warmup, "WARMUP", "Warm up")];
     const main = () => {
       const out: (GarminStep | GarminRepeat)[] = [];
       const m = w.main;
       if (!m) return out;
       for (let set = 0; set < m.sets; set++) {
-        if (m.reps > 1) {
+        if (m.reps > 1 && !repeats) {
+          for (let rep = 1; rep <= m.reps; rep++) {
+            const label = `${m.sets > 1 ? `Set ${set + 1}, rep` : "Rep"} ${rep} of ${m.reps}`;
+            out.push(step(m.work, "INTERVAL", label), step(m.rest, "RECOVERY", "Easy"));
+          }
+        } else if (m.reps > 1) {
           const repeat: GarminRepeat = { type: "WorkoutRepeatStep", stepOrder: ++order, repeatType: "REPEAT_UNTIL_STEPS_CMPLTD", repeatValue: m.reps, steps: [] };
           repeat.steps.push(step(m.work, "INTERVAL", m.sets > 1 ? `Set ${set + 1}: work` : "Work"), step(m.rest, "RECOVERY", "Easy"));
           out.push(repeat);
@@ -89,7 +106,7 @@ export function toGarminWorkout(s: PlannedSession, hourPower: number): GarminWor
     if (w.cooldown.seconds > 0) steps.push(step(w.cooldown, "COOLDOWN", "Cool down"));
     return steps;
   };
-  const steps = build();
+  const steps = buildSteps();
 
   const seconds = steps.reduce((t, st) => t + (st.type === "WorkoutRepeatStep" ? st.repeatValue * st.steps.reduce((a, x) => a + x.durationValue, 0) : st.durationValue), 0);
   const fuel = s.fuel ? ` Fuel: ${s.fuel.gramsPerHour} g carbs per hour.` : "";
