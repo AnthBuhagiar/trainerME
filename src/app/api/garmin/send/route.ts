@@ -12,9 +12,9 @@ export const runtime = "nodejs";
  * POST /api/garmin/send {date, start, minutes?}           one session (at the length chosen)
  */
 async function post(request: Request) {
-  if (!garminConnected()) return NextResponse.json({ error: "Connect Garmin first." }, { status: 400 });
   const body = (await request.json().catch(() => ({}))) as { date?: string; start?: string; minutes?: string };
   try {
+    if (!garminConnected()) return NextResponse.json({ error: "Connect Garmin first." }, { status: 400 });
     if (body.date) {
       const found = resolveSession(body.date, body.start, body.minutes);
       if (!found?.session.ride) return NextResponse.json({ error: "No ride that day." }, { status: 404 });
@@ -28,6 +28,7 @@ async function post(request: Request) {
     const newest = new Date(Date.parse(`${next}T00:00:00Z`) + 6 * 86_400_000).toISOString().slice(0, 10);
     return NextResponse.json(await sendToGarmin(sessions, state.targets!.training, { oldest: state.today, newest }));
   } catch (e) {
+    console.error("Garmin send failed:", e); // in the server log (journalctl -u hour-power)
     return NextResponse.json({ error: (e as Error).message }, { status: 502 });
   }
 }
