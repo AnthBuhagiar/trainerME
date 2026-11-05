@@ -165,7 +165,12 @@ function PlanPageView() {
       </section>
 
       <section className="flex flex-col gap-2">
-        <h2 className="label px-1">Week by week</h2>
+        <div className="flex items-baseline justify-between px-1">
+          <h2 className="label">Week by week</h2>
+          <Link href="/workouts" className="text-[14px] font-semibold text-signal-ink dark:text-signal">
+            All workouts →
+          </Link>
+        </div>
         <ol className="flex flex-col divide-y divide-line rounded-2xl border border-line bg-card">
           {weeks.slice(0, SHOWN).map(row)}
         </ol>

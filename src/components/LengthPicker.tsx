@@ -8,7 +8,7 @@ export function LengthPicker({ value, planned, min, max, baseHref }: { value: nu
   const router = useRouter();
   const go = (m: number) => {
     if (m === value) return;
-    router.replace(m === planned ? baseHref : `${baseHref}&minutes=${m}`, { scroll: false });
+    router.replace(m === planned ? baseHref : `${baseHref}${baseHref.includes("?") ? "&" : "?"}minutes=${m}`, { scroll: false });
   };
   return (
     <div className="flex flex-wrap items-center justify-between gap-2">
