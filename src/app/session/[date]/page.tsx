@@ -6,6 +6,7 @@ import { SendExternal } from "@/components/SendExternal";
 import { WorkoutSteps } from "@/components/WorkoutSteps";
 import { DoneElsewhere } from "@/components/DoneElsewhere";
 import { hasIntervalsKey } from "@/lib/intervals/client";
+import { garminStatus } from "@/lib/garmin/client";
 import { workMinutes } from "@/lib/plan/library";
 import { lengthLimits, resolveSession } from "@/lib/plan/session";
 import { LengthPicker } from "@/components/LengthPicker";
@@ -129,6 +130,8 @@ async function SessionPageView({
       {session.ride && hourPower > 0 && !planned.completedIn && (
         <SendExternal
           intervals={hasIntervalsKey()}
+          garmin={garminStatus()}
+          returnTo={`/session/${date}?start=${planned.start}${minutes ? `&minutes=${minutes}` : ""}`}
           session={{ date, start: planned.start, minutes }}
           footer={session.indoor ? <DoneElsewhere date={date} start={planned.start} row /> : undefined}
         />

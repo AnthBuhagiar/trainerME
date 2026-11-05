@@ -143,10 +143,23 @@ With `INTERVALS_API_KEY` set, every sync also reads your rides from Intervals.ic
 
 Hour Power plans, runs (Bluetooth trainer control) and records workouts by itself. If you'd rather ride them elsewhere, **Use another app instead** on the Week tab (this week and next) or on any workout sends them to:
 
+- **Garmin Connect**, straight to the rider's calendar and on to their watch or Edge (needs Garmin developer keys, below)
 - **Intervals.icu**, and from there to Garmin Connect and Zwift (needs `INTERVALS_API_KEY`, below)
 - **Zwift**: `.zwo` files for `Documents/Zwift/Workouts/<your id>`; set Zwift's FTP to your training hour power
 - **Other trainer apps**: `.erg` files with watt targets
 - **Phone calendar**: an `.ics` file for Google or Apple Calendar, each event linking back to the workout
+
+## Send workouts straight to Garmin Connect
+
+With a Garmin Connect Developer Program app, each rider connects their own Garmin account once and planned rides go straight to their Garmin Connect calendar, with watt targets from their hour power and repeats kept as repeats. The watch or Edge picks them up at its next sync and can run them on a smart trainer. No Intervals.icu account needed.
+
+1. In the [Garmin developer portal](https://developer.garmin.com/gc-developer-program/), open your app and copy its **consumer key** and **consumer secret**.
+2. Add them as Codespaces secrets (or in `.env.local`, or `/etc/hour-power.env` on a server) named `GARMIN_CLIENT_ID` and `GARMIN_CLIENT_SECRET`, then restart.
+3. In the app's settings in the portal, set the **redirect URL** to `<your app address>/api/garmin/callback`, e.g. `https://hourpower.example.com/api/garmin/callback`. A codespace's address changes with each codespace, so register the one you're using (or use a hosted copy).
+4. On a hosted copy, set the **deregistration** and **user permission change** notification URLs to `<your app address>/api/garmin/webhook`, so a rider removing Hour Power in Garmin Connect is forgotten here too.
+5. In Hour Power: **Settings and data → Garmin Connect → Connect Garmin**, approve on Garmin's page (allow workouts), then **Week → Use another app instead → Garmin Connect: Send**, or the same on any ride.
+
+Sending again replaces what Hour Power sent before for those days; workouts you made in Garmin Connect yourself are never touched. Disconnecting (or deleting your account) removes Hour Power's access on Garmin. Garmin's API addresses are in `src/lib/garmin/client.ts`; if a call starts failing, compare them with the current docs in the developer portal.
 
 ## Send workouts to Intervals.icu
 

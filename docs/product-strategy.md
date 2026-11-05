@@ -250,8 +250,10 @@ Goal: a trustworthy hour-power number and a week that fits real life.
 Onboarding target for the average rider: **Sign in with Strava → Connect Garmin → set a goal.** No accounts elsewhere, no keys, nothing to install.
 
 - [ ] **Hosted web app** with real accounts and a database (replacing the codespace and the local JSON store). Prerequisite for everything below.
-- [ ] **Connect Garmin directly** (Garmin Connect Developer Program, Training API): one button and an approval page, then workouts land on the rider's Garmin Connect calendar and sync to their watch or head unit, as JOIN's do. The **primary export route**.
-  - Gate: access is free but only for *approved business developers*; new requests were reported paused in 2026. Needs a business identity (e.g. an ABN and a website) and an application. Check developer.garmin.com for the current status.
+- [x] **Connect Garmin directly** (Garmin Connect Developer Program, Training API): one button and an approval page, then workouts land on the rider's Garmin Connect calendar and sync to their watch or head unit, as JOIN's do. The **primary export route**.
+  - Developer access approved (November 2026). Built: OAuth 2.0 sign-in with PKCE, sending this week and next or one ride (structured steps, watt ranges, repeats), replacing earlier sends, disconnect, and Garmin's deregistration and permission-change notifications. Next: test against the evaluation keys, then apply for production keys.
+- [ ] **Garmin Activity and Health APIs**: rides straight from Garmin (FIT files with power and heart rate, see the direct-import item below) and sleep, resting heart rate and HRV to feed the check-in (B4). Needs a public notification endpoint, so hosted copies only.
+- [ ] **Connect IQ watch app (lite)**: hour-power glance, today's session, Bathurst countdown and check-in on the wrist; mock-up made November 2026. After the Training API, since that already puts the workouts on the watch.
 - [ ] **Connect Intervals.icu** (its OAuth sign-in, not API keys) as the fallback route for Wahoo, Zwift and riders Garmin doesn't cover. Today's personal build uses an API key.
   - Done for the personal build: rides are read from Intervals.icu with the API key as a second source (deduplicated with Strava). Next: register an Intervals.icu OAuth app for a "Sign in with Intervals.icu" button.
 - [ ] **TrainingPeaks** sign-in and data: needs TrainingPeaks partner API approval (closed API).

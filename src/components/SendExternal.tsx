@@ -9,6 +9,10 @@ interface Props {
   session?: { date: string; start: string; minutes?: string };
   /** A last row, e.g. marking the workout done in that app. */
   footer?: ReactNode;
+  /** Garmin Connect: shown when the server has Garmin developer keys. */
+  garmin?: { connected: boolean; canSend: boolean };
+  /** Where to come back to after connecting Garmin. */
+  returnTo?: string;
 }
 
 const row = "flex items-center justify-between gap-3 px-4 py-3";
@@ -17,7 +21,7 @@ const row = "flex items-center justify-between gap-3 px-4 py-3";
  * Optional hand-off to other apps. Hour Power runs workouts itself; this is for
  * riders who'd rather ride them elsewhere. Folded away by default.
  */
-export function SendExternal({ intervals, session, footer }: Props) {
+export function SendExternal({ intervals, session, footer, garmin, returnTo }: Props) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const query = session ? `&date=${session.date}&start=${session.start}${session.minutes ? `&minutes=${session.minutes}` : ""}` : "";
@@ -39,6 +43,29 @@ export function SendExternal({ intervals, session, footer }: Props) {
     }
   }
 
+  async function sendGarmin() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/garmin/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(session ?? {}),
+      });
+      const body = await res.json();
+      setMessage(
+        body.error ??
+          (session
+            ? "On your Garmin Connect calendar. It reaches your watch or Edge at its next sync."
+            : `Sent ${body.sent} rides to Garmin Connect${body.replaced ? `, replacing ${body.replaced} sent earlier` : ""}. They reach your watch or Edge at its next sync.`),
+      );
+    } catch {
+      setMessage("Couldn’t reach the app.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const download = (format: string) => `/api/export?format=${format}${query}`;
 
   return (
@@ -51,6 +78,28 @@ export function SendExternal({ intervals, session, footer }: Props) {
       </summary>
       <p className="px-4 pb-2 text-[13px] text-muted">Send {what} to:</p>
       <ul className="flex flex-col divide-y divide-line border-t border-line">
+        {garmin && (
+          <li className={row}>
+            <span className="text-[14px]">
+              <span className="font-semibold">Garmin Connect</span>
+              <span className="block text-[13px] text-muted">
+                {garmin.connected && !garmin.canSend ? "Connect again and allow workouts" : "Straight to your calendar, then your watch or Edge"}
+              </span>
+            </span>
+            {garmin.connected && garmin.canSend ? (
+              <button onClick={sendGarmin} disabled={busy} className="shrink-0 rounded-full bg-signal-ink px-4 py-2 text-[14px] font-semibold text-white disabled:opacity-60">
+                {busy ? "Sending…" : "Send"}
+              </button>
+            ) : (
+              <a
+                href={`/api/garmin/connect${returnTo ? `?next=${encodeURIComponent(returnTo)}` : ""}`}
+                className="shrink-0 rounded-full border border-line px-4 py-2 text-[14px] font-semibold"
+              >
+                Connect
+              </a>
+            )}
+          </li>
+        )}
         {!session && (
           <li className={row}>
             <span className="text-[14px]">
