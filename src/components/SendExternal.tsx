@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 interface Props {
   /** Intervals.icu API key present on the server. */
   intervals: boolean;
   /** Limit to one session (session page); otherwise the rest of this week and next week. */
   session?: { date: string; start: string; minutes?: string };
+  /** A last row, e.g. marking the workout done in that app. */
+  footer?: ReactNode;
 }
 
 const row = "flex items-center justify-between gap-3 px-4 py-3";
@@ -15,7 +17,7 @@ const row = "flex items-center justify-between gap-3 px-4 py-3";
  * Optional hand-off to other apps. Hour Power runs workouts itself; this is for
  * riders who'd rather ride them elsewhere. Folded away by default.
  */
-export function SendExternal({ intervals, session }: Props) {
+export function SendExternal({ intervals, session, footer }: Props) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const query = session ? `&date=${session.date}&start=${session.start}${session.minutes ? `&minutes=${session.minutes}` : ""}` : "";
@@ -41,9 +43,9 @@ export function SendExternal({ intervals, session }: Props) {
 
   return (
     <details className="group rounded-2xl border border-line bg-card">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-[15px] font-semibold">
+      <summary className="relative flex h-12 cursor-pointer list-none items-center justify-center px-10 text-[15px] font-semibold [&::-webkit-details-marker]:hidden">
         Use another app instead
-        <span className="text-muted transition-transform group-open:rotate-180" aria-hidden="true">
+        <span className="absolute right-4 text-[13px] text-muted transition-transform group-open:rotate-180" aria-hidden="true">
           ▾
         </span>
       </summary>
@@ -92,6 +94,7 @@ export function SendExternal({ intervals, session }: Props) {
           </a>
         </li>
       </ul>
+      {footer && <div className="border-t border-line">{footer}</div>}
       {message && (
         <p className="border-t border-line px-4 py-3 text-[13px] text-muted" aria-live="polite">
           {message}

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 /** Confirm a trainer workout was done in another app (Zwift, MyWhoosh…) so the week stays as planned, or undo it. */
-export function DoneElsewhere({ date, start, doneIn }: { date: string; start: string; doneIn?: string }) {
+export function DoneElsewhere({ date, start, doneIn, row }: { date: string; start: string; doneIn?: string; /** As a row inside "Use another app instead". */ row?: boolean }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -26,6 +26,27 @@ export function DoneElsewhere({ date, start, doneIn }: { date: string; start: st
         <button onClick={() => send("DELETE")} disabled={busy} className="text-[14px] font-semibold text-muted">
           Undo
         </button>
+      </div>
+    );
+  }
+  if (row) {
+    return (
+      <div className="flex items-center justify-between gap-3 px-4 py-3">
+        <span className="text-[14px] font-semibold">{open ? "Mark this workout as done?" : "Done it there already?"}</span>
+        {open ? (
+          <span className="flex shrink-0 gap-2">
+            <button onClick={() => setOpen(false)} className="px-2 text-[14px] font-semibold text-muted">
+              Cancel
+            </button>
+            <button onClick={() => send("POST")} disabled={busy} className="rounded-full bg-signal-ink px-4 py-2 text-[14px] font-semibold text-white disabled:opacity-50">
+              Yes, done
+            </button>
+          </span>
+        ) : (
+          <button onClick={() => setOpen(true)} className="shrink-0 rounded-full border border-line px-4 py-2 text-[14px] font-semibold">
+            Mark done
+          </button>
+        )}
       </div>
     );
   }
