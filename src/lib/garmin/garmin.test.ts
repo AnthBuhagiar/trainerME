@@ -11,7 +11,7 @@ process.env.GARMIN_CLIENT_SECRET = "secret";
 const { getWorkout, scaleWorkout } = await import("@/lib/plan/library");
 const { toGarminWorkout } = await import("@/lib/garmin/workout");
 const garmin = await import("@/lib/garmin/client");
-const { sendToGarmin } = await import("@/lib/garmin/send");
+const { sendToGarmin, sendState } = await import("@/lib/garmin/send");
 const store = await import("@/lib/data/store");
 import type { PlannedSession } from "@/lib/plan/week";
 import type { GarminRepeat, GarminStep } from "@/lib/garmin/workout";
@@ -140,7 +140,7 @@ describe("sending to Garmin", () => {
     ]);
     expect(calls[0].auth).toBe("Bearer tok");
     expect(JSON.parse(calls[1].body!)).toEqual({ workoutId: 101, date: day(1) });
-    expect(garmin.loadSent()).toEqual([{ key: `${day(1)} 19:30`, date: day(1), workoutId: 101, scheduleId: 102 }]);
+    expect(garmin.loadSent()).toEqual([{ key: `${day(1)} 19:30`, date: day(1), workoutId: 101, scheduleId: 102, fingerprint: expect.stringMatching(/^[0-9a-f]{16}$/) }]);
   });
 
   test("sending again replaces what Hour Power sent, nothing else", async () => {
@@ -153,6 +153,20 @@ describe("sending to Garmin", () => {
     expect(deletes).toHaveLength(4); // a schedule and a workout for each
     expect(deletes.every((u) => u.startsWith(garmin.GARMIN.schedule) || u.startsWith(garmin.GARMIN.workout))).toBe(true);
     expect(garmin.loadSent().map((w) => w.date)).toEqual([day(1)]);
+  });
+
+  test("knows when the rides are on Garmin as planned, and when the plan changed since", async () => {
+    const week = [ride(day(1)), ride(day(3))];
+    expect(sendState(week, 181)).toBe("unsent");
+    await sendToGarmin(week, 181);
+    expect(sendState(week, 181)).toBe("sent");
+    expect(sendState(week, 190)).toBe("changed"); // new hour power: new targets
+    expect(sendState([ride(day(1)), ride(day(3), "threshold-2x15", 45)], 181)).toBe("changed"); // shortened
+    expect(sendState([...week, ride(day(5))], 181)).toBe("changed"); // a ride added
+    expect(sendState([ride(day(9))], 181)).toBe("unsent");
+    // Sent by the first version, before fingerprints: counted as sent.
+    garmin.saveSent(garmin.loadSent().map((w) => ({ ...w, fingerprint: undefined })));
+    expect(sendState(week, 190)).toBe("sent");
   });
 
   test("a workout the rider already deleted on Garmin doesn't stop the send", async () => {
