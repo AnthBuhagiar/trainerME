@@ -3,16 +3,22 @@ import Toybox.Communications;
 import Toybox.Lang;
 import Toybox.Math;
 import Toybox.Time;
+import Toybox.Timer;
 import Toybox.Time.Gregorian;
 import Toybox.WatchUi;
 
 // Today's plan from the Hour Power server (GET /api/watch/today), kept in storage so
 // the watch still shows the last day it fetched when the phone is out of reach.
+// Everything goes through the phone (Garmin Connect); the watch never signs in.
+// Unlinked, it shows a code to enter in Hour Power on the phone, then gets its key.
 class HourPowerData {
     var today = null;     // the server's reply (a Dictionary), or null before the first fetch
     var message = null;   // what went wrong on the last fetch, if anything
     var loading = false;
     var minutes = null;   // a length chosen on the watch for today's ride ("Only 35 min?")
+    var linkCode = null;  // shown while linking, e.g. "K7P-42Q"
+    var linkToken = null; // proves to the server it's this watch collecting the key
+    var linkTimer = null;
 
     function initialize() {
         var cached = Application.Storage.getValue("today");
@@ -51,8 +57,17 @@ class HourPowerData {
         return s;
     }
 
+    function key() {
+        var k = Application.Storage.getValue("watchKey");
+        return k instanceof String && k.length() > 0 ? k : null;
+    }
+
+    function linked() {
+        return key() != null;
+    }
+
     function headers(json) {
-        var h = { "Authorization" => "Bearer " + setting("watchKey") };
+        var h = { "Authorization" => "Bearer " + key() };
         if (json) {
             h["Content-Type"] = Communications.REQUEST_CONTENT_TYPE_JSON;
         }
@@ -60,9 +75,13 @@ class HourPowerData {
     }
 
     function ready() {
-        if (server() == null || setting("watchKey") == null) {
-            message = "Add the server and watch key in Connect IQ settings";
+        if (server() == null) {
+            message = "No server address. See watch/README.md";
             WatchUi.requestUpdate();
+            return false;
+        }
+        if (!linked()) {
+            startLink();
             return false;
         }
         return !loading;
@@ -112,7 +131,10 @@ class HourPowerData {
             message = null;
             Application.Storage.setValue("today", body);
         } else if (code == 401) {
-            message = "Watch key not recognised. Make a new one in the app";
+            // Unlinked on the phone (or linked to another watch): link again.
+            forget();
+            message = null;
+            startLink();
         } else if (code == 403) {
             message = "Open Hour Power on your phone and accept the terms";
         } else if (code == -104 || code == -2) {
@@ -123,6 +145,90 @@ class HourPowerData {
             message = "Couldn't reach Hour Power (" + code + ")";
         }
         WatchUi.requestUpdate();
+    }
+
+    // ---- Linking from the phone ----
+
+    function forget() {
+        Application.Storage.deleteValue("watchKey");
+        Application.Storage.deleteValue("today");
+        today = null;
+    }
+
+    // Ask for a code to show. Called whenever the watch has no key.
+    function startLink() {
+        if (linkCode != null || loading || server() == null) {
+            return;
+        }
+        loading = true;
+        Communications.makeWebRequest(server() + "/api/watch/link", {}, {
+            :method => Communications.HTTP_REQUEST_METHOD_POST,
+            :headers => { "Content-Type" => Communications.REQUEST_CONTENT_TYPE_JSON },
+            :responseType => Communications.HTTP_RESPONSE_CONTENT_TYPE_JSON
+        }, method(:onLinkStart));
+        WatchUi.requestUpdate();
+    }
+
+    function onLinkStart(code, body) {
+        loading = false;
+        if (code == 200 && body instanceof Dictionary && body["code"] != null) {
+            linkCode = body["code"];
+            linkToken = body["token"];
+            message = null;
+            if (linkTimer == null) {
+                linkTimer = new Timer.Timer();
+            }
+            linkTimer.start(method(:pollLink), 3000, true);
+        } else {
+            linkFailed(code);
+        }
+        WatchUi.requestUpdate();
+    }
+
+    function pollLink() {
+        if (linkToken == null || loading) {
+            return;
+        }
+        loading = true;
+        Communications.makeWebRequest(server() + "/api/watch/link", {}, {
+            :method => Communications.HTTP_REQUEST_METHOD_GET,
+            :headers => { "Authorization" => "Bearer " + linkToken },
+            :responseType => Communications.HTTP_RESPONSE_CONTENT_TYPE_JSON
+        }, method(:onLinkPoll));
+    }
+
+    function onLinkPoll(code, body) {
+        loading = false;
+        if (code == 200 && body instanceof Dictionary && "linked".equals(body["status"]) && body["key"] != null) {
+            stopLink();
+            Application.Storage.setValue("watchKey", body["key"]);
+            refresh(null);
+        } else if (code == 410) {
+            // The code ran out: get a fresh one.
+            stopLink();
+            startLink();
+        } else if (code != 200) {
+            linkFailed(code);
+        }
+        WatchUi.requestUpdate();
+    }
+
+    function stopLink() {
+        if (linkTimer != null) {
+            linkTimer.stop();
+        }
+        linkCode = null;
+        linkToken = null;
+    }
+
+    function linkFailed(code) {
+        if (code == -104 || code == -2) {
+            message = "Phone not connected";
+        } else if (code == 429) {
+            message = "Busy. Trying again shortly";
+        } else {
+            message = "Couldn't reach Hour Power (" + code + ")";
+        }
     }
 
     // Days from the day the data is for to today on the watch (0 when fresh).

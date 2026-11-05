@@ -1,4 +1,5 @@
 <properties>
+    <!-- Your hosted Hour Power address, built into the app, e.g. https://hourpower.example.com.
+         Set it before building (watch/README.md). Riders can change it in the app's settings in Connect IQ. -->
     <property id="serverUrl" type="string"></property>
-    <property id="watchKey" type="string"></property>
 </properties>

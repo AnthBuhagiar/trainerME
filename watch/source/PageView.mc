@@ -66,14 +66,20 @@ class PageView extends WatchUi.View {
 
     function empty(dc, data) {
         Draw.ring(dc, Draw.ORANGE, Draw.TRACK, 0, 6);
-        var rows = [
-            [:text, "HOUR POWER", Graphics.FONT_XTINY, Draw.ORANGE],
-            [:gap, 0.03],
-            [:text, data.loading ? "Loading today..." : (data.message != null ? data.message : "Not set up yet"), Graphics.FONT_SMALL, Draw.TEXT]
-        ];
-        if (!data.loading && data.message == null) {
-            rows.add([:text, "Add the server and watch key", Graphics.FONT_XTINY, Draw.MUTED]);
-            rows.add([:text, "in Connect IQ settings", Graphics.FONT_XTINY, Draw.MUTED]);
+        var rows = [[:text, "HOUR POWER", Graphics.FONT_XTINY, Draw.ORANGE], [:gap, 0.03]];
+        if (data.linkCode != null) {
+            // Linking: enter this on the phone.
+            rows.add([:text, "LINK THIS WATCH", Graphics.FONT_XTINY, Draw.MUTED]);
+            rows.add([:text, data.linkCode, Graphics.FONT_LARGE, Draw.TEXT]);
+            rows.add([:gap, 0.02]);
+            rows.add([:text, "In Hour Power on your phone:", Graphics.FONT_XTINY, Draw.MUTED]);
+            rows.add([:text, "Settings, Garmin watch app", Graphics.FONT_XTINY, Draw.SOFT]);
+        } else if (data.message != null) {
+            rows.add([:text, data.message, Graphics.FONT_SMALL, Draw.TEXT]);
+            rows.add([:gap, 0.02]);
+            rows.add([:pill, "START to try again", Draw.TEXT, Draw.LINE]);
+        } else {
+            rows.add([:text, data.linked() ? "Loading today..." : "Getting a link code...", Graphics.FONT_SMALL, Draw.TEXT]);
         }
         Draw.stack(dc, rows);
     }
