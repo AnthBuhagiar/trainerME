@@ -163,7 +163,7 @@ Sending again replaces what Hour Power sent before for those days; workouts you 
 
 ## Garmin watch app (Hour Power Lite)
 
-A Connect IQ app for round Garmin watches, in `watch/`: hour power, today's session with watt targets, the morning check-in and the goal countdown, and riding the session on the wrist (power against target, time left, heart rate, cadence), saved to Garmin Connect. In Hour Power, **Settings and data, Garmin watch app** makes the watch key it needs. It works with a hosted copy only: the watch can't get past a codespace's GitHub sign-in. Building it and getting it onto a watch: `watch/README.md`.
+A Connect IQ app for round Garmin watches, in `watch/`: hour power, today's session with watt targets, the morning check-in and the goal countdown, and riding the session on the wrist (power against target, time left, heart rate, cadence), saved to Garmin Connect. Everything goes through the phone, so watches without their own data or Wi-Fi work, and the watch never signs in: it shows a code once, you enter it in Hour Power on your phone (**Settings and data, Garmin watch app**), and it's linked. It works with a hosted copy only: the watch can't get past a codespace's GitHub sign-in. Building it and getting it onto a watch: `watch/README.md`.
 
 ## Send workouts to Intervals.icu
 

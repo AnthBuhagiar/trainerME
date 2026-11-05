@@ -25,18 +25,32 @@ workout player.
 
 ## How it talks to Hour Power
 
-- `GET /api/watch/today` (and `?minutes=35` to refit today's ride) and `POST /api/watch/checkin {mood}`.
-  The payload is built in `src/lib/watch/today.ts`, with labels in plain ASCII for the watch's fonts.
-- The watch sends a **watch key** (`Authorization: Bearer …`) instead of a sign-in cookie. Make one in
-  Hour Power under **Settings and data, Garmin watch app**. Only its hash is stored (`watch.json` in the rider's
-  folder). Making a new key, or **Turn the watch off**, stops the old one.
-- The last day fetched is kept on the watch, so it still shows (marked "Not updated") with the phone out of reach.
-  Rides can only be started from today's data.
+Everything goes **through the phone**: the watch's requests travel over Bluetooth to the Garmin Connect
+app, which passes them on. So it works on watches without their own data or Wi-Fi, and the watch never
+signs in.
 
-**It needs a server the watch can reach.** The watch's requests go out through the Garmin Connect app on
-the phone, with no GitHub sign-in, so a codespace's private address won't work. Use the hosted copy (see
-"Host it" in the main README). Don't make a codespace port public to get around this: without sign-in,
-anyone with the address could read everything.
+**Linking (once).** Open Hour Power on the watch: it shows a code like `K7P-42Q`. On your phone, in Hour
+Power, go to **Settings and data, Garmin watch app**, enter the code and tap **Link**. Within a few seconds
+the watch has its own key and shows your day. Nothing to type in Garmin Connect. A code works once and
+runs out after ten minutes (the watch gets a new one). Linking another watch replaces the old one;
+**Unlink the watch** stops it at once and it goes back to showing a code.
+
+- `POST /api/watch/link` gives the watch a code and a token only it holds; it checks
+  `GET /api/watch/link` with that token every 3 s until the code is entered
+  (`POST /api/watch/link/confirm`, signed in), then collects its key (`src/lib/watch/link.ts`).
+- After that, `GET /api/watch/today` (`?minutes=35` refits today's ride) and `POST /api/watch/checkin {mood}`,
+  sending the key as `Authorization: Bearer …`. The payload is built in `src/lib/watch/today.ts`, with labels in
+  plain ASCII for the watch's fonts. Only the key's hash is stored (`watch.json` in the rider's folder).
+- The last day fetched is kept on the watch, so it still shows (marked "Not updated") with the phone out of reach.
+  Rides record without the phone and reach Garmin Connect at the next sync. Rides can only be started from today's data.
+
+**It needs a server the watch can reach.** The Garmin Connect app can't get past a codespace's GitHub
+sign-in, so use the hosted copy (see "Host it" in the main README). Don't make a codespace port public to
+get around this: without sign-in, anyone with the address could read everything.
+
+**Set the server before building.** The hosted address is built into the app: put it in
+`resources/settings/properties.xml` as the `serverUrl` default (e.g. `https://hourpower.example.com`).
+It's only an address, nothing secret. Store installs can change it in the app's settings in Connect IQ.
 
 ## Build and run
 
@@ -52,23 +66,20 @@ in the repo's checks: the server side is tested there, the watch code is built h
 
 ### Try it in the simulator
 
-In the simulator's **File** menu, edit the app's properties (under Edit Persistent Storage in recent SDKs). Set `serverUrl` to your
-Hour Power address and `watchKey` to a key from Settings. To try a ride, the **Simulation** menu can feed in power, heart rate
-and cadence.
+Run it: the simulator shows a link code. Enter it in Hour Power (Settings, Garmin watch app) and the simulator
+links like a watch. To try a ride, the simulator's **Simulation** menu can feed in power, heart rate and cadence.
 
 ### On your watch
 
-Garmin only lets you edit an app's settings on the phone (Connect IQ app, Hour Power, Settings) for apps
-installed from the **Connect IQ Store**. So:
+With the server built in, nothing needs typing on the phone, so either works:
 
-1. **Monkey C: Export Project** makes an `.iq` file.
-2. In the [Connect IQ developer dashboard](https://apps.garmin.com/developer/), upload it as a **beta app**.
-   A beta app is visible only to you, with no review.
-3. Install it from the store link on your phone, then in the Connect IQ app open **Hour Power, Settings**
-   and enter the server and watch key.
+- **Copy it on**: **Monkey C: Build for Device** for your watch, connect the watch by USB and copy the `.prg`
+  into `GARMIN/APPS`. Quickest for your own watch.
+- **Beta app** (for other riders, or updates from the store): **Monkey C: Export Project** makes an `.iq` file;
+  upload it in the [Connect IQ developer dashboard](https://apps.garmin.com/developer/) as a beta app (visible
+  only to you, no review) and install it from the store link on your phone.
 
-Copying a `.prg` straight onto the watch (USB, `GARMIN/APPS`) runs it, but there's no way to type the
-settings then, so it can only show "Not set up yet".
+Then open Hour Power on the watch and link it with the code.
 
 ## Devices
 
@@ -79,7 +90,7 @@ Everything is laid out by screen size, so new round watches need no code changes
 ## Files
 
 - `source/HourPowerApp.mc`: the app, and saving a ride if it's closed mid-ride
-- `source/HourPowerData.mc`: fetching and caching today, the check-in, settings
+- `source/HourPowerData.mc`: linking, fetching and caching today, the check-in
 - `source/PageView.mc`: the four pages, their buttons and menus
 - `source/Ride.mc`: recording, sensors, steps, alerts
 - `source/RideView.mc`: the ride screen, pause, save, discard

@@ -94,7 +94,7 @@ function SettingsPageView({ garminMessage }: { garminMessage?: string }) {
 
       <section id="watch" className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-5">
         <h2 className="label">Garmin watch app</h2>
-        <WatchPanel server={appUrl()} created={watchKeyCreated()} />
+        <WatchPanel created={watchKeyCreated()} />
       </section>
 
       <section id="sensors" className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-5">
