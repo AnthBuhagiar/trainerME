@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hour Power Lite: today glance</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#ff6a1a}a:hover{color:#ff8a4a}
+</style>
+</helmet>
+<div style="width: 520px; height: 520px; position: relative; background: #e9edf1; font-family: Inter, system-ui, sans-serif; color: #f3f5f7; overflow: hidden">
+  <div aria-hidden="true" style="position: absolute; left: 438px; top: 131px; width: 14px; height: 44px; border-radius: 5px; background: #ff6a1a; transform: rotate(-30deg)"></div>
+  <div aria-hidden="true" style="position: absolute; left: 438px; top: 345px; width: 14px; height: 44px; border-radius: 5px; background: #3a444f; transform: rotate(30deg)"></div>
+  <div aria-hidden="true" style="position: absolute; left: 68px; top: 131px; width: 14px; height: 44px; border-radius: 5px; background: #3a444f; transform: rotate(30deg)"></div>
+  <div aria-hidden="true" style="position: absolute; left: 39px; top: 238px; width: 14px; height: 44px; border-radius: 5px; background: #3a444f"></div>
+  <div aria-hidden="true" style="position: absolute; left: 68px; top: 345px; width: 14px; height: 44px; border-radius: 5px; background: #3a444f; transform: rotate(-30deg)"></div>
+  <div style="position: absolute; left: 52px; top: 52px; width: 416px; height: 416px; border-radius: 50%; background: #1f262e; box-shadow: 0 20px 44px rgba(18,22,28,0.30), inset 0 0 0 2px #2f3842"></div>
+  <div style="position: absolute; left: 68px; top: 68px; width: 384px; height: 384px; border-radius: 50%; background: #000000; overflow: hidden">
+    <svg width="384" height="384" viewBox="0 0 384 384" role="img" aria-label="This week: 3 h 10 of 6 h done" style="position: absolute; left: 0; top: 0">
+      <circle cx="192" cy="192" r="185" fill="none" stroke="#1d2731" stroke-width="6"></circle>
+      <circle cx="192" cy="192" r="185" fill="none" stroke="{{accent}}" stroke-width="6" stroke-linecap="round" stroke-dasharray="616 1163" transform="rotate(-90 192 192)"></circle>
+    </svg>
+    <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding-top: 6px">
+      <div style="font-size: 14px; font-weight: 600; color: #9aa6b2; letter-spacing: 0.08em">THU 5 NOV</div>
+      <div style="margin-top: 10px; font-size: 13px; font-weight: 700; color: {{accent}}; letter-spacing: 0.16em">HOUR POWER</div>
+      <div style="display: flex; align-items: baseline; gap: 6px; margin-top: -2px">
+        <span style="font-family: Archivo, system-ui, sans-serif; font-stretch: 125%; font-weight: 800; font-size: 104px; line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums">201</span>
+        <span style="font-family: Archivo, system-ui, sans-serif; font-stretch: 125%; font-weight: 700; font-size: 26px; color: #9aa6b2">W</span>
+      </div>
+      <div style="margin-top: 2px; font-size: 15px; font-weight: 500; color: #9aa6b2">± 6 W</div>
+      <div style="width: 150px; height: 1px; background: #2a323d; margin: 14px 0 12px"></div>
+      <div style="font-size: 12px; font-weight: 700; color: #9aa6b2; letter-spacing: 0.14em">TODAY · 7:30 PM</div>
+      <div style="margin-top: 4px; font-size: 21px; font-weight: 700">Sweet spot 3 × 12</div>
+      <div style="margin-top: 2px; font-size: 14px; color: #9aa6b2">60 min · trainer</div>
+      <div style="margin-top: 14px; display: flex; align-items: center; gap: 7px; padding: 6px 14px; border-radius: 999px; background: #0c2230">
+        <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M1 11 L4.5 4 L7 8 L8.5 6 L11 11 Z" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linejoin="round"></path></svg>
+        <span style="font-size: 13px; font-weight: 600; color: #7dd3fc">Bathurst in 164 days</span>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#ff6a1a","options":["#ff6a1a","#38bdf8","#5cc28a"]},"$preview":{"width":520,"height":520}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#ff6a1a' };
+  }
+}
+</script>
+</body>
+</html>
