@@ -1,0 +1,3 @@
+project.manifest = manifest.xml
+# The code is written with gradual typing in mind but not annotated for strict checks.
+project.typecheck = 0

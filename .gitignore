@@ -11,3 +11,11 @@ dist/
 .DS_Store
 *.tsbuildinfo
 /release/
+
+# Connect IQ watch app: build output and the developer signing key
+/watch/bin/
+/watch/gen/
+*.der
+*.pem
+*.prg
+*.iq
