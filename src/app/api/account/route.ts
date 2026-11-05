@@ -4,14 +4,16 @@ import { athleteRoute } from "@/lib/auth/athlete";
 import { SESSION_COOKIE } from "@/lib/auth/session";
 import { currentAthlete, dataDir, multiUser } from "@/lib/data/store";
 import { retireCode } from "@/lib/referral/referral";
+import { disconnectGarmin } from "@/lib/garmin/client";
 import { appUrl, deauthorize } from "@/lib/strava/client";
 
 export const runtime = "nodejs";
 
-/** Delete my account: revoke Strava access and remove every file Hour Power holds for this athlete. */
+/** Delete my account: revoke Strava and Garmin access and remove every file Hour Power holds for this athlete. */
 async function post() {
   if (!multiUser() || !currentAthlete()) return NextResponse.json({ error: "Only on a shared Hour Power." }, { status: 400 });
   await deauthorize();
+  await disconnectGarmin();
   retireCode(currentAthlete()!);
   fs.rmSync(dataDir(), { recursive: true, force: true });
   const res = NextResponse.redirect(`${appUrl()}/login?deleted=1`, 303);

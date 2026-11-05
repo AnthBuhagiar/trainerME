@@ -8,6 +8,7 @@ import { dayLabel } from "@/lib/ui/format";
 import { WeekReviewCard } from "@/components/WeekReviewCard";
 import { reviewWeekStart, weekReview, type WeekReview } from "@/lib/plan/review";
 import { hasIntervalsKey } from "@/lib/intervals/client";
+import { garminStatus } from "@/lib/garmin/client";
 import { nextWeekStart, loadState } from "@/lib/plan/current";
 import { length } from "@/lib/ui/format";
 import type { PlannedSession, WeekPlan } from "@/lib/plan/week";
@@ -109,7 +110,7 @@ function WeekPageView() {
         covered={status.covered}
       />
       <Week plan={next} title="Next week" today={state.today} away={state.away} />
-      <SendExternal intervals={hasIntervalsKey()} />
+      <SendExternal intervals={hasIntervalsKey()} garmin={garminStatus()} returnTo="/week" />
     </main>
   );
 }

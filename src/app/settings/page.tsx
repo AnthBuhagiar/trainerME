@@ -11,14 +11,27 @@ import { BILLING_OPEN, REFERRALS_FOR_REWARD, referralSummary } from "@/lib/refer
 import { authEnabled } from "@/lib/auth/session";
 import { loadState } from "@/lib/plan/current";
 import { appUrl, autoUploadOn, canUpload } from "@/lib/strava/client";
+import { garminStatus } from "@/lib/garmin/client";
+
+/** What happened on the trip to Garmin, from /api/garmin/callback. */
+const GARMIN_MESSAGES: Record<string, string> = {
+  connected: "Garmin connected. Send workouts from Week or any ride.",
+  disconnected: "Garmin disconnected. Workouts already on your calendar stay there.",
+  declined: "Garmin wasn’t connected: access was declined.",
+  expired: "That took too long. Connect again.",
+  failed: "Garmin didn’t finish connecting. Try again.",
+  "no-workouts": "Connected, but workouts weren’t allowed. Connect again and tick workouts.",
+  "no-credentials": "Add GARMIN_CLIENT_ID and GARMIN_CLIENT_SECRET first (see README).",
+};
 
 export const dynamic = "force-dynamic";
 
-function SettingsPageView() {
+function SettingsPageView({ garminMessage }: { garminMessage?: string }) {
   const { settings, chosenDays, learnedBudget } = loadState();
   const athlete = multiUser() ? currentAthlete() : null;
   const referral = athlete ? referralSummary(athlete) : null;
   const admin = multiUser() && canSeeAdmin(athlete);
+  const garmin = garminStatus();
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 px-5 py-6">
       <h1 className="display text-[24px]">Settings and data</h1>
@@ -51,6 +64,31 @@ function SettingsPageView() {
         <h2 className="label">Strava</h2>
         <AutoUploadToggle initial={autoUploadOn(settings)} canUpload={canUpload()} />
       </section>
+
+      {garmin && (
+        <section id="garmin" className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-5">
+          <h2 className="label">Garmin Connect</h2>
+          <p className="text-[14px] leading-snug text-muted">
+            {garmin.connected
+              ? "Connected. Planned rides go to your Garmin Connect calendar with watt targets, then to your watch or Edge."
+              : "Put planned rides on your Garmin Connect calendar with watt targets. Your watch or Edge picks them up at its next sync."}
+          </p>
+          {garminMessage && (
+            <p className="text-[14px] font-semibold" aria-live="polite">
+              {garminMessage}
+            </p>
+          )}
+          {garmin.connected ? (
+            <form action="/api/garmin/disconnect" method="post">
+              <button className="h-12 w-full rounded-2xl border border-line text-[15px] font-semibold">Disconnect Garmin</button>
+            </form>
+          ) : (
+            <a href="/api/garmin/connect" className="flex h-12 items-center justify-center rounded-2xl bg-signal-ink text-[15px] font-semibold text-white">
+              Connect Garmin
+            </a>
+          )}
+        </section>
+      )}
 
       <section id="sensors" className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-5">
         <h2 className="label">Trainer and heart rate</h2>
@@ -94,7 +132,7 @@ function SettingsPageView() {
             <summary className="cursor-pointer list-none px-4 py-3 text-[15px] font-semibold text-muted">Delete my account</summary>
             <form action="/api/account" method="post" className="flex flex-col gap-3 border-t border-line p-4">
               <p className="text-[14px] leading-snug">
-                Removes all your rides, goals, plan and settings from Hour Power and revokes its Strava access. Your activities on Strava aren’t touched.
+                Removes all your rides, goals, plan and settings from Hour Power and revokes its Strava and Garmin access. Your activities on Strava and Garmin aren’t touched.
                 Download a backup first if you might come back.
               </p>
               <button className="h-12 rounded-2xl bg-signal-ink text-[15px] font-semibold text-white">Delete everything</button>
@@ -110,6 +148,7 @@ function SettingsPageView() {
   );
 }
 
-export default async function SettingsPage() {
-  return asAthlete(() => SettingsPageView());
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ garmin?: string }> }) {
+  const { garmin } = await searchParams;
+  return asAthlete(() => SettingsPageView({ garminMessage: garmin ? GARMIN_MESSAGES[garmin] : undefined }));
 }
