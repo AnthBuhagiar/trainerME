@@ -43,9 +43,9 @@ export function SwapPicker({ date, start, choices, current, planned }: { date: s
         </div>
       )}
       <details className="group rounded-2xl border border-line bg-card">
-        <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-[15px] font-semibold [&::-webkit-details-marker]:hidden">
+        <summary className="relative flex h-12 cursor-pointer list-none items-center justify-center px-10 text-[15px] font-semibold [&::-webkit-details-marker]:hidden">
           Try something different
-          <span aria-hidden="true" className="text-[13px] text-muted transition-transform group-open:rotate-180">
+          <span aria-hidden="true" className="absolute right-4 text-[13px] text-muted transition-transform group-open:rotate-180">
             ▾
           </span>
         </summary>
