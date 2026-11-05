@@ -1,6 +1,7 @@
 import { athleteRoute } from "@/lib/auth/athlete";
 import { NextResponse } from "next/server";
 import { loadAway, saveAway, type AwayKind } from "@/lib/plan/away";
+import { syncsGarmin } from "@/lib/garmin/resync";
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -27,5 +28,5 @@ async function remove(request: Request) {
 }
 
 export const GET = athleteRoute(get);
-export const POST = athleteRoute(post);
-export const DELETE = athleteRoute(remove);
+export const POST = athleteRoute(syncsGarmin(post));
+export const DELETE = athleteRoute(syncsGarmin(remove));

@@ -1,6 +1,7 @@
 import { athleteRoute } from "@/lib/auth/athlete";
 import { NextResponse } from "next/server";
 import { parseChoices, saveAvailability } from "@/lib/plan/availability";
+import { syncsGarmin } from "@/lib/garmin/resync";
 
 /** Save the rider's chosen days, or (with {reset: true}) go back to the week learned from their rides. */
 async function post(request: Request) {
@@ -15,4 +16,4 @@ async function post(request: Request) {
   return NextResponse.json({ ok: true });
 }
 
-export const POST = athleteRoute(post);
+export const POST = athleteRoute(syncsGarmin(post));

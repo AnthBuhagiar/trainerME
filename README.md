@@ -159,9 +159,11 @@ With a Garmin Connect Developer Program app, each rider connects their own Garmi
 4. On a hosted copy, set the **deregistration** and **user permission change** notification URLs to `<your app address>/api/garmin/webhook`, so a rider removing Hour Power in Garmin Connect is forgotten here too.
 5. In Hour Power: **Settings and data → Garmin Connect → Connect Garmin**, approve on Garmin's page (allow workouts), then **Week → Use another app instead → Garmin Connect: Send**, or the same on any ride.
 
-Sending again replaces what Hour Power sent before for those days; workouts you made in Garmin Connect yourself are never touched. Disconnecting (or deleting your account) removes Hour Power's access on Garmin. Garmin's API addresses are in `src/lib/garmin/client.ts`; if a call starts failing, compare them with the current docs in the developer portal.
+Sending again replaces what Hour Power sent before for those days; workouts you made in Garmin Connect yourself are never touched. Once rides are sent, Hour Power keeps them up to date: a check-in (tired, short on time, day off), a swap, days away, new targets or the plan adapting after a sync replaces the changed rides on Garmin straight away, so the watch has the session as it now stands at its next sync. Only the days you sent are kept up to date, and past days are left alone (`src/lib/garmin/resync.ts`). Disconnecting (or deleting your account) removes Hour Power's access on Garmin. Garmin's API addresses are in `src/lib/garmin/client.ts`; if a call starts failing, compare them with the current docs in the developer portal.
 
 ## Garmin watch app (Hour Power Lite)
+
+**Paused.** Sending workouts to Garmin Connect (above) covers riding, with ERG, and keeps up with check-ins; the watch app is kept for later and hasn't been built with the Connect IQ SDK yet.
 
 A Connect IQ app for round Garmin watches, in `watch/`: hour power, today's session with watt targets, the morning check-in and the goal countdown, and riding the session on the wrist (power against target, time left, heart rate, cadence), saved to Garmin Connect. Everything goes through the phone, so watches without their own data or Wi-Fi work, and the watch never signs in: it shows a code once, you enter it in Hour Power on your phone (**Settings and data, Garmin watch app**), and it's linked. It works with a hosted copy only: the watch can't get past a codespace's GitHub sign-in. Building it and getting it onto a watch: `watch/README.md`.
 

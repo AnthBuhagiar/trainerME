@@ -72,7 +72,7 @@ function SettingsPageView({ garminMessage }: { garminMessage?: string }) {
           <h2 className="label">Garmin Connect</h2>
           <p className="text-[14px] leading-snug text-muted">
             {garmin.connected
-              ? "Connected. Planned rides go to your Garmin Connect calendar with watt targets, then to your watch or Edge."
+              ? "Connected. Planned rides go to your Garmin Connect calendar with watt targets, then to your watch or Edge. Once sent, a check-in, swap or day off updates them there too."
               : "Put planned rides on your Garmin Connect calendar with watt targets. Your watch or Edge picks them up at its next sync."}
           </p>
           {garminMessage && (

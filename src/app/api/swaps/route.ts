@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { athleteRoute } from "@/lib/auth/athlete";
 import { catalogueEntry } from "@/lib/plan/catalogue";
 import { setSwap } from "@/lib/plan/swaps";
+import { syncsGarmin } from "@/lib/garmin/resync";
 
 /** Swap a planned ride for another workout, or (id null) go back to the planned one. */
 async function post(request: Request) {
@@ -13,4 +14,4 @@ async function post(request: Request) {
   return NextResponse.json({ ok: true });
 }
 
-export const POST = athleteRoute(post);
+export const POST = athleteRoute(syncsGarmin(post));

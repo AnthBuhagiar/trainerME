@@ -2,6 +2,7 @@ import { athleteRoute } from "@/lib/auth/athlete";
 import { NextResponse } from "next/server";
 import { loadSettings, saveSettings } from "@/lib/data/store";
 import { setRiderTimeZone } from "@/lib/plan/timeZone";
+import { syncsGarmin } from "@/lib/garmin/resync";
 
 const watts = (v: unknown) => typeof v === "number" && Number.isFinite(v) && v >= 50 && v <= 600;
 
@@ -21,4 +22,4 @@ async function post(request: Request) {
   return NextResponse.json(settings);
 }
 
-export const POST = athleteRoute(post);
+export const POST = athleteRoute(syncsGarmin(post));
