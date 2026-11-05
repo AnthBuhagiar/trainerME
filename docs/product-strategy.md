@@ -51,6 +51,7 @@ Ranked by defensibility (how hard they are to copy).
 | B6 | **Calendar awareness** *(optional)* | Reads family/work calendars, suggests realistic slots and plans recovery around busy weeks and holidays. |
 | B7 | **Late-night-friendly sessions** | Evening sessions are tuned for the most stimulus per minute, without hard efforts so late that they wreck sleep. |
 | B8 | **Gym-aware scheduling** | **Two strength sessions a week by default** for every rider (E5). If history shows fewer, the least regular indoor ride is swapped for strength (outdoor and long rides never are). Strength is placed so it doesn't blunt the key ride. |
+| B9 | **Swap a workout, or ride any of them** | On a planned ride, "Try something different" offers similar, easier or (when the days around it allow) harder workouts that fit the day; the swap counts as the planned session and can be undone. A Workouts page lists the whole catalogue in the rider's watts, and trainer workouts can be ridden on a free day as an extra ride. |
 
 ### D. Goals — whatever the rider is working towards (high value, medium defensibility)
 
