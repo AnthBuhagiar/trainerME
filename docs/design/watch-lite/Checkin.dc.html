@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hour Power Lite: morning check-in</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#ff6a1a}a:hover{color:#ff8a4a}
+</style>
+</helmet>
+<div style="width: 520px; height: 520px; position: relative; background: #e9edf1; font-family: Inter, system-ui, sans-serif; color: #f3f5f7; overflow: hidden">
+  <div aria-hidden="true" style="position: absolute; left: 438px; top: 131px; width: 14px; height: 44px; border-radius: 5px; background: #ff6a1a; transform: rotate(-30deg)"></div>
+  <div aria-hidden="true" style="position: absolute; left: 438px; top: 345px; width: 14px; height: 44px; border-radius: 5px; background: #3a444f; transform: rotate(30deg)"></div>
+  <div aria-hidden="true" style="position: absolute; left: 68px; top: 131px; width: 14px; height: 44px; border-radius: 5px; background: #3a444f; transform: rotate(30deg)"></div>
+  <div aria-hidden="true" style="position: absolute; left: 39px; top: 238px; width: 14px; height: 44px; border-radius: 5px; background: #3a444f"></div>
+  <div aria-hidden="true" style="position: absolute; left: 68px; top: 345px; width: 14px; height: 44px; border-radius: 5px; background: #3a444f; transform: rotate(-30deg)"></div>
+  <div style="position: absolute; left: 52px; top: 52px; width: 416px; height: 416px; border-radius: 50%; background: #1f262e; box-shadow: 0 20px 44px rgba(18,22,28,0.30), inset 0 0 0 2px #2f3842"></div>
+  <div style="position: absolute; left: 68px; top: 68px; width: 384px; height: 384px; border-radius: 50%; background: #000000; overflow: hidden">
+    <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center">
+      <div style="font-size: 12px; font-weight: 700; color: #9aa6b2; letter-spacing: 0.16em">CHECK-IN</div>
+      <div style="margin-top: 4px; font-family: Archivo, system-ui, sans-serif; font-stretch: 125%; font-weight: 800; font-size: 28px; letter-spacing: -0.02em">How's today?</div>
+      <div style="margin-top: 14px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; width: 264px">
+        <button type="button" aria-pressed="true" style="min-height: 58px; border: 2px solid #ff6a1a; border-radius: 16px; background: #2a1408; color: #f3f5f7; font: 700 16px Inter, system-ui, sans-serif">Good</button>
+        <button type="button" aria-pressed="false" style="min-height: 58px; border: 2px solid #2a323d; border-radius: 16px; background: #12161c; color: #f3f5f7; font: 700 16px Inter, system-ui, sans-serif">Tired</button>
+        <button type="button" aria-pressed="false" style="min-height: 58px; border: 2px solid #2a323d; border-radius: 16px; background: #12161c; color: #f3f5f7; font: 700 16px Inter, system-ui, sans-serif">Short on time</button>
+        <button type="button" aria-pressed="false" style="min-height: 58px; border: 2px solid #2a323d; border-radius: 16px; background: #12161c; color: #f3f5f7; font: 700 16px Inter, system-ui, sans-serif">Off today</button>
+      </div>
+      <div style="margin-top: 14px; width: 230px; font-size: 13px; line-height: 1.4; color: #9aa6b2">Tired swaps tonight's sweet spot for easy riding. Nothing to catch up.</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":520,"height":520}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
