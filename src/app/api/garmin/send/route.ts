@@ -19,7 +19,7 @@ async function post(request: Request) {
       const found = resolveSession(body.date, body.start, body.minutes);
       if (!found?.session.ride) return NextResponse.json({ error: "No ride that day." }, { status: 404 });
       if (!found.hourPower) return NextResponse.json({ error: "Sync your rides first so targets can be set." }, { status: 400 });
-      return NextResponse.json(await sendToGarmin([found.session], found.hourPower));
+      return NextResponse.json(await sendToGarmin([found.session], found.hourPower, undefined, found.planned));
     }
     const state = loadState();
     if (!state.current) return NextResponse.json({ error: "Sync Strava first so targets can be set from your hour power." }, { status: 400 });

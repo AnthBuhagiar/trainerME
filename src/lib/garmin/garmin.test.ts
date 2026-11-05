@@ -140,7 +140,7 @@ describe("sending to Garmin", () => {
     ]);
     expect(calls[0].auth).toBe("Bearer tok");
     expect(JSON.parse(calls[1].body!)).toEqual({ workoutId: 101, date: day(1) });
-    expect(garmin.loadSent()).toEqual([{ key: `${day(1)} 19:30`, date: day(1), workoutId: 101, scheduleId: 102, fingerprint: expect.stringMatching(/^[0-9a-f]{16}$/) }]);
+    expect(garmin.loadSent()).toEqual([{ key: `${day(1)} 19:30`, date: day(1), workoutId: 101, scheduleId: 102, fingerprint: expect.stringMatching(/^[0-9a-f]{16}$/), planFingerprint: expect.stringMatching(/^[0-9a-f]{16}$/) }]);
   });
 
   test("sending again replaces what Hour Power sent, nothing else", async () => {
@@ -165,7 +165,7 @@ describe("sending to Garmin", () => {
     expect(sendState([...week, ride(day(5))], 181)).toBe("changed"); // a ride added
     expect(sendState([ride(day(9))], 181)).toBe("unsent");
     // Sent by the first version, before fingerprints: counted as sent.
-    garmin.saveSent(garmin.loadSent().map((w) => ({ ...w, fingerprint: undefined })));
+    garmin.saveSent(garmin.loadSent().map((w) => ({ ...w, fingerprint: undefined, planFingerprint: undefined })));
     expect(sendState(week, 190)).toBe("sent");
   });
 

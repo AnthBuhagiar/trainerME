@@ -3,6 +3,7 @@ import { watchRoute } from "@/lib/auth/athlete";
 import { MOODS, saveCheckIn, type Mood } from "@/lib/plan/checkin";
 import { loadState } from "@/lib/plan/current";
 import { watchTodayFromState } from "@/lib/watch/state";
+import { syncsGarmin } from "@/lib/garmin/resync";
 
 export const runtime = "nodejs";
 
@@ -14,4 +15,4 @@ async function post(request: Request) {
   return NextResponse.json(watchTodayFromState());
 }
 
-export const POST = watchRoute(post);
+export const POST = watchRoute(syncsGarmin(post));

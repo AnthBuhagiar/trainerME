@@ -9,7 +9,7 @@ export interface GarminSendResult {
   replaced: number;
 }
 
-const keyOf = (s: PlannedSession) => `${s.date} ${s.start}`;
+export const keyOf = (s: PlannedSession) => `${s.date} ${s.start}`;
 
 /** The workout exactly as Garmin would get it: any change to the ride or its targets changes this. */
 export function workoutFingerprint(s: PlannedSession, hourPower: number): string {
@@ -35,15 +35,21 @@ export function sendState(sessions: PlannedSession[], hourPower: number, sent = 
   const byKey = new Map(sent.map((w) => [w.key, w]));
   const matches = rides.filter((s) => {
     const w = byKey.get(keyOf(s));
-    // Sent before fingerprints were kept: can't tell, so trust it was as planned.
-    return w && (!w.fingerprint || w.fingerprint === workoutFingerprint(s, hourPower));
+    return w && asPlanned(w, s, hourPower);
   }).length;
   if (matches === rides.length) return "sent";
   return rides.some((s) => byKey.has(keyOf(s))) ? "changed" : "unsent";
 }
 
+/** Is this sent workout still the planned session (at any length the rider chose when sending)? */
+export function asPlanned(w: SentWorkout, s: PlannedSession, hourPower: number): boolean {
+  const fp = w.planFingerprint ?? w.fingerprint;
+  // Sent before fingerprints were kept: can't tell, so trust it was as planned.
+  return w.key === keyOf(s) && (!fp || fp === workoutFingerprint(s, hourPower));
+}
+
 /** Remove one workout Hour Power sent before. Already gone on Garmin (deleted by the rider) is fine. */
-async function remove(w: SentWorkout): Promise<void> {
+export async function removeSent(w: SentWorkout): Promise<void> {
   const gone = (e: unknown) => {
     if (!/\(404\)/.test((e as Error).message)) throw e;
   };
@@ -58,30 +64,45 @@ async function remove(w: SentWorkout): Promise<void> {
  * Workouts the rider made in Garmin Connect are never touched: only ones in
  * Hour Power's own record are removed.
  */
-export async function sendToGarmin(sessions: PlannedSession[], hourPower: number, range?: { oldest: string; newest: string }): Promise<GarminSendResult> {
+export async function sendToGarmin(
+  sessions: PlannedSession[],
+  hourPower: number,
+  range?: { oldest: string; newest: string },
+  /** Sending one session at another length: the session as planned. */
+  planned?: PlannedSession,
+): Promise<GarminSendResult> {
   const rides = sessions.filter((s) => s.ride);
   const keys = new Set(rides.map(keyOf));
   let sent = loadSent();
   const old = sent.filter((w) => keys.has(w.key) || (range && w.date >= range.oldest && w.date <= range.newest));
   for (const w of old) {
-    await remove(w);
+    await removeSent(w);
     sent = sent.filter((x) => x !== w);
     saveSent(sent); // saved as it goes, so a failure part-way never forgets what's still on Garmin
   }
-  for (const s of rides) {
-    const created = await garminCall<{ workoutId: number }>(GARMIN.workout, { method: "POST", body: JSON.stringify(toGarminWorkout(s, hourPower)) });
-    const entry: SentWorkout = { key: keyOf(s), date: s.date, workoutId: created.workoutId, fingerprint: workoutFingerprint(s, hourPower) };
-    sent.push(entry);
-    saveSent(sent);
-    const scheduleId = await garminCall<number | { scheduleId?: number; id?: number }>(GARMIN.schedule, {
-      method: "POST",
-      body: JSON.stringify({ workoutId: created.workoutId, date: s.date }),
-    });
-    entry.scheduleId = typeof scheduleId === "number" ? scheduleId : (scheduleId?.scheduleId ?? scheduleId?.id);
-    saveSent(sent);
-  }
+  for (const s of rides) await addRide(s, hourPower, sent, planned && keyOf(planned) === keyOf(s) ? planned : s);
   // Keep the record short: workouts more than a month old are history.
   const cutoff = new Date(Date.now() - 31 * 86_400_000).toISOString().slice(0, 10);
   saveSent(sent.filter((w) => w.date >= cutoff));
   return { sent: rides.length, replaced: old.length };
+}
+
+/** Create the workout on Garmin, schedule it on its day, and record it in `sent` (saved as it goes). */
+export async function addRide(s: PlannedSession, hourPower: number, sent: SentWorkout[], planned: PlannedSession = s): Promise<void> {
+  const created = await garminCall<{ workoutId: number }>(GARMIN.workout, { method: "POST", body: JSON.stringify(toGarminWorkout(s, hourPower)) });
+  const entry: SentWorkout = {
+    key: keyOf(s),
+    date: s.date,
+    workoutId: created.workoutId,
+    fingerprint: workoutFingerprint(s, hourPower),
+    planFingerprint: workoutFingerprint(planned, hourPower),
+  };
+  sent.push(entry);
+  saveSent(sent);
+  const scheduleId = await garminCall<number | { scheduleId?: number; id?: number }>(GARMIN.schedule, {
+    method: "POST",
+    body: JSON.stringify({ workoutId: created.workoutId, date: s.date }),
+  });
+  entry.scheduleId = typeof scheduleId === "number" ? scheduleId : (scheduleId?.scheduleId ?? scheduleId?.id);
+  saveSent(sent);
 }

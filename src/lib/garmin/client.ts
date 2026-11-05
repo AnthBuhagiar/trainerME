@@ -234,6 +234,11 @@ export interface SentWorkout {
   scheduleId?: number;
   /** What was sent (see workoutFingerprint), to tell "sent" from "the plan changed since". */
   fingerprint?: string;
+  /**
+   * The planned session's fingerprint when it was sent. Differs from `fingerprint` when the
+   * rider sent it at another length; the plan has only changed when this no longer matches.
+   */
+  planFingerprint?: string;
 }
 
 export function loadSent(): SentWorkout[] {

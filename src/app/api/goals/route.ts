@@ -2,6 +2,7 @@ import { athleteRoute } from "@/lib/auth/athlete";
 import { NextResponse } from "next/server";
 import { loadGoals, saveGoals, saveRoute, upsertGoal } from "@/lib/goals/model";
 import { parseGoal } from "@/lib/goals/parse";
+import { syncsGarmin } from "@/lib/garmin/resync";
 
 async function get() {
   return NextResponse.json(loadGoals());
@@ -29,5 +30,5 @@ async function remove(request: Request) {
 }
 
 export const GET = athleteRoute(get);
-export const POST = athleteRoute(post);
-export const DELETE = athleteRoute(remove);
+export const POST = athleteRoute(syncsGarmin(post));
+export const DELETE = athleteRoute(syncsGarmin(remove));

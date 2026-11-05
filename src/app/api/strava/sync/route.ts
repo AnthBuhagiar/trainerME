@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { syncIntervals } from "@/lib/intervals/sync";
 import { loadTokens } from "@/lib/strava/client";
 import { syncStrava } from "@/lib/strava/sync";
+import { syncsGarmin } from "@/lib/garmin/resync";
 
 export const runtime = "nodejs";
 
@@ -32,4 +33,4 @@ async function post() {
   }
 }
 
-export const POST = athleteRoute(post);
+export const POST = athleteRoute(syncsGarmin(post));

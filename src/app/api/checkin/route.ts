@@ -1,6 +1,7 @@
 import { athleteRoute } from "@/lib/auth/athlete";
 import { NextResponse } from "next/server";
 import { MOODS, saveCheckIn, type Mood } from "@/lib/plan/checkin";
+import { syncsGarmin } from "@/lib/garmin/resync";
 
 async function post(request: Request) {
   const { date, mood } = (await request.json()) as { date?: string; mood?: Mood | null };
@@ -10,4 +11,4 @@ async function post(request: Request) {
   return NextResponse.json({ ok: true });
 }
 
-export const POST = athleteRoute(post);
+export const POST = athleteRoute(syncsGarmin(post));
