@@ -18,8 +18,12 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const initial = (ref ?? "").replace(/[^a-zA-Z0-9]/g, "").slice(0, 6).toUpperCase();
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-5 px-5 py-6">
-      <h1 className="display text-[32px]">Hour Power</h1>
-      <p className="text-[15px] leading-snug text-muted">
+      <header className="flex flex-col items-center gap-3 text-center">
+        {/* eslint-disable-next-line @next/next/no-img-element -- a small, already-sized brand image */}
+        <img src="/brand/hour-power-icon-rounded-1024.png" alt="" width={96} height={96} className="h-24 w-24" />
+        <h1 className="display text-[32px]">Hour Power</h1>
+      </header>
+      <p className="text-center text-[15px] leading-snug text-muted">
         Your hour power, estimated from every ride, and a training plan built around your week. Sign in with Strava: Hour Power reads your rides to
         work it out, and only you can see your data.
       </p>
