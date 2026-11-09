@@ -24,8 +24,52 @@ export const CURVE_DURATIONS = [5, 15, 30, 60, 120, 300, 480, 600, 1200, 1800, 3
  */
 export const MAX_HOLD_S = 30;
 
-/** Summaries made before sparse recordings were handled; older ones from such devices are re-read. */
-export const SUMMARY_VERSION = 2;
+/**
+ * Summaries made before sparse recordings were handled; older ones from such devices are re-read.
+ * v3 repairs power dropouts. Older v2 summaries aren't re-read for it (the effect is about 1%,
+ * and re-reading every ride would spend the Strava API limits).
+ */
+export const SUMMARY_VERSION = 3;
+
+/** The longest run of zero watts, while still pedalling, read as a lost power signal. */
+export const MAX_DROPOUT_S = 5;
+/** Cadence at or above this during a zero-watt run means the rider was pedalling. */
+export const MIN_DROPOUT_CADENCE = 30;
+
+/**
+ * Repair power-signal dropouts: a few seconds of 0 W while cadence still shows
+ * pedalling, with power either side, is a lost Bluetooth/ANT+ reading, not the
+ * rider stopping (a trainer ride on 9 Nov 2026 had 14 of them, 3 s each, with
+ * cadence frozen at its last value). Those seconds are filled in a straight line
+ * between the readings either side. Longer runs, runs with cadence dropping
+ * (coasting, stopping) and runs at the start or end stay as they are.
+ */
+export function repairDropouts(time: number[], watts: (number | null)[], cadence?: (number | null)[]): (number | null)[] {
+  if (!cadence || cadence.length !== watts.length) return watts;
+  const out = watts.slice();
+  let i = 0;
+  while (i < out.length) {
+    if (out[i]) {
+      i++;
+      continue;
+    }
+    let j = i;
+    while (j < out.length && !out[j]) j++;
+    // Zero run is i..j-1; its neighbours are i-1 and j.
+    if (i > 0 && j < out.length && time[j] - time[i - 1] - 1 <= MAX_DROPOUT_S) {
+      let pedalling = true;
+      for (let k = i; k < j; k++) if ((cadence[k] ?? 0) < MIN_DROPOUT_CADENCE) pedalling = false;
+      if (pedalling) {
+        const a = out[i - 1]!;
+        const b = out[j]!;
+        const span = time[j] - time[i - 1];
+        for (let k = i; k < j; k++) out[k] = Math.round(a + ((b - a) * (time[k] - time[i - 1])) / span);
+      }
+    }
+    i = j;
+  }
+  return out;
+}
 
 /** Expand to 1 Hz: each reading holds until the next, across gaps up to MAX_HOLD_S; longer gaps (stops) are zero. */
 export function resample(time: number[], values: (number | null)[], maxHold = MAX_HOLD_S): number[] {
@@ -88,7 +132,7 @@ export function summariseStreams(id: string, streams: RawStreams): RawRideSummar
   let power: number[] | null = null;
 
   if (watts && watts.some((w) => w)) {
-    power = resample(time, watts);
+    power = resample(time, repairDropouts(time, watts, streams.cadence));
     const joules = power.reduce((a, b) => a + b, 0);
     // Average over riding time (stops left out), as Strava does: total work / time riding.
     summary.avg_watts = Math.round(joules / Math.max(1, ridingSeconds(time)));

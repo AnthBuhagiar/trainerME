@@ -1,4 +1,4 @@
-import { targetWatts, type Effort } from "@/lib/plan/library";
+import { deviceTargetWatts, type Effort } from "@/lib/plan/library";
 import type { PlannedSession } from "@/lib/plan/week";
 
 /**
@@ -62,7 +62,7 @@ function build(s: PlannedSession, hourPower: number, repeats: boolean): GarminWo
   const w = s.ride!.workout;
   let order = 0;
   const step = (e: Effort, intensity: GarminStep["intensity"], description: string): GarminStep => {
-    const [lo, hi] = targetWatts(e, hourPower);
+    const [lo, hi] = deviceTargetWatts(e, hourPower);
     return {
       type: "WorkoutStep",
       stepOrder: ++order,

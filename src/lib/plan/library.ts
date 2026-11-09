@@ -650,3 +650,25 @@ export function scaleWorkout(w: Workout, minutes: number): ScaledWorkout {
 export function targetWatts(effort: Effort, hourPower: number): [number, number] {
   return [Math.round(effort.target[0] * hourPower), Math.round(effort.target[1] * hourPower)];
 }
+
+/**
+ * The narrowest alert window sent to a head unit or watch, as a share either
+ * side of the target's middle. Power on a trainer moves 10–15 W from second to
+ * second even when the effort is right, so a window of ±2.5–3.5% (threshold and
+ * sweet-spot targets) set Garmin's "power too low/high" alerts off constantly.
+ */
+export const DEVICE_MIN_HALF_WINDOW = 0.05;
+
+/**
+ * Watts for an effort on another device (Garmin, Intervals.icu): the same target,
+ * widened to at least ±5% around its middle so alerts mean the effort is off,
+ * not normal wobble. The middle doesn't move, so an ERG trainer holds the same
+ * power. Targets already wider than that are unchanged.
+ */
+export function deviceTargetWatts(effort: Effort, hourPower: number): [number, number] {
+  const [lo, hi] = effort.target;
+  const mid = (lo + hi) / 2;
+  if ((hi - lo) / 2 >= mid * DEVICE_MIN_HALF_WINDOW) return targetWatts(effort, hourPower);
+  const half = mid * DEVICE_MIN_HALF_WINDOW;
+  return [Math.round((mid - half) * hourPower), Math.round((mid + half) * hourPower)];
+}
