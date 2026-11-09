@@ -1,12 +1,24 @@
 const DAY_MS = 86_400_000;
 
+/**
+ * Wall-clock date-times ("2026-11-04T19:30:00", or a bare date) are read as UTC,
+ * so day maths gives the same answer whatever time zone the server runs in.
+ * Read as server-local time, a server on Sydney time moved every addDays()
+ * result back 11 hours: midnight plus 3 days came out as 1 pm the day before.
+ * Strings that carry a zone ("…Z", "…+11:00") are read as they are.
+ */
+function wallClockMs(iso: string): number {
+  if (/(Z|[+-]\d{2}:?\d{2})$/.test(iso)) return Date.parse(iso);
+  return Date.parse(iso.length <= 10 ? `${iso}T00:00:00Z` : `${iso.slice(0, 19)}Z`);
+}
+
 /** Whole-ish days from a to b (b - a), using the local date-time strings as-is. */
 export function daysBetween(a: string, b: string): number {
-  return (Date.parse(b) - Date.parse(a)) / DAY_MS;
+  return (wallClockMs(b) - wallClockMs(a)) / DAY_MS;
 }
 
 export function addDays(iso: string, days: number): string {
-  return new Date(Date.parse(iso) + days * DAY_MS).toISOString().slice(0, 19);
+  return new Date(wallClockMs(iso) + days * DAY_MS).toISOString().slice(0, 19);
 }
 
 export function dateOnly(iso: string): string {

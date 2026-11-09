@@ -13,7 +13,7 @@ describe("Intervals.icu workout text", () => {
 
   test("threshold session with watt targets", () => {
     expect(workoutText(getWorkout("threshold-2x15"), 181)).toBe(
-      ["Warmup\n- 17m 91-118w", "Main set 2x\n- 15m 176-185w\n- 5m 91-118w", "Cooldown\n- 8m 91-118w"].join("\n\n"),
+      ["Warmup\n- 17m 91-118w", "Main set 2x\n- 15m 171-189w\n- 5m 91-118w", "Cooldown\n- 8m 91-118w"].join("\n\n"),
     );
   });
 
@@ -60,6 +60,6 @@ describe("sending to Intervals.icu", () => {
     expect(calls[0].auth).toBe(`Basic ${Buffer.from("API_KEY:test-key").toString("base64")}`);
     const [event] = JSON.parse(calls[2].body!);
     expect(event).toMatchObject({ category: "WORKOUT", type: "VirtualRide", start_date_local: "2026-10-21T19:30:00", external_id: "hourpower-2026-10-21-1930" });
-    expect(event.description).toContain("- 15m 176-185w");
+    expect(event.description).toContain("- 15m 171-189w");
   });
 });

@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, test } from "vitest";
-import { LIBRARY, getWorkout, scaleWorkout, targetWatts, totalMinutes } from "@/lib/plan/library";
+import { LIBRARY, deviceTargetWatts, getWorkout, scaleWorkout, targetWatts, totalMinutes } from "@/lib/plan/library";
 
 const science = fs.readFileSync(path.join(process.cwd(), "docs/training-science.md"), "utf8");
 
@@ -64,5 +64,32 @@ describe("longer than planned", () => {
     expect(long.workout.steady).toEqual({ seconds: (60 - base) * 60, target: [0.6, 0.75] });
     expect(scaleWorkout(w, 200).minutes).toBe(90); // never past maxMinutes
     expect(scaleWorkout(getWorkout("endurance"), 90).workout.steady!.seconds).toBe((90 - 15) * 60);
+  });
+});
+
+describe("device target windows", () => {
+  test("narrow targets go to devices widened to ±5% around the same middle", () => {
+    // Sweet spot, 88–94% of 190 W: 167–179 W in the app, 164–182 W on Garmin (ride of 9 Nov 2026).
+    const sweetSpot = { seconds: 900, target: [0.88, 0.94] as [number, number] };
+    expect(targetWatts(sweetSpot, 190)).toEqual([167, 179]);
+    expect(deviceTargetWatts(sweetSpot, 190)).toEqual([164, 182]);
+  });
+
+  test("targets already wider than ±5% are sent unchanged", () => {
+    for (const target of [[0.5, 0.65], [1.2, 1.35], [0.45, 0.55], [0.76, 0.87]] as [number, number][]) {
+      expect(deviceTargetWatts({ seconds: 600, target }, 200)).toEqual(targetWatts({ seconds: 600, target }, 200));
+    }
+  });
+
+  test("every library effort on a device is at least ±5% wide and keeps its middle", () => {
+    for (const w of LIBRARY) {
+      const efforts = [w.warmup, w.cooldown, w.steady, w.main?.work, w.main?.rest, w.main?.betweenSets].filter((e) => e && e.seconds > 0);
+      for (const e of efforts) {
+        const [lo, hi] = deviceTargetWatts(e!, 200);
+        const [alo, ahi] = targetWatts(e!, 200);
+        expect(hi - lo).toBeGreaterThanOrEqual(Math.floor(0.1 * ((alo + ahi) / 2)));
+        expect(Math.abs((lo + hi) / 2 - (alo + ahi) / 2)).toBeLessThanOrEqual(1);
+      }
+    }
   });
 });

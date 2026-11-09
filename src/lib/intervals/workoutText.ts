@@ -1,4 +1,4 @@
-import { targetWatts, type Effort, type Workout } from "@/lib/plan/library";
+import { deviceTargetWatts, type Effort, type Workout } from "@/lib/plan/library";
 
 /**
  * Write a workout in Intervals.icu's plain-text workout format, with absolute
@@ -15,7 +15,7 @@ export function duration(seconds: number): string {
 }
 
 function step(e: Effort, hourPower: number): string {
-  const [lo, hi] = targetWatts(e, hourPower);
+  const [lo, hi] = deviceTargetWatts(e, hourPower);
   return `- ${duration(e.seconds)} ${lo}-${hi}w`;
 }
 

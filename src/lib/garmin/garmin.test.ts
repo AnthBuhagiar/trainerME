@@ -35,12 +35,13 @@ describe("Garmin workout", () => {
     expect(w).toMatchObject({ sport: "CYCLING", workoutName: "2 × 15 min threshold", workoutProvider: "Hour Power" });
     const steps = w.segments[0].steps;
     expect(steps[0]).toMatchObject({ intensity: "WARMUP", durationValue: 17 * 60, targetType: "POWER", targetValueLow: 91, targetValueHigh: 118 });
+    // Threshold (97–102% of hour power) goes out widened to ±5% around its middle, so alerts mean the effort is off.
     // Garmin's V2 API refuses REPEAT_UNTIL_STEPS_CMPLTD: no repeat steps when the workout fits.
     expect(steps.some((s) => s.type === "WorkoutRepeatStep")).toBe(false);
     expect(steps.slice(1, 5).map((s) => [(s as GarminStep).intensity, (s as GarminStep).durationValue, (s as GarminStep).targetValueLow, (s as GarminStep).targetValueHigh, (s as GarminStep).description])).toEqual([
-      ["INTERVAL", 900, 176, 185, "Rep 1 of 2"],
+      ["INTERVAL", 900, 171, 189, "Rep 1 of 2"],
       ["RECOVERY", 300, 91, 118, "Easy"],
-      ["INTERVAL", 900, 176, 185, "Rep 2 of 2"],
+      ["INTERVAL", 900, 171, 189, "Rep 2 of 2"],
       ["RECOVERY", 300, 91, 118, "Easy"],
     ]);
     expect(steps.at(-1)).toMatchObject({ intensity: "COOLDOWN" });
