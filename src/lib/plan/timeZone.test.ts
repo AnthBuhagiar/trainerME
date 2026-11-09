@@ -3,6 +3,9 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, test } from "vitest";
 
+// Without a rider zone the app falls back to the server's clock; this test is written for a UTC server
+// (as hosted), so pin it rather than depend on the machine running the tests.
+process.env.TZ = "UTC";
 process.env.TRAINERME_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "hourpower-tz-"));
 const store = await import("@/lib/data/store");
 const { keepRide } = await import("@/lib/player/keepRide");

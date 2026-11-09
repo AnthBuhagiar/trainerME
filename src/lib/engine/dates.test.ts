@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { todayLocal, zoneFromStrava } from "@/lib/engine/dates";
+import { addDays, daysBetween, todayLocal, zoneFromStrava } from "@/lib/engine/dates";
 
 describe("today, in the rider's time zone", () => {
   // 7:00 pm UTC on Friday 30 Oct is 6:00 am Saturday 31 Oct in Sydney (daylight saving, UTC+11).
@@ -26,5 +26,26 @@ describe("local time to UTC", () => {
     const { localToUtc } = await import("@/lib/engine/dates");
     expect(new Date(localToUtc("2026-11-04T19:30:00", "Australia/Sydney")).toISOString()).toBe("2026-11-04T08:30:00.000Z"); // AEDT, +11
     expect(new Date(localToUtc("2026-07-04T19:30:00", "Australia/Sydney")).toISOString()).toBe("2026-07-04T09:30:00.000Z"); // AEST, +10
+  });
+});
+
+describe("day maths doesn't depend on the server's time zone", () => {
+  // Node re-reads TZ when it changes, so each zone is tried in this one process.
+  const zones = ["UTC", "Australia/Sydney", "America/Los_Angeles"];
+  const original = process.env.TZ;
+
+  test.each(zones)("in %s", (zone) => {
+    process.env.TZ = zone;
+    try {
+      expect(addDays("2026-10-19T00:00:00", 3)).toBe("2026-10-22T00:00:00");
+      expect(addDays("2026-10-19T00:00:00", -7)).toBe("2026-10-12T00:00:00");
+      expect(addDays("2026-10-03T19:30:00", 1)).toBe("2026-10-04T19:30:00"); // across Sydney's daylight-saving change
+      expect(addDays("2026-11-09", 1)).toBe("2026-11-10T00:00:00");
+      expect(daysBetween("2026-10-15T19:30:00", "2026-10-20T12:00:00")).toBe(4.6875);
+      expect(daysBetween("2026-10-03T12:00:00", "2026-10-05T12:00:00")).toBe(2);
+      expect(daysBetween("2026-11-09T00:00:00Z", "2026-11-10T00:00:00Z")).toBe(1);
+    } finally {
+      process.env.TZ = original;
+    }
   });
 });
