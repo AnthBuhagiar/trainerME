@@ -1,4 +1,4 @@
-import { readJson, writeJson } from "@/lib/data/store";
+import { readSecretJson, writeSecretJson } from "@/lib/data/secrets";
 
 /**
  * Minimal Strava API client for the athlete of the current request.
@@ -87,7 +87,7 @@ export function authorizeUrl(state: string): string {
 }
 
 export function loadTokens(): StravaTokens | null {
-  return readJson<StravaTokens | null>(TOKENS_FILE, null);
+  return readSecretJson<StravaTokens | null>(TOKENS_FILE, null);
 }
 
 async function tokenRequest(body: Record<string, string>): Promise<StravaTokens> {
@@ -107,7 +107,7 @@ export async function exchangeCode(code: string, scope?: string): Promise<Strava
 }
 
 export function saveTokens(tokens: StravaTokens): void {
-  writeJson(TOKENS_FILE, tokens);
+  writeSecretJson(TOKENS_FILE, tokens);
 }
 
 /**
@@ -146,7 +146,7 @@ async function accessToken(): Promise<string> {
   if (!tokens) throw new Error("Strava is not connected yet.");
   if (tokens.expires_at - 60 > Date.now() / 1000) return tokens.access_token;
   const refreshed = await tokenRequest({ refresh_token: tokens.refresh_token, grant_type: "refresh_token" });
-  writeJson(TOKENS_FILE, { ...tokens, ...refreshed });
+  writeSecretJson(TOKENS_FILE, { ...tokens, ...refreshed });
   return refreshed.access_token;
 }
 

@@ -72,11 +72,25 @@ export function writeJson(rel: string, value: unknown): void {
   writeFileAtomic(file(rel), value);
 }
 
+/** Data folders are the server user's alone (0700), and so are the files in them (0600). */
+export const DIR_MODE = 0o700;
+export const FILE_MODE = 0o600;
+
+/** Create a data folder (and any missing parents) private to the server user; tighten it if it exists. */
+export function privateDir(dir: string): void {
+  fs.mkdirSync(dir, { recursive: true, mode: DIR_MODE });
+  try {
+    fs.chmodSync(dir, DIR_MODE);
+  } catch {
+    // not ours to change (e.g. a mounted volume's root): the files are still 0600
+  }
+}
+
 function writeFileAtomic(target: string, value: unknown): void {
-  fs.mkdirSync(path.dirname(target), { recursive: true });
+  privateDir(path.dirname(target));
   // A name of its own, so two saves of the same file at once can't take each other's temporary file.
   const tmp = `${target}.${process.pid}.${crypto.randomUUID()}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify(value, null, 2));
+  fs.writeFileSync(tmp, JSON.stringify(value, null, 2), { mode: FILE_MODE });
   fs.renameSync(tmp, target);
 }
 

@@ -219,7 +219,21 @@ describe("Garmin notifications", () => {
     expect(fs.existsSync(tokensFile())).toBe(false);
   });
 
-  test("a permission change updates what the buttons offer", async () => {
+  test("a Garmin error reply never reaches the log or the error message", async () => {
+    garmin.saveGarminTokens({ access_token: "tok", refresh_token: "r", expires_at: Date.now() / 1000 + 3600, userId: "g1" });
+    const personal = JSON.stringify({ errorCode: "INVALID_WORKOUT", userEmail: "rider@example.test", userProfile: { name: "Synthetic Rider", weight: 77 } });
+    vi.stubGlobal("fetch", async () => new Response(personal, { status: 400 }));
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    const error = await garmin.garminCall("https://apis.garmin.com/workoutportal/workout/v2").catch((e: Error) => e);
+    const all = `${JSON.stringify(logged.mock.calls)} ${(error as Error).message}`;
+    expect(all).toContain("INVALID_WORKOUT"); // the error code is kept
+    for (const leak of ["rider@example.test", "Synthetic Rider", "77"]) expect(all).not.toContain(leak);
+    expect(garmin.garminErrorSummary("<html>Bad gateway for rider@example.test</html>")).toBe("");
+    expect(garmin.garminErrorSummary(JSON.stringify({ message: "contact rider@example.test" }))).toBe("");
+    logged.mockRestore();
+  });
+
+    test("a permission change updates what the buttons offer", async () => {
     const { POST } = await import("@/app/api/garmin/webhook/route");
     garmin.saveGarminTokens({ access_token: "tok", refresh_token: "r", expires_at: Date.now() / 1000 + 3600, userId: "g1", permissions: ["WORKOUT_IMPORT"] });
     await POST(ping({ userPermissionsChange: [{ userId: "g1", permissions: ["ACTIVITY_EXPORT"] }] }));

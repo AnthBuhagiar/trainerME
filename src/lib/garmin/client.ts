@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { readSecretJson, writeSecretJson } from "@/lib/data/secrets";
 import { dataDir, readJson, writeJson } from "@/lib/data/store";
 import { appUrl } from "@/lib/strava/client";
 
@@ -130,11 +131,11 @@ export function permissionList(value: unknown): string[] | undefined {
 }
 
 export function loadGarminTokens(): GarminTokens | null {
-  return readJson<GarminTokens | null>(TOKENS_FILE, null);
+  return readSecretJson<GarminTokens | null>(TOKENS_FILE, null);
 }
 
 export function saveGarminTokens(tokens: GarminTokens): void {
-  writeJson(TOKENS_FILE, tokens);
+  writeSecretJson(TOKENS_FILE, tokens);
 }
 
 export function garminConnected(): boolean {
@@ -188,6 +189,27 @@ async function accessToken(): Promise<string> {
   return refreshed.access_token;
 }
 
+/**
+ * What went wrong, from a Garmin error reply, without passing on the reply
+ * itself: only a short error code or message field, and only if it looks like
+ * one (letters, digits, spaces and basic punctuation, at most 80 characters).
+ */
+export function garminErrorSummary(text: string): string {
+  let body: unknown;
+  try {
+    body = JSON.parse(text);
+  } catch {
+    return "";
+  }
+  if (!body || typeof body !== "object") return "";
+  const b = body as Record<string, unknown>;
+  for (const field of ["errorCode", "error", "code", "errorMessage", "message"]) {
+    const v = b[field];
+    if (typeof v === "string" && v.length <= 80 && /^[\w .,:'()-]+$/.test(v) && !/@|\d{6,}/.test(v)) return v;
+  }
+  return "";
+}
+
 export async function garminCall<T>(url: string, init: RequestInit = {}): Promise<T> {
   const res = await fetchGarmin(url, {
     signal: AbortSignal.timeout(TIMEOUT_MS),
@@ -198,9 +220,10 @@ export async function garminCall<T>(url: string, init: RequestInit = {}): Promis
   if (res.status === 403) throw new Error("Garmin needs the workouts permission. Connect Garmin again and allow workouts.");
   if (res.status === 429) throw new Error("Garmin is busy. Try again in a few minutes.");
   if (!res.ok) {
-    const text = await res.text();
-    console.error(`Garmin ${init.method ?? "GET"} ${new URL(url).pathname} → ${res.status}: ${text.slice(0, 2000)}`); // the whole reply, for the server log
-    throw new Error(`Garmin request failed (${res.status}): ${text.slice(0, 300)}`);
+    const reason = garminErrorSummary(await res.text().catch(() => ""));
+    // Never the reply itself: it can carry the rider's personal data. The path and an error code are enough.
+    console.error(`Garmin ${init.method ?? "GET"} ${new URL(url).pathname} → ${res.status}${reason ? ` (${reason})` : ""}`);
+    throw new Error(`Garmin request failed (${res.status})${reason ? `: ${reason}` : ""}`);
   }
   const text = await res.text();
   return (text ? JSON.parse(text) : null) as T;

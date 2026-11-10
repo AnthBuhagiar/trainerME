@@ -10,4 +10,5 @@ RUN npx next build
 ENV NODE_ENV=production
 ENV TRAINERME_DATA_DIR=/data
 EXPOSE 3000
-CMD ["sh", "-c", "npx next start -H 0.0.0.0 -p ${PORT:-3000}"]
+# umask 077: everything written to /data is the app's alone (folders 0700, files 0600).
+CMD ["sh", "-c", "umask 077 && npx next start -H 0.0.0.0 -p ${PORT:-3000}"]

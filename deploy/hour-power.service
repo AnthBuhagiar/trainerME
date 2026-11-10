@@ -10,6 +10,8 @@ EnvironmentFile=/etc/hour-power.env
 Environment=NODE_ENV=production
 Environment=HOSTNAME=127.0.0.1
 Environment=TRAINERME_DATA_DIR=/opt/hour-power/data
+# Everything the app writes is the service user's alone (data folders 0700, files 0600).
+UMask=0077
 ExecStart=/usr/bin/node --max-old-space-size=256 server.js
 Restart=always
 RestartSec=5
