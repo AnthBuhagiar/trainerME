@@ -1,0 +1,15 @@
+{
+  "$comment": "High/critical npm advisories accepted for now, each with why it can't be reached and when to look again. scripts/audit.mjs fails CI on any other high/critical advisory, or on an entry past its review date.",
+  "advisories": {
+    "GHSA-6g55-p6wh-862q": {
+      "package": "postcss (bundled by next@15)",
+      "reachability": "Next 15 pins postcss 8.4.31 for its build-time CSS pipeline. It only processes the app's own CSS (globals.css, Tailwind output, next/font CSS) during `next build`; no rider input ever reaches PostCSS, and nothing PostCSS-related runs at request time. Overriding it to 8.5.x breaks next/font; the fix is Next 16.",
+      "review_by": "2027-02-01"
+    },
+    "GHSA-r28c-9q8g-f849": {
+      "package": "postcss (bundled by next@15)",
+      "reachability": "Same as GHSA-6g55-p6wh-862q: source-map auto-loading only on the app's own CSS at build time; not reachable by riders.",
+      "review_by": "2027-02-01"
+    }
+  }
+}

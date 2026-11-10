@@ -1,0 +1,27 @@
+# Checks every pull request (and main): lint, types, tests, build, and the npm audit gate.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      - run: npm test
+      - run: npx next build
+      # Fails on any high or critical advisory not accepted in security/audit-allowlist.json.
+      - run: npm run audit:ci
