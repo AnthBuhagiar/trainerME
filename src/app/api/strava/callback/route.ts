@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { athleteIds, claimOwner, moveSingleRiderData } from "@/lib/auth/owner";
+import { athleteIds, moveSingleRiderData, ownerId } from "@/lib/auth/owner";
 import { authEnabled, createSession, SESSION_COOKIE, SESSION_DAYS } from "@/lib/auth/session";
 import { runAsAthlete } from "@/lib/data/store";
 import { acceptTerms } from "@/lib/legal/acceptance";
@@ -50,7 +50,8 @@ export async function GET(req: NextRequest) {
   if (!known.includes(athleteId) && known.length >= limit) {
     return NextResponse.redirect(`${appUrl()}/login?error=full`);
   }
-  if (claimOwner(athleteId) === athleteId) moveSingleRiderData(athleteId);
+  // The owner is configured (OWNER_ATHLETE_ID), never claimed by signing in first.
+  if (ownerId() === athleteId) moveSingleRiderData(athleteId);
   const agreed = req.cookies.get(TERMS_COOKIE)?.value === TERMS_VERSION;
   runAsAthlete(athleteId, () => {
     saveTokens(tokens);

@@ -96,7 +96,8 @@ Anyone with Strava can sign in to a hosted Hour Power. Each athlete gets their o
     -F callback_url=$APP_URL/api/strava/webhook -F verify_token=$STRAVA_WEBHOOK_TOKEN
   ```
   (If `STRAVA_WEBHOOK_TOKEN` is empty, add one first: `openssl rand -hex 16`, then `systemctl restart hour-power`.)
-- Data from before this change moves into the first rider's folder on their next visit.
+- **The owner** (admin dashboard, the server's `INTERVALS_API_KEY`) is set with `OWNER_ATHLETE_ID` in `/etc/hour-power.env`: your Strava athlete id (the number in your strava.com/athletes/… address). Nobody becomes owner by signing in first; with no owner set, the admin dashboard is off. A server set up before this keeps the owner it had (`owner.json`) until you set it.
+- Data from before several riders moves into the owner's folder on their next visit.
 - The server's `INTERVALS_API_KEY` is only used for the rider who runs the server.
 
 ### Admin data (owner only)

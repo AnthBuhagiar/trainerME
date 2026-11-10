@@ -8,7 +8,6 @@ process.env.TRAINERME_DATA_DIR = dir;
 process.env.SESSION_SECRET = "test-secret";
 
 const store = await import("@/lib/data/store");
-const owner = await import("@/lib/auth/owner");
 const referral = await import("@/lib/referral/referral");
 const seen = await import("@/lib/admin/seen");
 const { buildAdminStats } = await import("@/lib/admin/stats");
@@ -34,7 +33,7 @@ describe("admin stats", () => {
   const now = new Date("2026-10-30T01:00:00Z");
 
   test("lists riders with account and usage only, and counts referrals", () => {
-    owner.claimOwner(11);
+    process.env.OWNER_ATHLETE_ID = "11"; // the server's configured owner
     store.runAsAthlete(11, () => {
       store.writeJson("strava-tokens.json", { access_token: "a", refresh_token: "r", expires_at: 0, athlete: { id: 11, firstname: "Anthony", lastname: "Buhagiar" }, scope: "read,activity:read_all,profile:read_all,activity:write" });
       store.writeJson("terms.json", { version: "x", acceptedAt: "2026-09-01T00:00:00.000Z" });
@@ -114,7 +113,7 @@ describe("plan changes", () => {
 
 describe("access", () => {
   test("only the server's owner sees the admin page", () => {
-    // Rider 11 owns this server (claimed in the first test).
+    // Rider 11 owns this server (OWNER_ATHLETE_ID, set in the first test).
     expect(canSeeAdmin(11)).toBe(true);
     expect(canSeeAdmin(22)).toBe(false);
     expect(canSeeAdmin(null)).toBe(false);
