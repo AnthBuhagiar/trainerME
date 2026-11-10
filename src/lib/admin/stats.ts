@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { readSecretJson } from "@/lib/data/secrets";
 import { athleteIds, ownerId } from "@/lib/auth/owner";
 import { athleteDir, readJson, runAsAthlete, type RawActivity } from "@/lib/data/store";
 import type { Goal } from "@/lib/goals/model";
@@ -156,7 +157,7 @@ function safeUsage(since?: string): PlanUsage {
 
 function riderRow(id: number, owner: number | null, now: Date): RiderRow & { usage: PlanUsage } {
   return runAsAthlete(id, () => {
-    const tokens = readJson<{ athlete?: { firstname?: string; lastname?: string }; scope?: string } | null>("strava-tokens.json", null);
+    const tokens = readSecretJson<{ athlete?: { firstname?: string; lastname?: string }; scope?: string } | null>("strava-tokens.json", null);
     const terms = readJson<{ version?: string; acceptedAt?: string } | null>("terms.json", null);
     const sync = readJson<{ lastSyncedAt?: number }>("sync-state.json", {});
     const raw = readJson<RawActivity[]>("activities.json", []);

@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { dataDir } from "@/lib/data/store";
+import { dataDir, FILE_MODE, privateDir } from "@/lib/data/store";
 
 /**
  * Everything in data/ except credentials, as one JSON file, so the app can
@@ -8,8 +8,17 @@ import { dataDir } from "@/lib/data/store";
  * record stay behind: the new copy signs in to Strava itself.
  */
 
+// Credentials (Strava and Garmin tokens, the watch's key) never go in a backup or come back from one.
 // referral.json: who recommended whom and who has paid is the server's record, never restored from a file.
-const EXCLUDE = new Set(["strava-tokens.json", "owner.json", "intervals.json", "referral.json", "referral-codes.json"]);
+const EXCLUDE = new Set([
+  "strava-tokens.json",
+  "garmin-tokens.json",
+  "watch.json",
+  "owner.json",
+  "intervals.json",
+  "referral.json",
+  "referral-codes.json",
+]);
 
 export interface Backup {
   app: "hour-power";
@@ -52,8 +61,8 @@ export function restoreBackup(backup: Backup): number {
   for (const [rel, value] of Object.entries(backup.files)) {
     if (!isSafePath(rel)) continue;
     const target = path.join(dataDir(), rel);
-    fs.mkdirSync(path.dirname(target), { recursive: true });
-    fs.writeFileSync(target, JSON.stringify(value, null, 2));
+    privateDir(path.dirname(target));
+    fs.writeFileSync(target, JSON.stringify(value, null, 2), { mode: FILE_MODE });
     n++;
   }
   return n;
