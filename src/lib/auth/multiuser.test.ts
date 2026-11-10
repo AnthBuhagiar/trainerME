@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { afterAll, describe, expect, test } from "vitest";
+import { afterAll, describe, expect, test, vi } from "vitest";
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "hourpower-multi-"));
 process.env.TRAINERME_DATA_DIR = dir;
@@ -45,16 +45,50 @@ describe("several athletes on one server", () => {
     expect(() => store.runAsAthlete(1.5, () => 0)).toThrow();
   });
 
-  test("the first athlete owns the server and gets the data from before", () => {
+  test("the configured owner gets the data from before", () => {
     fs.writeFileSync(path.join(dir, "goals.json"), "[]");
     fs.writeFileSync(path.join(dir, "referral-codes.json"), '{"codes":{}}');
-    expect(owner.claimOwner(1)).toBe(1);
-    expect(owner.claimOwner(2)).toBe(1);
-    expect(owner.moveSingleRiderData(1)).toBe(1);
-    expect(fs.existsSync(path.join(dir, "athletes", "1", "goals.json"))).toBe(true);
-    expect(fs.existsSync(path.join(dir, "owner.json"))).toBe(true);
-    expect(fs.existsSync(path.join(dir, "referral-codes.json"))).toBe(true); // server-wide: stays put
-    expect(owner.athleteIds().sort()).toEqual([1, 2]);
+    process.env.OWNER_ATHLETE_ID = "1";
+    try {
+      expect(owner.ownerId()).toBe(1);
+      expect(owner.moveSingleRiderData(1)).toBe(1);
+      expect(fs.existsSync(path.join(dir, "athletes", "1", "goals.json"))).toBe(true);
+      expect(fs.existsSync(path.join(dir, "owner.json"))).toBe(false); // nothing is claimed by signing in
+      expect(fs.existsSync(path.join(dir, "referral-codes.json"))).toBe(true); // server-wide: stays put
+      expect(owner.athleteIds().sort()).toEqual([1, 2]);
+    } finally {
+      delete process.env.OWNER_ATHLETE_ID;
+    }
+  });
+
+  test("nobody becomes owner by signing in first: no setting, no owner (admin off)", async () => {
+    const { canSeeAdmin } = await import("@/lib/admin/access");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    delete process.env.OWNER_ATHLETE_ID;
+    fs.rmSync(path.join(dir, "owner.json"), { force: true });
+    expect(owner.ownerId()).toBeNull();
+    for (const anyone of [1, 2, null]) expect(canSeeAdmin(anyone)).toBe(false);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("OWNER_ATHLETE_ID"));
+
+    process.env.OWNER_ATHLETE_ID = "not-a-number";
+    expect(owner.ownerId()).toBeNull(); // ignored, still fail closed
+    process.env.OWNER_ATHLETE_ID = "2";
+    expect(owner.ownerId()).toBe(2);
+    expect(canSeeAdmin(2)).toBe(true);
+    expect(canSeeAdmin(1)).toBe(false);
+    delete process.env.OWNER_ATHLETE_ID;
+    warn.mockRestore();
+  });
+
+  test("a server already claimed before the setting keeps its owner until OWNER_ATHLETE_ID says otherwise", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    fs.writeFileSync(path.join(dir, "owner.json"), JSON.stringify({ athleteId: 1 }));
+    expect(owner.ownerId()).toBe(1);
+    process.env.OWNER_ATHLETE_ID = "2";
+    expect(owner.ownerId()).toBe(2); // the setting wins
+    delete process.env.OWNER_ATHLETE_ID;
+    fs.rmSync(path.join(dir, "owner.json"), { force: true });
+    vi.restoreAllMocks();
   });
 
   test("a backup holds one athlete's files and can't be restored into another's", () => {

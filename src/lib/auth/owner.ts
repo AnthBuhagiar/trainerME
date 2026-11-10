@@ -1,23 +1,47 @@
 import fs from "node:fs";
 import path from "node:path";
-import { athleteDir, DATA_DIR, readServerJson, writeServerJson } from "@/lib/data/store";
+import { athleteDir, DATA_DIR, readServerJson } from "@/lib/data/store";
 
 const FILE = "owner.json";
 
 /**
- * The first Strava athlete to sign in to a hosted copy runs it: the server's
- * own Intervals.icu key is theirs, and data from before it had more than one
- * rider moves into their folder.
+ * The server's owner runs it: they see the admin dashboard, the server's own
+ * Intervals.icu key is theirs, and data from before it had more than one rider
+ * moves into their folder. Set by OWNER_ATHLETE_ID (their Strava athlete id).
+ *
+ * Nobody becomes owner by signing in first. A server already claimed that way
+ * (owner.json, from before this setting) keeps that owner until
+ * OWNER_ATHLETE_ID is set, which then wins. With neither, there is no owner:
+ * the admin dashboard and owner-only features are off (fail closed), and the
+ * server logs how to set one up.
  */
 export function ownerId(): number | null {
-  return readServerJson<{ athleteId?: number }>(FILE, {}).athleteId ?? null;
+  const configured = configuredOwner();
+  if (configured !== null) return configured;
+  const legacy = readServerJson<{ athleteId?: number }>(FILE, {}).athleteId;
+  if (typeof legacy === "number" && Number.isSafeInteger(legacy) && legacy > 0) {
+    warnOnce(`Hour Power: the owner comes from owner.json (athlete ${legacy}). Set OWNER_ATHLETE_ID=${legacy} to make it explicit.`);
+    return legacy;
+  }
+  warnOnce("Hour Power: no owner set, so the admin dashboard and owner-only features are off. Set OWNER_ATHLETE_ID to the owner's Strava athlete id.");
+  return null;
 }
 
-export function claimOwner(athleteId: number): number {
-  const owner = ownerId();
-  if (owner !== null) return owner;
-  writeServerJson(FILE, { athleteId });
-  return athleteId;
+/** OWNER_ATHLETE_ID, if it's a valid athlete id. */
+function configuredOwner(): number | null {
+  const raw = process.env.OWNER_ATHLETE_ID?.trim();
+  if (!raw) return null;
+  const id = Number(raw);
+  if (Number.isSafeInteger(id) && id > 0) return id;
+  warnOnce("Hour Power: OWNER_ATHLETE_ID isn't a Strava athlete id (a whole number), so it's ignored.");
+  return null;
+}
+
+const warned = new Set<string>();
+function warnOnce(message: string) {
+  if (warned.has(message) || !process.env.SESSION_SECRET) return; // only hosted copies have an owner to set up
+  warned.add(message);
+  console.warn(message);
 }
 
 /** Everyone who has signed in, from their folders. */

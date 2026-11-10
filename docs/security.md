@@ -35,3 +35,9 @@ What protects a hosted Hour Power, and what's knowingly left open.
 - If `STRAVA_SUBSCRIPTION_ID` is set, events for any other subscription are ignored. The endpoint is rate limited per client.
 - **Garmin** (`/api/garmin/webhook`): requires `GARMIN_WEBHOOK_TOKEN` (in the URL as `?token=` or the `X-Webhook-Token` header, compared in constant time); without it every call is refused. Rate limited per client. A deregistration only forgets the Garmin connection, and only once Garmin itself refuses the tokens.
 - Every webhook decision and purge is written to the server's `audit.json` (latest 2,000 entries): time, event, athlete id, decision. No tokens, names or provider replies.
+
+## Server owner
+
+- The owner (admin dashboard at `/admin` and `/api/admin/stats`, the server's `INTERVALS_API_KEY`, and the folder that data from before several riders moves into) is `OWNER_ATHLETE_ID` (`src/lib/auth/owner.ts`).
+- Signing in never makes anyone owner. With `OWNER_ATHLETE_ID` unset and no earlier claim, there is no owner: the admin dashboard answers 404 to everyone and the Intervals.icu key is used by nobody, and the server logs how to set it (fail closed).
+- A server claimed before this setting existed (`owner.json`) keeps that owner, with a log line asking for `OWNER_ATHLETE_ID`; once set, the setting wins.
