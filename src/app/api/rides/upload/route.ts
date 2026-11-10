@@ -1,4 +1,5 @@
 import { athleteRoute } from "@/lib/auth/athlete";
+import { badBody, rateLimited, readJsonBody } from "@/lib/security/requests";
 import { NextResponse } from "next/server";
 import { loadSettings } from "@/lib/data/store";
 import { physicsFor } from "@/lib/goals/summary";
@@ -22,9 +23,24 @@ interface Body {
 }
 
 /** Keep a ride recorded in the player in Hour Power, then upload it to Strava. */
+/** A ride in the player records one sample a second: 12 hours is plenty, and well under the size cap. */
+const MAX_SAMPLES = 12 * 3600;
+const MAX_BYTES = 8 * 1024 * 1024;
+
 async function post(request: Request) {
-  const body = (await request.json()) as Body;
+  const limited = rateLimited("ride-upload", request, 10, 60_000);
+  if (limited) return limited;
+  let body: Body;
+  try {
+    body = await readJsonBody<Body>(request, MAX_BYTES);
+  } catch (e) {
+    return badBody(e);
+  }
+  if (!Array.isArray(body?.samples) || body.samples.length > MAX_SAMPLES || !body.samples.every((x) => x && Number.isFinite(x.t))) {
+    return NextResponse.json({ error: body?.samples?.length > MAX_SAMPLES ? "That ride is longer than 12 hours." : "Nothing recorded yet." }, { status: body?.samples?.length > MAX_SAMPLES ? 413 : 400 });
+  }
   if (!body.samples?.length || !Number.isFinite(body.startMs)) return NextResponse.json({ error: "Nothing recorded yet." }, { status: 400 });
+  if (typeof body.name !== "string" || !body.name.trim() || body.name.length > 120) return NextResponse.json({ error: "That ride needs a name." }, { status: 400 });
   // First, so the ride counts in Hour Power even when Strava says no.
   let kept = false;
   try {

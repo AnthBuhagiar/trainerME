@@ -41,3 +41,18 @@ What protects a hosted Hour Power, and what's knowingly left open.
 - The owner (admin dashboard at `/admin` and `/api/admin/stats`, the server's `INTERVALS_API_KEY`, and the folder that data from before several riders moves into) is `OWNER_ATHLETE_ID` (`src/lib/auth/owner.ts`).
 - Signing in never makes anyone owner. With `OWNER_ATHLETE_ID` unset and no earlier claim, there is no owner: the admin dashboard answers 404 to everyone and the Intervals.icu key is used by nobody, and the server logs how to set it (fail closed).
 - A server claimed before this setting existed (`owner.json`) keeps that owner, with a log line asking for `OWNER_ATHLETE_ID`; once set, the setting wins.
+
+## Rate limits and request size caps
+
+In-memory, per server process (`src/lib/security/rateLimit.ts`, `requests.ts`); keyed by the signed-in rider, or by the client's address (first `X-Forwarded-For` entry from Caddy) when not signed in.
+
+| Route | Limit | Body cap |
+|---|---|---|
+| `POST /api/watch/link` (new link, not signed in) | 5 per client per 10 min | none read |
+| `GET /api/watch/link` (watch polling) | 120 per client per min | none read |
+| `POST /api/watch/link/confirm` | 10 per rider and 30 per client per 10 min | 1 KB |
+| `POST /api/checkin`, `POST /api/watch/checkin` | 30 per rider per min | 4 KB |
+| `POST /api/rides/upload` | 10 per rider per min | 8 MB, at most 12 h of samples |
+| Strava and Garmin webhooks | 120 per client per min | |
+
+Bodies are read through `readJsonBody`, which refuses a declared `Content-Length` over the cap at once and stops reading an undeclared one as soon as it passes it (413).
