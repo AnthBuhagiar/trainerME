@@ -40,6 +40,8 @@ export interface AthleteSettings {
   weightKg: number;
   /** The rider's time zone (IANA, from their latest Strava activity), so "today" is their today. */
   timeZone?: string;
+  /** Asked for a goal on first opening the app (set it, or chose to skip). */
+  goalAsked?: boolean;
   /** FTP the rider has accepted for zones. Never overwritten silently. */
   acceptedFtp: number;
   bikeWeightKg: number;

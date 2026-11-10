@@ -9,7 +9,7 @@ import { loadState } from "@/lib/plan/current";
 
 export const dynamic = "force-dynamic";
 
-function GoalPageView() {
+function GoalPageView({ first }: { first: boolean }) {
   const { current, goal: active, summary, settings } = loadState();
   const goal = active ?? loadGoals().at(-1) ?? null;
   const plan = summary?.route?.target ?? summary?.route?.today;
@@ -19,7 +19,8 @@ function GoalPageView() {
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 px-5 py-6">
       <Watermark src="/photos/bowral-finish.jpg" position="52% 30%" tint="goal" />
       <header className="flex flex-col gap-1 pt-16">
-        <h1 className="display text-[24px]">{goal ? goal.name : "Set a goal"}</h1>
+        <h1 className="display text-[24px]">{goal ? goal.name : first ? "First, your goal" : "Set a goal"}</h1>
+        {!goal && first && <p className="text-[15px] text-muted">Your plan is built around it.</p>}
       </header>
 
       {summary && current && (
@@ -150,10 +151,17 @@ function GoalPageView() {
       ) : (
         <GoalForm goal={goal} hourPower={current ? Math.round(current.hourPower) : null} />
       )}
+
+      {!goal && first && (
+        <form action="/api/goals/skip" method="post" className="flex justify-center">
+          <button className="h-10 text-[14px] font-semibold text-muted">Skip for now</button>
+        </form>
+      )}
     </main>
   );
 }
 
-export default async function GoalPage() {
-  return asAthlete(() => GoalPageView());
+export default async function GoalPage({ searchParams }: { searchParams: Promise<{ first?: string }> }) {
+  const { first } = await searchParams;
+  return asAthlete(() => GoalPageView({ first: first === "1" }));
 }

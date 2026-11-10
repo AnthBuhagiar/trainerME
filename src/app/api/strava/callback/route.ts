@@ -5,6 +5,7 @@ import { runAsAthlete } from "@/lib/data/store";
 import { acceptTerms } from "@/lib/legal/acceptance";
 import { TERMS_COOKIE, TERMS_VERSION } from "@/lib/legal/terms";
 import { ensureReferralCode, recordReferrer, REFERRAL_COOKIE } from "@/lib/referral/referral";
+import { syncStrava } from "@/lib/strava/sync";
 import { appUrl, exchangeCode, NEXT_COOKIE, REQUIRED_SCOPES, safeNext, saveTokens, STATE_COOKIE } from "@/lib/strava/client";
 
 export const runtime = "nodejs";
@@ -57,6 +58,8 @@ export async function GET(req: NextRequest) {
   // A recommender's code counts only for a rider joining now, not one signing in again.
   const ref = req.cookies.get(REFERRAL_COOKIE)?.value;
   if (ref && !known.includes(athleteId)) recordReferrer(athleteId, ref);
+  // A new rider goes to set their goal first: start pulling their rides meanwhile, so Today is ready after.
+  if (!known.includes(athleteId)) void runAsAthlete(athleteId, () => syncStrava()).catch(() => {});
   const res = done(`${appUrl()}/?strava=connected`);
   res.cookies.delete(TERMS_COOKIE);
   res.cookies.delete(REFERRAL_COOKIE);
