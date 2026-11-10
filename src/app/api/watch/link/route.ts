@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { bearer } from "@/lib/watch/key";
 import { collectLink, startLink } from "@/lib/watch/link";
+import { rateLimited } from "@/lib/security/requests";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,13 +11,18 @@ export const dynamic = "force-dynamic";
  * POST /api/watch/link                          a code to show, and the watch's token
  * GET  /api/watch/link  (Bearer <token>)        {status: "waiting" | "linked", key | "expired"}
  */
-export async function POST() {
+export async function POST(request: Request) {
+  // Not signed in, and each pending link takes one of a limited number of places: a few per client.
+  const limited = rateLimited("watch-link-start", request, 5, 10 * 60_000);
+  if (limited) return limited;
   const link = startLink();
   if (!link) return NextResponse.json({ error: "Too many watches linking right now. Try again in a few minutes." }, { status: 429 });
   return NextResponse.json(link, { headers: { "cache-control": "no-store" } });
 }
 
 export async function GET(request: Request) {
+  const limited = rateLimited("watch-link-poll", request, 120, 60_000); // the watch asks every few seconds
+  if (limited) return limited;
   const result = collectLink(bearer(request));
   return NextResponse.json(result, { status: result.status === "expired" ? 410 : 200, headers: { "cache-control": "no-store" } });
 }
