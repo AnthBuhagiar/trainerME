@@ -115,11 +115,22 @@ export function saveTokens(tokens: StravaTokens): void {
  * webhook saying they removed access (webhook events aren't signed).
  */
 export async function stillAuthorized(): Promise<boolean> {
+  return (await stravaAccess()) !== "revoked";
+}
+
+/**
+ * Is Hour Power's access to this athlete's Strava still good? "revoked" only
+ * when Strava itself refuses the saved tokens (401 from the API, or the refresh
+ * token rejected); rate limits, outages and network errors are "unavailable",
+ * which never counts as revoked.
+ */
+export async function stravaAccess(): Promise<"ok" | "revoked" | "unavailable"> {
+  if (!loadTokens()) return "revoked";
   try {
     await stravaGet("/athlete");
-    return true;
+    return "ok";
   } catch (e) {
-    return !/\((400|401|403)\)|not connected/.test((e as Error).message);
+    return /token request failed \((400|401)\)|GET \/athlete failed \(401\)/.test((e as Error).message) ? "revoked" : "unavailable";
   }
 }
 
