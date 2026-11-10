@@ -375,7 +375,10 @@ function RidersTable({ riders, viewer }: { riders: RiderRow[]; viewer: number | 
         <tbody>
           {rows.map((r) => (
             <tr key={r.athleteId}>
-              <td>{r.owner || r.athleteId === viewer ? `${r.name} (you)` : r.name}</td>
+              <td>
+                {r.owner || r.athleteId === viewer ? `${r.name} (you)` : r.name}
+                {r.revokedPurgeAfter && <div className="text-[12px] text-signal-ink">Removed in Strava · deleted {r.revokedPurgeAfter.slice(0, 10)}</div>}
+              </td>
               <td className="hide-narrow">{r.joined ? fullDay(r.joined) : "—"}</td>
               <td>{ago(r.lastSync)}</td>
               <td className="num">{int(r.ridesLast30)}</td>

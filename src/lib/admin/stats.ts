@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import { readSecretJson } from "@/lib/data/secrets";
+import { stravaRevocation } from "@/lib/auth/revocation";
 import { athleteIds, ownerId } from "@/lib/auth/owner";
 import { athleteDir, readJson, runAsAthlete, type RawActivity } from "@/lib/data/store";
 import type { Goal } from "@/lib/goals/model";
@@ -48,6 +49,8 @@ export interface RiderRow {
   startedAt: string | null;
   /** Finished weeks counted so far (0 until their first full week). */
   weeksCounted: number;
+  /** Removed Hour Power in Strava (confirmed): when their data is due to be deleted, unless they sign in again. */
+  revokedPurgeAfter: string | null;
 }
 
 export interface WeekAdherence {
@@ -185,6 +188,7 @@ function riderRow(id: number, owner: number | null, now: Date): RiderRow & { usa
     return {
       athleteId: id,
       name: displayName(tokens?.athlete?.firstname, tokens?.athlete?.lastname),
+      revokedPurgeAfter: stravaRevocation()?.purgeAfter ?? null,
       owner: id === owner,
       joined: joinedCandidates[0] ?? null,
       lastSeen: seen.at(-1) ?? null,

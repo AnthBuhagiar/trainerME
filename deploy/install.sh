@@ -51,6 +51,7 @@ GARMIN_CLIENT_SECRET=
 MAX_ATHLETES=
 CONTACT_EMAIL=
 STRAVA_WEBHOOK_TOKEN=$(openssl rand -hex 16)
+GARMIN_WEBHOOK_TOKEN=$(openssl rand -hex 24)
 ENV
   echo "Created /etc/hour-power.env"
 fi

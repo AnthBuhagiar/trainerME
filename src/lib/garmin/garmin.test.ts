@@ -201,8 +201,18 @@ describe("sending to Garmin", () => {
 });
 
 describe("Garmin notifications", () => {
+  const SECRET = "synthetic-webhook-token-0123456789";
+  beforeEach(async () => {
+    process.env.GARMIN_WEBHOOK_TOKEN = SECRET;
+    (await import("@/lib/security/rateLimit")).resetRateLimits();
+  });
   afterEach(() => vi.unstubAllGlobals());
-  const ping = (body: unknown) => new NextRequest("https://example.test/api/garmin/webhook", { method: "POST", body: JSON.stringify(body) });
+  const ping = (body: unknown, token: string | null = SECRET, ip = "203.0.113.1") =>
+    new NextRequest(`https://example.test/api/garmin/webhook${token ? `?token=${token}` : ""}`, {
+      method: "POST",
+      body: JSON.stringify(body),
+      headers: { "x-forwarded-for": ip },
+    });
   const tokensFile = () => path.join(store.dataDir(), "garmin-tokens.json");
 
   test("a deregistration is acted on only once Garmin refuses the tokens", async () => {
@@ -231,6 +241,43 @@ describe("Garmin notifications", () => {
     expect(garmin.garminErrorSummary("<html>Bad gateway for rider@example.test</html>")).toBe("");
     expect(garmin.garminErrorSummary(JSON.stringify({ message: "contact rider@example.test" }))).toBe("");
     logged.mockRestore();
+  });
+
+    test("a ping without the shared secret (or with the wrong one) is refused and changes nothing", async () => {
+    const { POST } = await import("@/app/api/garmin/webhook/route");
+    garmin.saveGarminTokens({ access_token: "tok", refresh_token: "r", expires_at: Date.now() / 1000 + 3600, userId: "g1" });
+    vi.stubGlobal("fetch", async () => new Response("", { status: 401 })); // even if Garmin would refuse the tokens
+    expect((await POST(ping({ deregistrations: [{ userId: "g1" }] }, null))).status).toBe(403);
+    expect((await POST(ping({ deregistrations: [{ userId: "g1" }] }, "guessed-wrong-token-000000"))).status).toBe(403);
+    delete process.env.GARMIN_WEBHOOK_TOKEN; // not set up: refused too
+    expect((await POST(ping({ deregistrations: [{ userId: "g1" }] }))).status).toBe(403);
+    expect(fs.existsSync(tokensFile())).toBe(true);
+  });
+
+  test("a Garmin outage during the check keeps the connection, and repeats are harmless", async () => {
+    const { POST } = await import("@/app/api/garmin/webhook/route");
+    garmin.saveGarminTokens({ access_token: "tok", refresh_token: "r", expires_at: Date.now() / 1000 + 3600, userId: "g1" });
+    vi.stubGlobal("fetch", async () => new Response("", { status: 503 }));
+    await POST(ping({ deregistrations: [{ userId: "g1" }] }));
+    expect(fs.existsSync(tokensFile())).toBe(true);
+    vi.stubGlobal("fetch", async () => {
+      throw new TypeError("fetch failed");
+    });
+    await POST(ping({ deregistrations: [{ userId: "g1" }] }));
+    expect(fs.existsSync(tokensFile())).toBe(true);
+    vi.stubGlobal("fetch", async () => new Response("", { status: 401 }));
+    await POST(ping({ deregistrations: [{ userId: "g1" }] }));
+    await POST(ping({ deregistrations: [{ userId: "g1" }] })); // again: nothing left to do, no error
+    expect(fs.existsSync(tokensFile())).toBe(false);
+  });
+
+  test("is rate limited per client", async () => {
+    const { POST } = await import("@/app/api/garmin/webhook/route");
+    const codes: number[] = [];
+    for (let i = 0; i < 125; i++) codes.push((await POST(ping({}, SECRET, "198.51.100.9"))).status);
+    expect(codes.slice(0, 120).every((c) => c === 200)).toBe(true);
+    expect(codes.slice(120)).toEqual([429, 429, 429, 429, 429]);
+    expect((await POST(ping({}, SECRET, "198.51.100.10"))).status).toBe(200); // another client isn't affected
   });
 
     test("a permission change updates what the buttons offer", async () => {

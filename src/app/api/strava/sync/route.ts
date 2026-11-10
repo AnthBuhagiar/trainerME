@@ -1,4 +1,5 @@
 import { athleteRoute } from "@/lib/auth/athlete";
+import { stravaRevocation } from "@/lib/auth/revocation";
 import { NextResponse } from "next/server";
 import { syncIntervals } from "@/lib/intervals/sync";
 import { loadTokens } from "@/lib/strava/client";
@@ -9,6 +10,8 @@ export const runtime = "nodejs";
 
 /** Pulls new activities and a batch of ride streams from Strava, then from Intervals.icu if its key is set. */
 async function post() {
+  // Removed in Strava: stop until they connect again (Today says so).
+  if (stravaRevocation()) return NextResponse.json({ error: "Hour Power's access to Strava was removed. Connect Strava again to carry on." }, { status: 409 });
   try {
     const strava = loadTokens() ? await syncStrava() : null;
     let intervals = null;

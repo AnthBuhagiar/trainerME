@@ -12,6 +12,7 @@ import { WeekStrip } from "@/components/WeekStrip";
 import { weekStrip } from "@/lib/plan/weekStrip";
 import { SetupCard } from "@/components/SetupCard";
 import { SyncPanel } from "@/components/SyncPanel";
+import { stravaRevocation } from "@/lib/auth/revocation";
 import { TargetsPrompt } from "@/components/TargetsPrompt";
 import { UpdateButton } from "@/components/UpdateButton";
 import { WeekReviewCard } from "@/components/WeekReviewCard";
@@ -29,6 +30,7 @@ const fmtDate = new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short
 async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: string }> }) {
   const { strava: notice } = await searchParams;
   const tokens = loadTokens();
+  const revoked = stravaRevocation();
   const { activities, targets, checkIns, today, settings, rides, history, current, summary, thisWeekStart, week, budget } = loadState();
   // First time in: set a goal first (the plan is built around it); Today once it's set or skipped.
   if (!loadGoals().length && !settings.goalAsked) redirect("/goal?first=1");
@@ -91,6 +93,17 @@ async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: str
       )}
 
       {!tokens && <SetupCard hasCredentials={hasCredentials()} callbackDomain={callbackDomain()} notice={notice} />}
+      {revoked && (
+        <section className="flex flex-col gap-2 rounded-2xl border border-signal-ink bg-card px-4 py-3">
+          <p className="text-[15px] font-semibold">Hour Power&rsquo;s access to Strava was removed</p>
+          <p className="text-[14px] text-muted">
+            Your data here will be deleted on {new Date(revoked.purgeAfter).toLocaleDateString("en-AU", { day: "numeric", month: "long" })} unless you connect again.
+          </p>
+          <a href="/api/strava/connect" className="text-[15px] font-semibold text-signal-ink">
+            Connect Strava again
+          </a>
+        </section>
+      )}
 
       {upcoming.length > 0 && (
         <section className="flex flex-col gap-2">

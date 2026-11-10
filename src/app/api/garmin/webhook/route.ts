@@ -1,7 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { athleteIds } from "@/lib/auth/owner";
-import { multiUser, runAsAthlete } from "@/lib/data/store";
-import { forgetGarmin, loadGarminTokens, permissionList, saveGarminTokens, stillConnected } from "@/lib/garmin/client";
+import { currentAthlete, multiUser, runAsAthlete } from "@/lib/data/store";
+import crypto from "node:crypto";
+import { forgetGarmin, garminAccess, loadGarminTokens, permissionList, saveGarminTokens } from "@/lib/garmin/client";
+import { audit } from "@/lib/security/audit";
+import { allow, clientKey } from "@/lib/security/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -20,15 +23,40 @@ async function forGarminUser(userId: string, fn: () => Promise<void>): Promise<v
   for (const id of athleteIds()) await runAsAthlete(id, async () => (match() ? fn() : undefined));
 }
 
+/** The shared secret Garmin's push URL carries (?token=…, or the X-Webhook-Token header), compared in constant time. */
+function genuine(req: NextRequest): boolean {
+  const expected = process.env.GARMIN_WEBHOOK_TOKEN;
+  const given = req.headers.get("x-webhook-token") ?? req.nextUrl.searchParams.get("token");
+  if (!expected || expected.length < 16 || !given) return false; // not set up: refuse rather than run open
+  const a = crypto.createHash("sha256").update(given).digest();
+  const b = crypto.createHash("sha256").update(expected).digest();
+  return crypto.timingSafeEqual(a, b);
+}
+
 /**
- * Garmin's deregistration and permission-change notifications (set both
- * endpoints to this address in the developer portal). They aren't signed, so a
- * removal is only acted on once Garmin really refuses the saved tokens.
+ * Garmin's deregistration and permission-change notifications. Set both
+ * endpoints in the developer portal to this address with
+ * ?token=<GARMIN_WEBHOOK_TOKEN>; anything without the token is refused, and
+ * calls are rate limited. Even then a removal is only acted on once Garmin
+ * itself refuses the saved tokens (a Garmin outage changes nothing), and it
+ * only forgets the Garmin connection. Every decision goes in the audit log.
  */
 export async function POST(req: NextRequest) {
+  if (!allow(`garmin-webhook:${clientKey(req)}`, 120, 60_000)) return NextResponse.json({ error: "Too many requests." }, { status: 429 });
+  if (!genuine(req)) return NextResponse.json({ error: "Not allowed." }, { status: 403 });
   const ping = (await req.json().catch(() => null)) as GarminPing | null;
   for (const d of ping?.deregistrations ?? []) {
-    if (d.userId) await forGarminUser(d.userId, async () => (!(await stillConnected()) ? forgetGarmin() : undefined));
+    if (!d.userId) continue;
+    await forGarminUser(d.userId, async () => {
+      const access = await garminAccess();
+      if (access === "revoked") forgetGarmin();
+      audit({
+        event: "garmin-deregistration",
+        athleteId: currentAthlete() ?? undefined,
+        provider: "garmin",
+        decision: access === "revoked" ? "forgot the Garmin connection" : access === "ok" ? "ignored: Garmin still accepts the tokens" : "kept: Garmin unavailable",
+      });
+    });
   }
   for (const p of ping?.userPermissionsChange ?? []) {
     const permissions = permissionList(p.permissions);

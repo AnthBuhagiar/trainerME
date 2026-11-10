@@ -89,7 +89,7 @@ Anyone with Strava can sign in to a hosted Hour Power. Each athlete gets their o
 - **Privacy page** at `/privacy`; add `CONTACT_EMAIL=` to show a contact address.
 - **Terms and Conditions** at `/terms` (text in `src/lib/legal/terms.ts`). Riders tick "I agree" on the sign-in page before going to Strava; anyone signed in who hasn't accepted the current version is asked before using the app. Change `TERMS_VERSION` when the terms change and everyone is asked again. `CONTACT_EMAIL` fills the contact line.
 - **Delete my account** in Settings removes the rider's folder and revokes Hour Power's Strava access.
-- **Webhook (recommended, expected by Strava's review):** removes a rider's data when they remove Hour Power in Strava. Once, on the server:
+- **Webhook (recommended, expected by Strava's review):** when a rider removes Hour Power in Strava (confirmed with Strava), their sync stops and their data is deleted 7 days later unless they connect again (see `docs/security.md`). Once, on the server:
   ```bash
   source /etc/hour-power.env && curl -X POST https://www.strava.com/api/v3/push_subscriptions \
     -F client_id=$STRAVA_CLIENT_ID -F client_secret=$STRAVA_CLIENT_SECRET \
@@ -156,7 +156,7 @@ With a Garmin Connect Developer Program app, each rider connects their own Garmi
 1. In the [Garmin developer portal](https://developer.garmin.com/gc-developer-program/), open your app and copy its **consumer key** and **consumer secret**.
 2. Add them as Codespaces secrets (or in `.env.local`, or `/etc/hour-power.env` on a server) named `GARMIN_CLIENT_ID` and `GARMIN_CLIENT_SECRET`, then restart.
 3. In the app's settings in the portal, set the **redirect URL** to `<your app address>/api/garmin/callback`, e.g. `https://hourpower.example.com/api/garmin/callback`. A codespace's address changes with each codespace, so register the one you're using (or use a hosted copy).
-4. On a hosted copy, set the **deregistration** and **user permission change** notification URLs to `<your app address>/api/garmin/webhook`, so a rider removing Hour Power in Garmin Connect is forgotten here too.
+4. On a hosted copy, set the **deregistration** and **user permission change** notification URLs to `<your app address>/api/garmin/webhook?token=<GARMIN_WEBHOOK_TOKEN>` (from `/etc/hour-power.env`; add one with `openssl rand -hex 24` if it's missing), so a rider removing Hour Power in Garmin Connect is forgotten here too. Notifications without the token are refused.
 5. In Hour Power: **Settings and data → Garmin Connect → Connect Garmin**, approve on Garmin's page (allow workouts), then **Week → Use another app instead → Garmin Connect: Send**, or the same on any ride.
 
 Sending again replaces what Hour Power sent before for those days; workouts you made in Garmin Connect yourself are never touched. Once rides are sent, Hour Power keeps them up to date: a check-in (tired, short on time, day off), a swap, days away, new targets or the plan adapting after a sync replaces the changed rides on Garmin straight away, so the watch has the session as it now stands at its next sync. Only the days you sent are kept up to date, and past days are left alone (`src/lib/garmin/resync.ts`). Disconnecting (or deleting your account) removes Hour Power's access on Garmin. Garmin's API addresses are in `src/lib/garmin/client.ts`; if a call starts failing, compare them with the current docs in the developer portal.

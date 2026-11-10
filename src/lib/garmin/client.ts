@@ -231,11 +231,17 @@ export async function garminCall<T>(url: string, init: RequestInit = {}): Promis
 
 /** Does Garmin still accept this athlete's tokens? Used before acting on an unsigned deregistration ping. */
 export async function stillConnected(): Promise<boolean> {
+  return (await garminAccess()) !== "revoked";
+}
+
+/** As stravaAccess: "revoked" only when Garmin itself refuses the tokens; anything else that fails is "unavailable". */
+export async function garminAccess(): Promise<"ok" | "revoked" | "unavailable"> {
+  if (!loadGarminTokens()) return "revoked";
   try {
     await garminCall(GARMIN.userId);
-    return true;
+    return "ok";
   } catch (e) {
-    return !/didn't accept|not connected|token request failed \((400|401)\)/.test((e as Error).message);
+    return /didn't accept|token request failed \((400|401)\)/.test((e as Error).message) ? "revoked" : "unavailable";
   }
 }
 

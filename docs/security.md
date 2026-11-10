@@ -24,3 +24,14 @@ What protects a hosted Hour Power, and what's knowingly left open.
 - Data folders are 0700 and files 0600 (`src/lib/data/store.ts`); the systemd unit sets `UMask=0077` and the Docker image runs with `umask 077`.
 - Backups (`src/lib/data/backup.ts`) never contain or restore `strava-tokens.json`, `garmin-tokens.json` or `watch.json`.
 - Garmin error replies are never logged or shown: only the HTTP status and, when it looks like one, Garmin's short error code (`garminErrorSummary`).
+
+## Webhooks and account removal
+
+- **Strava** (`/api/strava/webhook`): events aren't signed, so an event decides nothing by itself. On "athlete deauthorized", Hour Power asks Strava whether the saved tokens still work (`stravaAccess`):
+  - Strava accepts them → ignored (a forged event).
+  - Strava is rate limiting, failing or unreachable → nothing changes.
+  - Strava refuses them (401, or the refresh token is rejected) → the rider is **marked revoked** (`revoked.json`): sync stops, Today tells them their data will be deleted in 7 days unless they connect again, and the admin dashboard shows the date. Signing in again clears it.
+- **Deletion** happens only after the 7-day grace period (`GRACE_DAYS` in `src/lib/auth/revocation.ts`), checked whenever a Strava event arrives, and only if Strava still refuses the tokens then (unavailable → try later; accepted again → cleared). Repeated events never reset or shorten the clock.
+- If `STRAVA_SUBSCRIPTION_ID` is set, events for any other subscription are ignored. The endpoint is rate limited per client.
+- **Garmin** (`/api/garmin/webhook`): requires `GARMIN_WEBHOOK_TOKEN` (in the URL as `?token=` or the `X-Webhook-Token` header, compared in constant time); without it every call is refused. Rate limited per client. A deregistration only forgets the Garmin connection, and only once Garmin itself refuses the tokens.
+- Every webhook decision and purge is written to the server's `audit.json` (latest 2,000 entries): time, event, athlete id, decision. No tokens, names or provider replies.

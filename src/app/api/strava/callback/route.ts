@@ -6,6 +6,8 @@ import { acceptTerms } from "@/lib/legal/acceptance";
 import { TERMS_COOKIE, TERMS_VERSION } from "@/lib/legal/terms";
 import { ensureReferralCode, recordReferrer, REFERRAL_COOKIE } from "@/lib/referral/referral";
 import { syncStrava } from "@/lib/strava/sync";
+import { clearStravaRevocation } from "@/lib/auth/revocation";
+import { audit } from "@/lib/security/audit";
 import { appUrl, exchangeCode, NEXT_COOKIE, REQUIRED_SCOPES, safeNext, saveTokens, STATE_COOKIE } from "@/lib/strava/client";
 
 export const runtime = "nodejs";
@@ -52,6 +54,8 @@ export async function GET(req: NextRequest) {
   const agreed = req.cookies.get(TERMS_COOKIE)?.value === TERMS_VERSION;
   runAsAthlete(athleteId, () => {
     saveTokens(tokens);
+    // Back after removing Hour Power in Strava: nothing will be deleted.
+    if (clearStravaRevocation()) audit({ event: "strava-signin", athleteId, provider: "strava", decision: "revocation cleared" });
     if (agreed) acceptTerms(); // ticked on the sign-in page; otherwise they're asked before anything else
   });
   ensureReferralCode(athleteId);
