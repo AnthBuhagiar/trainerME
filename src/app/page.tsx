@@ -1,3 +1,5 @@
+import { loadGoals } from "@/lib/goals/model";
+import { redirect } from "next/navigation";
 import { Watermark } from "@/components/Watermark";
 import { TimeZoneSync } from "@/components/TimeZoneSync";
 import { asAthlete } from "@/lib/auth/athlete";
@@ -28,6 +30,8 @@ async function HomeView({ searchParams }: { searchParams: Promise<{ strava?: str
   const { strava: notice } = await searchParams;
   const tokens = loadTokens();
   const { activities, targets, checkIns, today, settings, rides, history, current, summary, thisWeekStart, week, budget } = loadState();
+  // First time in: set a goal first (the plan is built around it); Today once it's set or skipped.
+  if (!loadGoals().length && !settings.goalAsked) redirect("/goal?first=1");
   const missing = rides.filter((r) => !r.streams).length;
   const upcoming = budget.slots.length
     ? [...week(thisWeekStart).sessions, ...week(nextWeekStart(thisWeekStart)).sessions].filter((s) => s.date >= today)

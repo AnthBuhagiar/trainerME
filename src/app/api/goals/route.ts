@@ -2,6 +2,7 @@ import { athleteRoute } from "@/lib/auth/athlete";
 import { NextResponse } from "next/server";
 import { loadGoals, saveGoals, saveRoute, upsertGoal } from "@/lib/goals/model";
 import { parseGoal } from "@/lib/goals/parse";
+import { loadSettings, saveSettings } from "@/lib/data/store";
 import { syncsGarmin } from "@/lib/garmin/resync";
 
 async function get() {
@@ -20,7 +21,9 @@ async function post(request: Request) {
   } else if (body.removeRoute && parsed.event) {
     parsed.event.routeName = undefined;
   }
-  return NextResponse.json(upsertGoal(parsed));
+  const goals = upsertGoal(parsed);
+  saveSettings({ ...loadSettings(), goalAsked: true });
+  return NextResponse.json(goals);
 }
 
 async function remove(request: Request) {
