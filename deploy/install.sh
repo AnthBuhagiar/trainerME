@@ -8,6 +8,15 @@ DOMAIN="${1:?Usage: bash install.sh hourpower.yourdomain.com}"
 PORT="${PORT:-3100}"
 RAW="https://raw.githubusercontent.com/AnthBuhagiar/trainerME/main/deploy"
 BASE=/opt/hour-power
+# A private repository needs a read-only token: HOUR_POWER_GITHUB_TOKEN=github_pat_... bash install.sh <domain>
+TOKEN="${HOUR_POWER_GITHUB_TOKEN:-}"
+fetch() { # url, file: the token (if any) goes in a private header file, never on the command line
+  if [[ -n "$TOKEN" ]]; then
+    local h; h=$(mktemp); chmod 600 "$h"; printf 'Authorization: Bearer %s\n' "$TOKEN" > "$h"
+    local rc=0; curl -fsSL -H @"$h" -o "$2" "$1" || rc=$?; rm -f "$h"; return $rc
+  fi
+  curl -fsSL -o "$2" "$1"
+}
 
 if ss -ltn | grep -q ":${PORT} "; then
   echo "Port ${PORT} is already in use. Re-run with another, e.g.: PORT=3200 bash install.sh ${DOMAIN}" >&2
@@ -31,9 +40,9 @@ id hourpower >/dev/null 2>&1 || useradd --system --home "$BASE" --shell /usr/sbi
 mkdir -p "$BASE/data" "$BASE/releases"
 chown -R hourpower:hourpower "$BASE/data"
 
-curl -fsSL -o "$BASE/update.sh" "$RAW/update.sh" && chmod 755 "$BASE/update.sh"
+fetch "$RAW/update.sh" "$BASE/update.sh" && chmod 755 "$BASE/update.sh"
 for unit in hour-power.service hour-power-update.service hour-power-update.timer; do
-  curl -fsSL -o "/etc/systemd/system/$unit" "$RAW/$unit"
+  fetch "$RAW/$unit" "/etc/systemd/system/$unit"
 done
 
 if [[ ! -f /etc/hour-power.env ]]; then
@@ -53,6 +62,7 @@ OWNER_ATHLETE_ID=
 CONTACT_EMAIL=
 STRAVA_WEBHOOK_TOKEN=$(openssl rand -hex 16)
 GARMIN_WEBHOOK_TOKEN=$(openssl rand -hex 24)
+HOUR_POWER_GITHUB_TOKEN=${TOKEN}
 ENV
   echo "Created /etc/hour-power.env"
 fi

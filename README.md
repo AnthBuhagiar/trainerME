@@ -71,6 +71,14 @@ The codespace stops when idle. For an app that's always there, run Hour Power on
 - Logs: `journalctl -u hour-power -n 50`. Status: `systemctl status hour-power`.
 - Your data is in `/opt/hour-power/data`; download a backup from Settings now and then.
 
+### Private repository
+With the repository private, the server needs a read-only token to download releases:
+1. On GitHub: **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**. Repository access: **Only select repositories → trainerME**. Permissions: **Contents: Read-only**. Copy the token.
+2. On the server: `nano /etc/hour-power.env`, add `HOUR_POWER_GITHUB_TOKEN=<the token>`, save. Test with `/opt/hour-power/update.sh` (no output means it's up to date).
+3. When the token expires, the update log says so (`journalctl -u hour-power-update -n 20`): make a new one and replace the line.
+
+The install and helper scripts above download from `raw.githubusercontent.com`; with a private repository, add `-H "Authorization: Bearer <token>"` to those `curl` commands, and run `install.sh` as `HOUR_POWER_GITHUB_TOKEN=<token> bash install.sh <domain>`.
+
 ### Move to a new address
 To run Hour Power on its own domain (e.g. `hourpower.app`):
 1. Buy the domain (Cloudflare Registrar sells `.app`) and add an **A** record pointing at the Droplet's IP.
