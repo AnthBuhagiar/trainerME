@@ -80,7 +80,20 @@ describe("credential files at rest", () => {
     expect(JSON.stringify(warn.mock.calls)).not.toMatch(/synthetic/);
   });
 
-  test("data files are 0600 and their folders 0700", () => {
+  test("a badly formed key (a pasted placeholder) doesn't break anything: ignored, logged once, without the key", () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    process.env.TRAINERME_SECRET_KEY = "<paste the output of: openssl rand>"; // 36 characters, not a key
+    expect(() => writeSecretJson("strava-tokens.json", TOKENS)).not.toThrow();
+    expect(readSecretJson("strava-tokens.json", null)).toEqual(TOKENS);
+    expect(errors).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify(errors.mock.calls)).not.toContain("paste the output");
+    // Fixed later: the file is encrypted on its next read.
+    process.env.TRAINERME_SECRET_KEY = KEY;
+    expect(readSecretJson("strava-tokens.json", null)).toEqual(TOKENS);
+    expect(onDisk()).not.toContain("AT-synthetic");
+  });
+
+    test("data files are 0600 and their folders 0700", () => {
     process.env.TRAINERME_SECRET_KEY = KEY;
     writeSecretJson("strava-tokens.json", TOKENS);
     store.writeJson("rides/1.json", { id: "1" });

@@ -38,13 +38,31 @@ interface Keys {
   all: Map<string, Buffer>;
 }
 
+/**
+ * A badly formed key (a pasted placeholder, say) must not take the app down:
+ * it's ignored, with a clear error in the server log (never the key itself),
+ * and tokens are handled as with no key until it's fixed.
+ */
+const badKeys = new Set<string>();
+function tryParseKey(value: string, name: string): Buffer | null {
+  try {
+    return parseKey(value);
+  } catch {
+    if (!badKeys.has(name)) {
+      badKeys.add(name);
+      console.error(`Hour Power: ${name} isn't a valid key (it must be 64 hex characters: openssl rand -hex 32), so it's ignored until it's fixed.`);
+    }
+    return null;
+  }
+}
+
 function keys(): Keys {
   const all = new Map<string, Buffer>();
-  const current = process.env.TRAINERME_SECRET_KEY ? parseKey(process.env.TRAINERME_SECRET_KEY) : null;
+  const current = process.env.TRAINERME_SECRET_KEY ? tryParseKey(process.env.TRAINERME_SECRET_KEY, "TRAINERME_SECRET_KEY") : null;
   if (current) all.set(keyId(current), current);
   for (const old of (process.env.TRAINERME_SECRET_KEY_PREVIOUS ?? "").split(",").filter((s) => s.trim())) {
-    const k = parseKey(old);
-    all.set(keyId(k), k);
+    const k = tryParseKey(old, "TRAINERME_SECRET_KEY_PREVIOUS");
+    if (k) all.set(keyId(k), k);
   }
   return { current, all };
 }
