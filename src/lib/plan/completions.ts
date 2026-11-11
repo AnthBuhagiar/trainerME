@@ -12,7 +12,7 @@ import type { WeekPlan } from "@/lib/plan/week";
 export const ANOTHER_APP = "another app";
 
 const FILE = "completions.json";
-type Completions = Record<string, { app: string; at: string; ride?: string }>;
+type Completions = Record<string, { app: string; at: string; ride?: string; stravaId?: number }>;
 
 /** Ridden in the app's own player. */
 export const HOUR_POWER = "Hour Power";
@@ -28,8 +28,8 @@ export function markDoneElsewhere(date: string, start: string, app = ANOTHER_APP
 }
 
 /** A planned session ridden in the player (on its day or another): `ride` is the ride's local start. */
-export function markRidden(date: string, start: string, ride: string, now = new Date()): void {
-  writeJson(FILE, { ...loadCompletions(), [completionKey(date, start)]: { app: HOUR_POWER, at: now.toISOString(), ride } });
+export function markRidden(date: string, start: string, ride: string, now = new Date(), stravaId?: number): void {
+  writeJson(FILE, { ...loadCompletions(), [completionKey(date, start)]: { app: HOUR_POWER, at: now.toISOString(), ride, ...(stravaId ? { stravaId } : {}) } });
 }
 
 export function unmarkDoneElsewhere(date: string, start: string): void {

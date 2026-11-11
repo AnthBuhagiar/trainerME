@@ -178,6 +178,32 @@ export interface UploadResult {
 }
 
 /**
+ * A manual Strava activity (no file): a gym session, say. Needs the upload
+ * permission (activity:write). Strava has no API to delete activities, so the
+ * caller makes sure it's only created once.
+ */
+export async function stravaCreateManual(a: { name: string; sportType: string; startLocal: string; seconds: number; description?: string }): Promise<{ id: number }> {
+  const form = new URLSearchParams({
+    name: a.name,
+    sport_type: a.sportType,
+    start_date_local: a.startLocal,
+    elapsed_time: String(Math.max(60, Math.round(a.seconds))),
+    ...(a.description ? { description: a.description } : {}),
+  });
+  const res = await fetch(`${API}/activities`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${await accessToken()}`, "Content-Type": "application/x-www-form-urlencoded" },
+    body: form,
+  });
+  if (res.status === 401 || res.status === 403) throw new Error("Strava didn't allow it. Reconnect Strava and tick the upload permission.");
+  if (res.status === 429) throw new StravaRateLimitError(res.headers.get("x-ratelimit-usage"));
+  if (!res.ok) throw new Error(`Strava didn't save it (${res.status}).`);
+  const body = (await res.json()) as { id?: number };
+  if (!body.id) throw new Error("Strava didn't save it.");
+  return { id: body.id };
+}
+
+/**
  * Upload a ride file (TCX) to Strava and wait briefly for it to be processed.
  * Strava processes uploads asynchronously; most finish within a few seconds.
  */
