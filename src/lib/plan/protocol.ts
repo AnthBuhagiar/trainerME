@@ -21,7 +21,7 @@ export const ROTATE_EVERY_WEEKS = 3;
 
 /**
  * P3/P4: session menus per phase. Base is pyramidal (threshold key, sweet spot or
- * tempo second), build is polarised (short VO2 intervals key, threshold second),
+ * tempo second), build is polarised (VO2 intervals key, rotating 30/15s and 5 × 4 min (P4), threshold second),
  * event-specific is climbing pace plus a VO2 top-up, taper keeps short sharp work.
  * Each list rotates every ROTATE_EVERY_WEEKS loading weeks. dayAfter (P8) is used
  * when the second session would be hard and falls the day after the key one.

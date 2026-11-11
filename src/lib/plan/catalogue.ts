@@ -25,7 +25,7 @@ export type Role =
   | "comeback" // after missed training (P13)
   | "taper"; // the last two weeks (P11)
 
-export type Confidence = "Strong" | "Moderate" | "Practice" | "Low–moderate";
+export type Confidence = "Strong" | "Moderate" | "Limited" | "Practice";
 
 export interface FamilyInfo {
   id: string;
@@ -56,14 +56,14 @@ export const FAMILIES: FamilyInfo[] = [
   { id: "sweetspot", name: "Sweet spot", aim: "Lots of time at 88–94% of hour power for the fatigue it costs.", progression: "3 × 12 → 4 × 10 → 2 × 20 → 3 × 15 min." },
   { id: "threshold", name: "Threshold", aim: "Raise hour power directly with long efforts at 97–102% of it.", progression: "3 × 10 → 2 × 15 → 2 × 20 min, with over-unders as the variety option." },
   { id: "supra", name: "Just above hour power", aim: "Five-minute efforts at 102–110% of hour power with short breaks.", progression: "6 × 5 → 8 × 5 min (Lindsay and Hawley's range)." },
-  { id: "vo2-short", name: "VO2 · short intervals (30/15s)", aim: "Time at a high share of VO2max from short work and shorter rest. The main VO2 format (P4).", progression: "2 × 10 → 3 × 10 → 3 × 13 (the Rønnestad session)." },
+  { id: "vo2-short", name: "VO2 · short intervals (30/15s)", aim: "Time at a high share of VO2max from short work and shorter rest. One of the two VO2 formats, rotated with long intervals (P4).", progression: "2 × 10 → 3 × 10 → 3 × 13 (the Rønnestad session)." },
   { id: "vo2-long", name: "VO2 · long intervals", aim: "Four- and five-minute efforts above hour power. Good outdoors on a steady climb.", progression: "4 × 4 → 5 × 4 → 4 × 5 → 8 × 4 min." },
   { id: "climb", name: "Event climbing pace", aim: "Efforts at the power the goal needs; they also refresh the hour-power estimate.", progression: "2 × 12 → 3 × 10 → 2 × 20 min." },
   { id: "durability", name: "Long ride with late efforts", aim: "Holding power when already tired, for long events (E6), with fuel practice (E7).", progression: "Tempo → sweet spot → climb pace in the final hour." },
   { id: "taper", name: "Taper sharpeners", aim: "Keep intensity while volume drops before the event (E4).", progression: "Openers in taper week 1 and event week; one set of 30/15s for a rider used to them." },
 ];
 
-const RONNESTAD = "Rønnestad et al. 2015 (and 2020, elite): 3 × 13 × 30 s on / 15 s off, twice a week for 10 weeks, beat effort-matched 4 × 5 min";
+const RONNESTAD = "Rønnestad et al. 2015 (and 2020, elite): 3 × 13 × 30 s on / 15 s off, twice a week for 10 weeks, beat effort-matched 4 × 5 min in one lab's trials; reviews find no clear winner between interval lengths (E2)";
 const RONNESTAD_LONG = "Rønnestad et al. 2015: the long-interval comparison group, 4 × 5 min with 2.5 min recovery";
 const STEPTO_4 = "Stepto et al. 1999: 8 × 4 min at 85% of peak aerobic power (≈113% of hour power) was one of the two formats that improved 40 km time trials most";
 const STEPTO_30 = "Stepto et al. 1999: 12 × 30 s at 175% of peak aerobic power was the other format that improved 40 km time trials; 60 s, 2 min and 8 min formats did not";
@@ -81,8 +81,8 @@ export const CATALOGUE: CatalogueEntry[] = [
   { id: "sprints-6x15s", family: "sprints", level: 1, phases: ["base", "build", "specific", "taper"], roles: ["dayAfter", "second", "easy", "comeback", "taper"], source: "Practice: short sprints keep top-end power with almost no fatigue, so the day stays easy (E1)", confidence: "Practice" },
   { id: "sprint-intervals-12x30", family: "sprints", level: 2, phases: ["build", "specific"], roles: ["second"], source: STEPTO_30, confidence: "Moderate" },
   // Tempo
-  { id: "tempo-3x10", family: "tempo", level: 1, phases: ["base"], roles: ["second"], source: PRACTICE_E3 + "; the pyramidal base of Filipas et al. 2022", confidence: "Practice" },
-  { id: "tempo-2x20", family: "tempo", level: 2, phases: ["base"], roles: ["second"], source: PRACTICE_E3 + "; the pyramidal base of Filipas et al. 2022", confidence: "Practice" },
+  { id: "tempo-3x10", family: "tempo", level: 1, phases: ["base"], roles: ["second"], source: PRACTICE_E3 + "; pyramidal base: matches or beats polarised for recreational athletes (Rosenblat et al. 2025)", confidence: "Practice" },
+  { id: "tempo-2x20", family: "tempo", level: 2, phases: ["base"], roles: ["second"], source: PRACTICE_E3 + "; pyramidal base: matches or beats polarised for recreational athletes (Rosenblat et al. 2025)", confidence: "Practice" },
   // Sweet spot
   { id: "sweetspot-3x12", family: "sweetspot", level: 1, phases: ["base"], roles: ["second", "dayAfter"], source: PRACTICE_E3, confidence: "Practice" },
   { id: "sweetspot-4x10", family: "sweetspot", level: 2, phases: ["base"], roles: ["second", "dayAfter"], source: PRACTICE_E3, confidence: "Practice" },
@@ -159,7 +159,7 @@ export interface StrengthVariation {
 
 const RONNESTAD_LIFTS = ["Half squat (Smith machine)", "Leg press, one leg at a time", "One-legged hip flexion", "Calf raise"];
 const RONNESTAD_STRENGTH =
-  "Rønnestad, Hansen & Raastad (2010, 2017) and Rønnestad & Mujika 2014: four lower-body lifts, 3 × 4–10RM, twice a week, heavy load rising every few weeks";
+  "Rønnestad, Hansen & Raastad 2010; Rønnestad, Hansen & Nygaard 2017; Rønnestad & Mujika 2014: four lower-body lifts, 3 × 4–10RM, twice a week, heavy load rising every few weeks";
 
 export const STRENGTH_PROGRAM: StrengthVariation[] = [
   {
