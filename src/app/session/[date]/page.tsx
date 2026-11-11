@@ -12,6 +12,10 @@ import { workMinutes } from "@/lib/plan/library";
 import { lengthLimits, resolveSession } from "@/lib/plan/session";
 import { LengthPicker } from "@/components/LengthPicker";
 import { SwapPicker } from "@/components/SwapPicker";
+import { StrengthDone } from "@/components/StrengthDone";
+import { strengthLogged } from "@/lib/plan/strengthLog";
+import { kindOf } from "@/lib/plan/timeBudget";
+import { canUpload } from "@/lib/strava/client";
 import { getWorkout, scaleWorkout } from "@/lib/plan/library";
 import { swapOptions } from "@/lib/plan/swaps";
 import { dayLabel, length, plain } from "@/lib/ui/format";
@@ -31,6 +35,10 @@ async function SessionPageView({
   if (!found) notFound();
   const { state, week, planned, session, hourPower } = found;
   const limits = lengthLimits(planned);
+  // A gym session the rider recorded themselves (on Strava), not one logged here with "Done it".
+  const recordedGym = planned.strength
+    ? state.activities.find((a) => a.startLocal.slice(0, 10) === date && kindOf(a.sportType) === "strength" && !a.id.startsWith("hpgym-") && !strengthLogged(planned))
+    : undefined;
   // Other workouts for this day (not once it's done or gone by).
   const choices =
     planned.ride && !planned.completedIn && date >= state.today
@@ -90,6 +98,21 @@ async function SessionPageView({
               </li>
             ))}
           </ul>
+          {date <= state.today &&
+            (recordedGym ? (
+              <p className="rounded-2xl border border-line bg-card px-4 py-3 text-[15px] font-semibold">
+                <span className="text-done">✓</span> Done · {recordedGym.name}
+              </p>
+            ) : (
+              <StrengthDone
+                date={date}
+                start={planned.start}
+                name={session.strength.name}
+                minutes={session.minutes}
+                logged={strengthLogged(planned)}
+                canUpload={canUpload()}
+              />
+            ))}
         </>
       )}
 
