@@ -12,7 +12,7 @@
     "audit:ci": "node scripts/audit.mjs"
   },
   "dependencies": {
-    "next": "15.5.29",
+    "next": "16.4.5",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },
