@@ -3,6 +3,7 @@ import { stravaRevocation } from "@/lib/auth/revocation";
 import { NextResponse } from "next/server";
 import { syncIntervals } from "@/lib/intervals/sync";
 import { loadTokens } from "@/lib/strava/client";
+import { brandGarminRides } from "@/lib/strava/brand";
 import { syncStrava } from "@/lib/strava/sync";
 import { syncsGarmin } from "@/lib/garmin/resync";
 
@@ -14,6 +15,8 @@ async function post() {
   if (stravaRevocation()) return NextResponse.json({ error: "Hour Power's access to Strava was removed. Connect Strava again to carry on." }, { status: 409 });
   try {
     const strava = loadTokens() ? await syncStrava() : null;
+    // Hour Power workouts ridden on Garmin: say so on Strava (a few per sync, never in the way).
+    if (strava && !strava.rateLimited) await brandGarminRides();
     let intervals = null;
     let intervalsError: string | undefined;
     try {

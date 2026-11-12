@@ -7,6 +7,7 @@ import { keepRide } from "@/lib/player/keepRide";
 import { virtualSpeed } from "@/lib/player/virtualSpeed";
 import { markRidden } from "@/lib/plan/completions";
 import { setRiderTimeZone } from "@/lib/plan/timeZone";
+import { brandLine, brandOn } from "@/lib/strava/brandLine";
 import { canUpload, stravaUpload } from "@/lib/strava/client";
 import { buildTcx, type RideSample } from "@/lib/strava/tcx";
 
@@ -60,7 +61,7 @@ async function post(request: Request) {
   try {
     const result = await stravaUpload(buildTcx(body.startMs, body.samples, "Ridden with Hour Power", virtualSpeed(body.samples, physicsFor(loadSettings())).map((m) => m.distance)), {
       name: body.name,
-      description: "Ridden with Hour Power",
+      description: brandOn(loadSettings()) ? brandLine(body.name) : undefined,
       externalId: `hourpower-${body.startMs}`,
     });
     return NextResponse.json({ kept, ...result }, { status: result.error ? 422 : 200 });

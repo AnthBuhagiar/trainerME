@@ -1,6 +1,8 @@
 import { asAthlete } from "@/lib/auth/athlete";
 import { canSeeAdmin } from "@/lib/admin/access";
 import { AutoUploadToggle } from "@/components/AutoUploadToggle";
+import { StravaBrandToggle } from "@/components/StravaBrandToggle";
+import { brandOn } from "@/lib/strava/brandLine";
 import { DaysEditor } from "@/components/DaysEditor";
 import { choicesFromBudget } from "@/lib/plan/availability";
 import { SensorsPanel } from "@/components/SensorsPanel";
@@ -65,6 +67,7 @@ function SettingsPageView({ garminMessage }: { garminMessage?: string }) {
       <section className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-5">
         <h2 className="label">Strava</h2>
         <AutoUploadToggle initial={autoUploadOn(settings)} canUpload={canUpload()} />
+        <StravaBrandToggle initial={brandOn(settings)} />
       </section>
 
       {garmin && (
