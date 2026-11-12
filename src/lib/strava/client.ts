@@ -171,6 +171,17 @@ export async function stravaGet<T>(path: string, params: Record<string, string |
   return (await res.json()) as T;
 }
 
+/** Change an activity's description (needs activity:write). */
+export async function stravaUpdateDescription(id: number, description: string): Promise<void> {
+  const res = await fetch(`${API}/activities/${id}`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${await accessToken()}`, "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ description }),
+  });
+  if (res.status === 429) throw new StravaRateLimitError(res.headers.get("x-ratelimit-usage"));
+  if (!res.ok) throw new Error(`Strava didn't update the activity (${res.status}).`);
+}
+
 export interface UploadResult {
   activityId?: number;
   status: string;

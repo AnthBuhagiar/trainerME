@@ -194,6 +194,7 @@ to higher intakes over several weeks.
 | C10 | **Event goals** | Superseded by the full Goal Event feature set (section D). |
 | C11 | **Works with JOIN/Zwift** | Reads JOIN's planned workouts from Strava descriptions to report whether the plan is moving hour power. |
 | C12 | **Never overwrites zones silently** | New estimates are offered for Accept/Decline before replacing the FTP used for training. |
+| C13 | **Hour Power line on Strava** | One line ("⚡ Hour Power workout: Threshold 3×12 · hourpowerapp.cc") on rides uploaded from the player, gym sessions logged in the app, and Hour Power workouts sent to Garmin once Garmin's copy reaches Strava (added under the rider's own text, fresh rides only, never twice). On by default; off in Settings. Quiet brand recognition, unlike apps that paste the whole workout. |
 
 ### F. Growth and pricing
 | # | Feature | What it does |
