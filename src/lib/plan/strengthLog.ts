@@ -1,7 +1,7 @@
-import { loadRawActivities, loadSettings, saveRawActivities, type RawActivity } from "@/lib/data/store";
+import { loadRawActivities, saveRawActivities, type RawActivity } from "@/lib/data/store";
 import { completionKey, loadCompletions, markRidden, unmarkDoneElsewhere } from "@/lib/plan/completions";
 import type { PlannedSession } from "@/lib/plan/week";
-import { brandLine, brandOn } from "@/lib/strava/brandLine";
+import { brandLine } from "@/lib/strava/brandLine";
 import { canUpload, stravaCreateManual } from "@/lib/strava/client";
 
 /**
@@ -53,7 +53,7 @@ export async function logStrength(s: PlannedSession, now = new Date()): Promise<
       sportType: "WeightTraining",
       startLocal: at,
       seconds: s.minutes * 60,
-      description: [...s.strength.items, ...(brandOn(loadSettings()) ? ["", brandLine(s.strength.name, "gym session")] : [])].join("\n"),
+      description: [...s.strength.items, "", brandLine(s.strength.name, "gym session")].join("\n"),
     });
     markRidden(s.date, s.start, at, now, id);
     return { stravaId: id };

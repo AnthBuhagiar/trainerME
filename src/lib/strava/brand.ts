@@ -4,7 +4,7 @@ import { readJson, writeJson } from "@/lib/data/store";
 import { addDays } from "@/lib/plan/calendar";
 import { loadState } from "@/lib/plan/current";
 import { weekStatus } from "@/lib/plan/weekStrip";
-import { brandLine, brandOn, withBrand } from "@/lib/strava/brandLine";
+import { brandLine, withBrand } from "@/lib/strava/brandLine";
 import { canUpload, stravaGet, stravaUpdateDescription } from "@/lib/strava/client";
 import type { Activity } from "@/lib/types";
 
@@ -12,8 +12,8 @@ import type { Activity } from "@/lib/types";
  * A short line on Strava saying a ride was an Hour Power workout: on rides
  * uploaded from the player, gym sessions logged in the app, and Hour Power
  * workouts sent to Garmin and ridden there (added to the ride's description
- * once Garmin's copy reaches Strava). One line, never more; the rider can turn
- * it off in Settings.
+ * once Garmin's copy reaches Strava). Always on: one line,
+ * never more.
  */
 
 const FILE = "strava-branded.json";
@@ -37,7 +37,7 @@ export function ridesToBrand(sessions: { activity: Activity; title: string; key:
 export async function brandGarminRides(): Promise<number> {
   try {
     const state = loadState();
-    if (!brandOn(state.settings) || !canUpload()) return 0;
+    if (!canUpload()) return 0;
     const sent = loadSent();
     if (!sent.length) return 0;
     const sentKeys = new Set(sent.map((w) => w.key));
