@@ -1,14 +1,10 @@
 import { multiUser } from "@/lib/data/store";
 import { appUrl } from "@/lib/strava/client";
-import type { AthleteSettings } from "@/lib/types";
 
 /**
  * The one line on Strava that says a ride or gym session was an Hour Power
  * workout (see brand.ts for Garmin-ridden workouts).
  */
-
-/** On unless the rider turned it off. */
-export const brandOn = (s: AthleteSettings) => s.stravaBrand !== false;
 
 const MARK = "Hour Power";
 

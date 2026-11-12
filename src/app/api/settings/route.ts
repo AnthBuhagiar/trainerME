@@ -8,12 +8,11 @@ const watts = (v: unknown) => typeof v === "number" && Number.isFinite(v) && v >
 
 /** Update rider preferences. Only known fields can be changed here. */
 async function post(request: Request) {
-  const body = (await request.json()) as { autoUpload?: unknown; stravaBrand?: unknown; trainingHourPower?: unknown; declinedHourPower?: unknown; timeZone?: unknown };
+  const body = (await request.json()) as { autoUpload?: unknown; trainingHourPower?: unknown; declinedHourPower?: unknown; timeZone?: unknown };
   // The phone's time zone (sent by the app when it differs): first, as it re-times kept rides.
   if (body.timeZone !== undefined) setRiderTimeZone(body.timeZone);
   const settings = loadSettings();
   if (typeof body.autoUpload === "boolean") settings.autoUpload = body.autoUpload;
-  if (typeof body.stravaBrand === "boolean") settings.stravaBrand = body.stravaBrand;
   if (watts(body.trainingHourPower)) {
     settings.trainingHourPower = Math.round(body.trainingHourPower as number);
     settings.declinedHourPower = undefined;

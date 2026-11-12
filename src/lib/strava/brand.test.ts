@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { brandLine, brandOn, withBrand } from "@/lib/strava/brandLine";
+import { brandLine, withBrand } from "@/lib/strava/brandLine";
 import { ridesToBrand } from "@/lib/strava/brand";
 import type { Activity } from "@/lib/types";
 
@@ -24,11 +24,6 @@ describe("Hour Power line on Strava", () => {
     expect(withBrand(null, "⚡ Hour Power workout: X")).toBe("⚡ Hour Power workout: X");
     expect(withBrand("Legs felt good", "⚡ Hour Power workout: X")).toBe("Legs felt good\n\n⚡ Hour Power workout: X");
     expect(withBrand("Legs felt good\n\n⚡ Hour Power workout: X", "⚡ Hour Power workout: X")).toBeNull();
-  });
-
-  it("is on unless turned off", () => {
-    expect(brandOn({} as never)).toBe(true);
-    expect(brandOn({ stravaBrand: false } as never)).toBe(false);
   });
 
   it("only tags fresh Strava rides of sessions sent to Garmin, once", () => {
