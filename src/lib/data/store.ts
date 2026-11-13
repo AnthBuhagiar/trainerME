@@ -105,6 +105,8 @@ export interface RawActivity {
   start_local: string;
   is_trainer?: boolean;
   description?: string;
+  /** On Strava's copy of a ride Hour Power uploaded: the id of the ride Hour Power kept ("hp-<start ms>"). */
+  kept_ride?: string;
   summary: {
     distance: number;
     moving_time: number;
@@ -173,14 +175,24 @@ export function isIndoor(a: Activity): boolean {
 export const fromStrava = (a: RawActivity) => (a.source ?? "strava") === "strava";
 
 /**
- * The same ride can arrive from Strava and from Intervals.icu (e.g. a Garmin upload synced to both).
- * Treat activities of the same kind starting within 2 minutes with similar length as one, keeping
- * the copy whose streams are downloaded, then the Strava one.
+ * The same ride can arrive from Strava and from Intervals.icu (e.g. a Garmin upload synced to both),
+ * or be ridden in Hour Power's player and come back from Strava. Strava's copy of a ride Hour Power
+ * uploaded names the ride it came from, so those are always one. Otherwise, activities of the same
+ * kind starting within 2 minutes with similar length are one (a ride Hour Power kept and a Strava
+ * ride starting within 2 minutes are one whatever their length: Strava counts moving time
+ * differently). The copy whose streams are downloaded is kept, then the Strava one.
  */
 export function dedupeActivities(raw: RawActivity[], hasStreams: (id: string) => boolean = hasRideSummary): RawActivity[] {
-  const sorted = [...raw].sort((a, b) => a.start_local.localeCompare(b.start_local));
-  const kept: RawActivity[] = [];
   const rank = (a: RawActivity) => (hasStreams(a.id) ? 2 : 0) + (fromStrava(a) ? 1 : 0);
+  // Linked copies first: the weaker of each pair goes.
+  const byId = new Map(raw.map((a) => [a.id, a]));
+  const dropped = new Set<RawActivity>();
+  for (const a of raw) {
+    const own = a.kept_ride && byId.get(a.kept_ride);
+    if (own && own !== a) dropped.add(rank(a) > rank(own) ? own : a);
+  }
+  const sorted = raw.filter((a) => !dropped.has(a)).sort((a, b) => a.start_local.localeCompare(b.start_local));
+  const kept: RawActivity[] = [];
   for (const a of sorted) {
     // Sorted by start, so only the last few kept activities can be within 2 minutes.
     const start = Date.parse(`${a.start_local}Z`);
@@ -191,7 +203,7 @@ export function dedupeActivities(raw: RawActivity[], hasStreams: (id: string) =>
       if (gap > 120_000) break;
       const sameKind = k.sport_type.includes("Ride") === a.sport_type.includes("Ride");
       const lengths = [k.summary.moving_time, a.summary.moving_time];
-      const similar = Math.min(...lengths) >= 0.8 * Math.max(...lengths);
+      const similar = Math.min(...lengths) >= 0.8 * Math.max(...lengths) || k.source === "hourpower" || a.source === "hourpower";
       if (k.source !== a.source && sameKind && similar) {
         i = j;
         break;
