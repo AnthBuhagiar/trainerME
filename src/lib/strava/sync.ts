@@ -38,6 +38,8 @@ interface StravaActivity {
   timezone?: string;
   /** Where it started; empty for indoor rides and uploaded files. */
   start_latlng?: number[] | null;
+  /** What the uploader called it: Hour Power's player uploads say "hourpower-<start ms>". */
+  external_id?: string | null;
 }
 
 interface StravaAthlete {
@@ -55,6 +57,12 @@ export interface SyncResult {
   rateLimited: boolean;
 }
 
+/** The ride Hour Power kept for a Strava activity it uploaded itself ("hp-<start ms>"). */
+export function keptRideId(externalId: string | null | undefined): string | undefined {
+  const ms = externalId && /^hourpower-(\d+)/.exec(externalId)?.[1];
+  return ms ? `hp-${ms}` : undefined;
+}
+
 function toRaw(a: StravaActivity) {
   return {
     id: String(a.id),
@@ -70,6 +78,7 @@ function toRaw(a: StravaActivity) {
       elevation_gain: a.total_elevation_gain,
       relative_effort: a.suffer_score ?? undefined,
     },
+    ...(keptRideId(a.external_id) ? { kept_ride: keptRideId(a.external_id) } : {}),
   };
 }
 
